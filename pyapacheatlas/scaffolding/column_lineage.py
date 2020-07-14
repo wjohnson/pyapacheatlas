@@ -31,6 +31,30 @@ def column_lineage_scaffold(datasource,
     column_lineage_process_entity = EntityTypeDef(
         name="{}_column_lineage".format(datasource),
         superTypes=["Process"],
+        attributes=[
+            {
+            "name": "dependencyType",
+            "typeName": "string",
+            "isOptional": False,
+            "cardinality": "SINGLE",
+            "valuesMinCount": 1,
+            "valuesMaxCount": 1,
+            "isUnique": False,
+            "isIndexable": False,
+            "includeInNotification": False
+            },
+            {
+            "name": "expression",
+            "typeName": "string",
+            "isOptional": True,
+            "cardinality": "SINGLE",
+            "valuesMinCount": 0,
+            "valuesMaxCount": 1,
+            "isUnique": False,
+            "isIndexable": False,
+            "includeInNotification": False
+            }
+        ]
     )
 
     # Define {datasource}_process

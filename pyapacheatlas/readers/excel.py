@@ -44,6 +44,7 @@ def from_excel(filepath, excel_config, type_defs):
     # Getting column entities
     column_sheet = wb.get_sheet_by_name(excel_config.column_sheet)
     json_columns = _parse_spreadsheet(column_sheet)
+    # TODO: Add columnMappings attribute to appropriate process
     entities.extend(
         _parse_column_mapping(json_columns, excel_config, guid_tracker, entities, type_defs)
     )
@@ -64,13 +65,13 @@ def _columns_matching_pattern(row, starts_with, does_not_match = []):
 
 def _parse_table_mapping(json_rows, excel_config, guid_tracker):
     # Required attributes
-    source_table_column = excel_config.entity_source_prefix+" table"
+    source_table_name_header = excel_config.entity_source_prefix+" table"
     source_table_type_column = excel_config.entity_source_prefix+" type"
-    required_source_headers = [source_table_column, source_table_type_column]
+    required_source_headers = [source_table_name_header, source_table_type_column]
 
-    target_table_column = excel_config.entity_target_prefix+" table"
+    target_table_name_header = excel_config.entity_target_prefix+" table"
     target_table_type_column = excel_config.entity_target_prefix+" type"
-    required_target_headers = [target_table_column, target_table_type_column]
+    required_target_headers = [target_table_name_header, target_table_type_column]
 
     process_name_column = excel_config.entity_process_prefix+" name"
     process_type_column = excel_config.entity_process_prefix+" type"
@@ -83,23 +84,23 @@ def _parse_table_mapping(json_rows, excel_config, guid_tracker):
         target_entity, source_entity, process_entity = None, None, None
         # Always expecting a TARGET in the sheet
         target_entity = AtlasEntity(
-            name=row[target_table_column],
+            name=row[target_table_name_header],
             typeName=row[target_table_type_column],
-            qualified_name=row[target_table_column],
+            # qualifiedName can be overwritten via the attributes functionality
+            qualified_name=row[target_table_name_header],
             guid=guid_tracker.get_guid(),
-            # TODO: Add additional attributes
             attributes = _columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers)
         )
         output.append(target_entity)
         
-        if row[source_table_column] is not None:
+        if row[source_table_name_header] is not None:
             # There is a source table
             source_entity = AtlasEntity(
-                name=row[source_table_column],
+                name=row[source_table_name_header],
                 typeName=row[source_table_type_column],
-                qualified_name=row[source_table_column],
+                # qualifiedName can be overwritten via the attributes functionality
+                qualified_name=row[source_table_name_header],
                 guid=guid_tracker.get_guid(),
-                # TODO: Add additional attributes
                 attributes = _columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers)
             )
             output.append(source_entity)
@@ -139,15 +140,15 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
         :type atlas_typedefs: list(:class:`~pyapacheatlas.core.typedef.EntityTypeDef`)
     """
     # Required attributes
-    source_table_column = excel_config.entity_source_prefix+" table"
-    source_column_name = excel_config.entity_source_prefix+" column"
-    required_source_headers = [source_column_name, source_table_column]
+    source_table_name_header = excel_config.entity_source_prefix+" table"
+    source_column_name_header = excel_config.entity_source_prefix+" column"
+    required_source_headers = [source_column_name_header, source_table_name_header]
     
-    target_table_column = excel_config.entity_target_prefix+" table"
-    target_column_name = excel_config.entity_target_prefix+" column"
-    required_target_headers = [target_column_name, target_table_column]
+    target_table_name_header = excel_config.entity_target_prefix+" table"
+    target_column_name_header = excel_config.entity_target_prefix+" column"
+    required_target_headers = [target_column_name_header, target_table_name_header]
     
-    transformation_column = excel_config.column_transformation_name
+    transformation_column_header = excel_config.column_transformation_name
     # No required process headers
 
     process_to_column_lineage_type = {}
@@ -165,7 +166,7 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
         target_entity, source_entity, process_entity = None, None, None
         target_entity_table_name, source_entity_table_name = None, None
         # Given the existing table entity in atlas_entities, look up the appropriate column type
-        target_entity_table_name = row[target_table_column]
+        target_entity_table_name = row[target_table_name_header]
         if target_entity_table_name not in tables:
             target_table_entity = first_entity_matching_attribute("name", target_entity_table_name, atlas_entities)
             tables[target_entity_table_name] = target_table_entity
@@ -175,9 +176,10 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
         
         # There should always be a target
         target_entity = AtlasEntity(
-            name=row[target_table_column],
+            name=row[target_column_name_header],
             typeName=target_col_type,
-            qualified_name=row[target_table_column], #TODO: Add qualified name attribute
+            # qualifiedName can be overwritten via the attributes functionality
+            qualified_name=target_entity_table_name+"."+row[target_column_name_header],
             guid=guid_tracker.get_guid(),
             attributes = _columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers),
             # TODO: Make the relationship name more dynamic instead of hard coding table
@@ -187,9 +189,9 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
         output.append(target_entity)
     
         # Source Column is optiona in the spreadsheet
-        if row[source_table_column] is not None:
+        if row[source_table_name_header] is not None:
             # Given the existing source table entity in atlas_entities, look up the appropriate column type
-            source_entity_table_name = row[source_table_column]
+            source_entity_table_name = row[source_table_name_header]
             
             if source_entity_table_name not in tables:
                 source_table_entity = first_entity_matching_attribute("name", source_entity_table_name, atlas_entities)
@@ -198,9 +200,10 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             source_col_type = child_type_from_relationship(tables[source_entity_table_name], "columns", atlas_typedefs, normalize=True)
 
             source_entity = AtlasEntity(
-                name=row[source_table_column],
+                name=row[source_column_name_header],
                 typeName=source_col_type,
-                qualified_name=row[source_table_column], #TODO: Add qualified name attribute
+                # qualifiedName can be overwritten via the attributes functionality
+                qualified_name=source_entity_table_name+"."+row[source_column_name_header],
                 guid=guid_tracker.get_guid(),
                 attributes = _columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers),
                 # TODO: Make the relationship name more dynamic instead of hard coding query
@@ -222,9 +225,15 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             )
         )
         # Assuming there is always a Process for adding at least the target table
+        process_attributes = _columns_matching_pattern(row, excel_config.entity_process_prefix)
+        process_attributes.update({"dependencyType":"SIMPLE"})
+        if row[transformation_column_header] is not None:
+            process_attributes.update({"dependencyType":"EXPRESSION", "expression":row[transformation_column_header]})
+
         process_entity = AtlasProcess(
             name=table_process.get_name(),
             typeName=process_type,
+            # qualifiedName can be overwritten via the attributes functionality
             qualified_name=table_process.get_name() + "derived_column:{}_{}".format(
                 "NA" if source_entity is None else source_entity.get_name(),
                 target_entity.get_name()
@@ -233,7 +242,7 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             # Assuming always a single output
             inputs=[] if source_entity is None else [source_entity.to_json(minimum=True)],
             outputs=[target_entity.to_json(minimum=True)],
-            attributes = _columns_matching_pattern(row, excel_config.entity_process_prefix),
+            attributes = process_attributes,
             # TODO: Make the relationship name more dynamic instead of hard coding query
             relationshipAttributes = {"query":table_process.to_json(minimum=True)}
         )

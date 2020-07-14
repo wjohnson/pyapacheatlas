@@ -143,3 +143,4 @@ cython_debug/
 # Personal edits
 hive-reference/
 tester.py
+*.xlsx
