@@ -14,6 +14,12 @@ class AtlasEntity():
         # }}
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
     
+    def get_name(self):
+        return self.attributes["name"]
+
+    def get_qualified_name(self):
+        return self.attributes["qualifiedName"]
+
     def to_json(self, minimum=False):
         if minimum:
             output = {

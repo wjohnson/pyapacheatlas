@@ -23,9 +23,29 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + "/entity/bulk?guid={}".format(guid_str)
         getEntity = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
         results = json.loads(getEntity.text)
-
+        try:
+            getEntity.raise_for_status()
+        except requests.RequestException as e:
+            print(results)
+            raise e
+        
         return results
 
+
+    def get_all_typedefs(self):
+        results = None
+        atlas_endpoint = self.endpoint_url + "/types/typedefs"
+
+        getTypeDefs = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
+        results = json.loads(getTypeDefs.text)
+        try:
+            getTypeDefs.raise_for_status()
+        except requests.RequestException as e:
+            print(results)
+            raise e
+        
+        return results
+    
 
     def get_typedef(self, type_category, guid = None, name = None, use_cache = False):
         results = None
@@ -36,8 +56,13 @@ class AtlasClient():
         elif name:
             atlas_endpoint = atlas_endpoint + '/name/{}'.format(name)
 
-        getEntity = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
-        results = json.loads(getEntity.text)
+        getTypeDef = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
+        results = json.loads(getTypeDef.text)
+        try:
+            getTypeDef.raise_for_status()
+        except requests.RequestException as e:
+            print(results)
+            raise e
         
         return results
     
@@ -61,6 +86,11 @@ class AtlasClient():
             headers=self.authentication.get_headers()
         )
         results = json.loads(postTypeDefs.text)
+        try:
+            postTypeDefs.raise_for_status()
+        except requests.RequestException as e:
+            print(results)
+            raise e
 
         return results
 
@@ -102,6 +132,11 @@ class AtlasClient():
             headers=self.authentication.get_headers()
         )
         results = json.loads(postBulkEntities.text)
+        try:
+            postBulkEntities.raise_for_status()
+        except requests.RequestException as e:
+            print(results)
+            raise e
 
         return results
 
