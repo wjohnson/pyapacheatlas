@@ -2,13 +2,13 @@ from openpyxl import Workbook
 from string import ascii_uppercase
 
 COLUMN_TEMPLATE = [
-    "Target Table", "Target Column", 
-    "Source Table", "Source Column",
+    "Target Table", "Target Column", "Target Classifications",
+    "Source Table", "Source Column", "Source Classifications",
     "Transformation"
 ]
 TABLE_TEMPLATE = [
-    "Target Table", "Target Type",
-    "Source Table", "Source Type",
+    "Target Table", "Target Type", "Target Classifications",
+    "Source Table", "Source Type", "Source Classifications",
     "Process Name", "Process Type"
 ]
 
@@ -37,5 +37,3 @@ def make_template(filepath):
 
     wb.save(filepath)
     wb.close()
-
-make_template("./someothertest.xlsx")

@@ -7,7 +7,8 @@ from .util import (
     first_entity_matching_attribute, 
     first_process_matching_io,
     from_process_lookup_col_lineage,
-    from_tablename_lookup_col
+    from_tablename_lookup_col,
+    string_to_classification
 )
 
 class ExcelConfiguration():
@@ -65,13 +66,16 @@ def _columns_matching_pattern(row, starts_with, does_not_match = []):
 
 def _parse_table_mapping(json_rows, excel_config, guid_tracker):
     # Required attributes
+    # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute
     source_table_name_header = excel_config.entity_source_prefix+" table"
     source_table_type_column = excel_config.entity_source_prefix+" type"
-    required_source_headers = [source_table_name_header, source_table_type_column]
+    source_table_classifications_header = excel_config.entity_target_prefix+" classifications"
+    required_source_headers = [source_table_name_header, source_table_type_column, source_table_classifications_header]
 
     target_table_name_header = excel_config.entity_target_prefix+" table"
     target_table_type_column = excel_config.entity_target_prefix+" type"
-    required_target_headers = [target_table_name_header, target_table_type_column]
+    target_table_classifications_header = excel_config.entity_target_prefix+" classifications"
+    required_target_headers = [target_table_name_header, target_table_type_column, target_table_classifications_header]
 
     process_name_column = excel_config.entity_process_prefix+" name"
     process_type_column = excel_config.entity_process_prefix+" type"
@@ -89,7 +93,8 @@ def _parse_table_mapping(json_rows, excel_config, guid_tracker):
             # qualifiedName can be overwritten via the attributes functionality
             qualified_name=row[target_table_name_header],
             guid=guid_tracker.get_guid(),
-            attributes = _columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers)
+            attributes = _columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers),
+            classifications = string_to_classification(row.get(target_table_classifications_header))
         )
         output.append(target_entity)
         
@@ -101,7 +106,8 @@ def _parse_table_mapping(json_rows, excel_config, guid_tracker):
                 # qualifiedName can be overwritten via the attributes functionality
                 qualified_name=row[source_table_name_header],
                 guid=guid_tracker.get_guid(),
-                attributes = _columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers)
+                attributes = _columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers),
+                classifications = string_to_classification(row.get(source_table_classifications_header))
             )
             output.append(source_entity)
 
@@ -140,13 +146,16 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
         :type atlas_typedefs: list(:class:`~pyapacheatlas.core.typedef.EntityTypeDef`)
     """
     # Required attributes
+    # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute
     source_table_name_header = excel_config.entity_source_prefix+" table"
     source_column_name_header = excel_config.entity_source_prefix+" column"
-    required_source_headers = [source_column_name_header, source_table_name_header]
+    source_column_classifications_header = excel_config.entity_source_prefix+" classifications"
+    required_source_headers = [source_column_name_header, source_table_name_header, source_column_classifications_header]
     
     target_table_name_header = excel_config.entity_target_prefix+" table"
     target_column_name_header = excel_config.entity_target_prefix+" column"
-    required_target_headers = [target_column_name_header, target_table_name_header]
+    target_column_classifications_header = excel_config.entity_target_prefix+" classifications"
+    required_target_headers = [target_column_name_header, target_table_name_header, target_column_classifications_header]
     
     transformation_column_header = excel_config.column_transformation_name
     # No required process headers
@@ -183,7 +192,8 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             guid=guid_tracker.get_guid(),
             attributes = _columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers),
             # TODO: Make the relationship name more dynamic instead of hard coding table
-            relationshipAttributes = {"table":tables[target_entity_table_name].to_json(minimum=True)}
+            relationshipAttributes = {"table":tables[target_entity_table_name].to_json(minimum=True)},
+            classifications = string_to_classification(row.get(target_column_classifications_header))
         )
         # Add to outputs
         output.append(target_entity)
@@ -207,7 +217,8 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
                 guid=guid_tracker.get_guid(),
                 attributes = _columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers),
                 # TODO: Make the relationship name more dynamic instead of hard coding query
-                relationshipAttributes = {"table":tables[source_entity_table_name].to_json(minimum=True)}
+                relationshipAttributes = {"table":tables[source_entity_table_name].to_json(minimum=True)},
+                classifications = string_to_classification(row.get(source_column_classifications_header))
             )
             # Add to outputs
             output.append(source_entity)

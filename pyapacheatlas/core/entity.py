@@ -13,6 +13,7 @@ class AtlasEntity():
         #   "typeName": ""
         # }}
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
+        self.classifications = kwargs.get("classifications", {})
     
     def get_name(self):
         return self.attributes["name"]

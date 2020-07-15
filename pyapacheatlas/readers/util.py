@@ -71,3 +71,10 @@ def from_process_lookup_col_lineage(process_name, existing_mapping, atlas_entiti
             }
     
     return existing_mapping, column_lineage_type
+
+def string_to_classification(string, sep=";"):
+    if string is None:
+        return []
+    # TODO: How do we bring in attributes if they're required?
+    results = [{"typeName": s.strip(), "attributes":{}} for s in string.split(sep) if s.strip() != ""]
+    return results
