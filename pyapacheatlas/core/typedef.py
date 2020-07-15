@@ -93,3 +93,4 @@ class RelationshipTypeDef(BaseTypeDef):
 
         self.endDef1 = RelationshipTypeDef._decide_endDef(endDef1, RelationshipTypeDef.default_columns_endDef)
         self.endDef2 = RelationshipTypeDef._decide_endDef(endDef2, RelationshipTypeDef.default_table_endDef)
+        self.relationshipCategory = kwargs.get("relationshipCategory")

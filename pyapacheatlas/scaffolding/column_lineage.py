@@ -23,8 +23,21 @@ def column_lineage_scaffold(datasource,
     # Define {datasource}_table_columns relationship ()
     table_column_relationship = RelationshipTypeDef(
         name="{}_table_columns".format(datasource),
-        endDef1 = table_entity.name,
-        endDef2 = column_entity.name
+        relationshipCategory = "COMPOSITION",
+        endDef1 = {
+            "type": table_entity.name,
+            "name": "columns",
+            "isContainer": True,
+            "cardinality": "SET",
+            "isLegacyAttribute": False
+            },
+        endDef2 = {
+            "type": column_entity.name,
+            "name": "table",
+            "isContainer": False,
+            "cardinality": "SINGLE",
+            "isLegacyAttribute": False
+        }
     )
 
     # Define {datasource}_column_lineage
@@ -77,6 +90,7 @@ def column_lineage_scaffold(datasource,
     # Define {datasource}_process_column_lineage
     table_process_column_lineage_relationship = RelationshipTypeDef(
         name="{}_process_column_lineage".format(datasource),
+        relationshipCategory = "COMPOSITION",
         endDef1 = {
             "type": column_lineage_process_entity.name,
             "name": "query",
