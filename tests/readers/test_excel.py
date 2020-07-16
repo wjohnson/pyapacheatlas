@@ -159,3 +159,44 @@ def test_parse_column_mapping_with_classifications():
     assert({"typeName":"CustomerInfo","attributes":{}} in target_col_entity.classifications)
     assert({"typeName":"PII","attributes":{}} in target_col_entity.classifications)
     assert(len(source_col_entity.classifications) == 0)
+
+
+def test_parse_column_mapping_with_attributes():
+    excel_config = ExcelConfiguration()
+    guid_tracker = GuidTracker(-1000)
+
+    json_tables, json_columns, atlas_typedefs = setup_parse_column_mapping()
+
+    # Update target to include an attribute
+    json_columns[0].update({"target test_attrib1":"value", "target test_attrib2":"value2", "source foo":"bar"})
+    
+    # Outputs -1003 as the last guid
+    tables_and_processes = _parse_table_mapping(json_tables, excel_config, guid_tracker)
+
+    results = _parse_column_mapping(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs)
+
+    # Two column entities
+    # One process entity
+    target_col_entity = results[0]
+    source_col_entity = results[1]
+    col_lineage_entity = results[2]
+
+    assert(target_col_entity.attributes["test_attrib1"] == "value")
+    assert(target_col_entity.attributes["test_attrib2"] == "value2")
+    assert(source_col_entity.attributes["foo"] == "bar")
+
+def test_parse_column_mapping_with_columnMapping():
+    excel_config = ExcelConfiguration()
+    guid_tracker = GuidTracker(-1000)
+    expected = "[{\"ColumnMapping\": [{\"Source\": \"col0\", \"Sink\": \"col1\"}], \"DatasetMapping\": {\"Source\": \"table0\", \"Sink\": \"table1\"}}]"
+
+    json_tables, json_columns, atlas_typedefs = setup_parse_column_mapping()
+    
+    # Outputs -1003 as the last guid
+    tables_and_processes = _parse_table_mapping(json_tables, excel_config, guid_tracker)
+
+    results = _parse_column_mapping(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs, use_column_mapping=True)
+
+    # Demonstrating column lineage
+    assert("columnMapping" in tables_and_processes[2].attributes)
+    assert(tables_and_processes[2].attributes["columnMapping"] == expected)

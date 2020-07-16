@@ -1,3 +1,64 @@
+def apply_columnMapping_to_Process(atlas_entities, table_process, column_lineage_process):
+    # Find all processes
+    procs_for_tables = []
+
+    guids = {}
+    # guid: {
+    # type:(table/column/table_process/columnLineageProcess),
+    # parent: guid
+    # child: 
+    # }
+
+    lineage_tree = {}
+    # Table Process
+    ## Input Table | Output Table
+    ### C1 | C2    | C3 | C4
+    ## Lineage
+    ### C1 -> C3 | C2 -> C4
+
+    for entity in atlas_entities:
+
+        # Column Lineage Process
+        if "query" in entity.relationshipAttributeDefs:
+            parent_guid = entity.relationshipAttributes["query"]["guid"]
+            guid[parent_guid] = {
+                "type":"column_lineage_process",
+                "input_guid":next(iter(entity.attributes["inputs"]), None), # There may not be a first element
+                "output_guid":entity.attributes["outputs"][0] # Always assuming there is an output
+            }
+        # Non column lineage process
+        elif "inputs" in entity.attributes and "outputs" in entity.attributes:
+            guids[entity.guid] = {
+                "type":"table_process",
+                "input_guid":next(iter(entity.attributes["inputs"]), None), # There may not be a first element
+                "output_guid":entity.attributes["outputs"][0] # Always assuming there is an output
+            }
+            procs_for_tables.append(entity)
+
+        else:
+            guids[entity.guid] = {"name":entity.get_name()}
+
+    for proc in procs_for_tables:
+        input_table_name = guids.get(guids[proc.guid]["input_guid"], {}).get("name")
+        output_table_name = guids.get(guids[proc.guid]["output_guid"], {}).get("name")
+    # Extract the tables from input output
+    # Find all columns that point to that table
+    # Find the column lineages processes
+
+    return NotImplementedError
+
+
+def child_type_from_relationship(entity_type, relationship_name, atlas_typedefs, normalize=True):
+    output = None
+    for typdedf in atlas_typedefs:
+        for relationshipDef in typdedf["relationshipAttributeDefs"]:
+            if relationshipDef.get("name", None) == relationship_name:
+                output = relationshipDef.get("typeName")
+                if normalize and output.startswith("array<") and output.endswith(">"):
+                    # Assuming typename looks like array<{typename}>
+                    output = output[6:-1]
+    return output
+
 def first_entity_matching_attribute(attribute, value, atlas_entities):
     output = None
     for entity in atlas_entities:
@@ -30,17 +91,6 @@ def first_process_matching_io(input_name, output_name, atlas_entities):
     
     return output_entity
         
-
-def child_type_from_relationship(entity_type, relationship_name, atlas_typedefs, normalize=True):
-    output = None
-    for typdedf in atlas_typedefs:
-        for relationshipDef in typdedf["relationshipAttributeDefs"]:
-            if relationshipDef.get("name", None) == relationship_name:
-                output = relationshipDef.get("typeName")
-                if normalize and output.startswith("array<") and output.endswith(">"):
-                    # Assuming typename looks like array<{typename}>
-                    output = output[6:-1]
-    return output
 
 def from_tablename_lookup_col(table_name, existing_mapping, atlas_entities, atlas_typedefs):
     if table_name in existing_mapping:

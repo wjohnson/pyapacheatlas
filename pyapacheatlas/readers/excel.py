@@ -1,3 +1,5 @@
+import json
+
 from openpyxl import load_workbook, Workbook
 
 from ..core.entity import AtlasEntity, AtlasProcess
@@ -24,7 +26,7 @@ class ExcelConfiguration():
         self.entity_process_prefix = kwargs.get("entity_process_prefix", "process").lower()
         self.column_transformation_name = kwargs.get("column_transformation_name", "transformation").lower()
 
-def from_excel(filepath, excel_config, type_defs):
+def from_excel(filepath, excel_config, type_defs, use_column_mapping = False):
 
     wb = load_workbook(filepath)
 
@@ -45,10 +47,9 @@ def from_excel(filepath, excel_config, type_defs):
     # Getting column entities
     column_sheet = wb.get_sheet_by_name(excel_config.column_sheet)
     json_columns = _parse_spreadsheet(column_sheet)
-    # TODO: Add columnMappings attribute to appropriate process
-    entities.extend(
-        _parse_column_mapping(json_columns, excel_config, guid_tracker, entities, type_defs)
-    )
+    
+    _temp_columns = _parse_column_mapping(json_columns, excel_config, guid_tracker, entities, type_defs, use_column_mapping=use_column_mapping)
+    entities.extend(_temp_columns)
     
     output = [e.to_json() for e in entities]
 
@@ -129,7 +130,7 @@ def _parse_table_mapping(json_rows, excel_config, guid_tracker):
     return output
 
 
-def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities, atlas_typedefs):
+def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities, atlas_typedefs, use_column_mapping=False):
     """
     :param json_rows:
             A list of dicts that contain the converted rows of your column spreadsheet.
@@ -160,14 +161,9 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
     transformation_column_header = excel_config.column_transformation_name
     # No required process headers
 
-    process_to_column_lineage_type = {}
-
-    output = []
-
-    # Read every row
-    # There should always be a target column
     output = []
     tables = {}
+    dataset_mapping = {} # table_process_guid: {"input_table":"","output_table":"","columnMapping":[]}
     table_and_proc_mappings ={}
 
     for row in json_rows:
@@ -258,7 +254,41 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             relationshipAttributes = {"query":table_process.to_json(minimum=True)}
         )
         output.append(process_entity)
-    
+
+        if use_column_mapping:
+            # This is assuming only one dataset in the table process
+            col_map_source_col = "*" if source_entity is None else source_entity.get_name()
+            col_map_target_col = target_entity.get_name()
+            col_map_source_table = next(iter(table_process.attributes["inputs"]), {}).get("qualifiedName") or "*"
+            col_map_target_table = table_process.attributes["outputs"][0]["qualifiedName"]
+            hash_key = hash(col_map_source_col + col_map_source_table)
+            col_map_dict = {"Source":col_map_source_col ,"Sink":col_map_target_col}
+            data_map_dict = {"Source":col_map_source_table,"Sink":col_map_target_table}
+
+            if table_process.guid in dataset_mapping:
+                if hash_key in dataset_mapping[table_process.guid]:
+                    dataset_mapping[table_process.guid][hash_key]["ColumnMapping"].append(col_map_dict)
+                else:
+                    dataset_mapping[table_process.guid][hash_key]={
+                        "ColumnMapping":[col_map_dict],
+                        "DatasetMapping": data_map_dict
+                    }
+            else:
+                dataset_mapping[table_process.guid]={
+                    hash_key:{
+                        "ColumnMapping":[col_map_dict],
+                        "DatasetMapping": data_map_dict
+                    }
+                }
+    if use_column_mapping:
+        for entity in atlas_entities:
+            if entity.guid in dataset_mapping:
+                column_mapping_attribute = [mappings for mappings in dataset_mapping[entity.guid].values()]
+                entity.attributes.update(
+                    {"columnMapping":json.dumps(column_mapping_attribute)}
+                )
+                    
+
 
     return output
 
