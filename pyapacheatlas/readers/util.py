@@ -1,4 +1,8 @@
-def apply_columnMapping_to_Process(atlas_entities, table_process, column_lineage_process):
+def apply_columnMapping_to_Process(atlas_entities):
+    """
+    Update the table processes to use the columnMapping attribute to
+    represent column lineages in the Data Catalog UI.
+    """
     # Find all processes
     procs_for_tables = []
 
@@ -9,17 +13,11 @@ def apply_columnMapping_to_Process(atlas_entities, table_process, column_lineage
     # child: 
     # }
 
-    lineage_tree = {}
-    # Table Process
-    ## Input Table | Output Table
-    ### C1 | C2    | C3 | C4
-    ## Lineage
-    ### C1 -> C3 | C2 -> C4
-
     for entity in atlas_entities:
 
         # Column Lineage Process
         if "query" in entity.relationshipAttributeDefs:
+            # TODO: Make this more dynamic and not hard code query
             parent_guid = entity.relationshipAttributes["query"]["guid"]
             guid[parent_guid] = {
                 "type":"column_lineage_process",
@@ -44,11 +42,23 @@ def apply_columnMapping_to_Process(atlas_entities, table_process, column_lineage
     # Extract the tables from input output
     # Find all columns that point to that table
     # Find the column lineages processes
+    # TODO: MAJOR!
 
     return NotImplementedError
 
 
-def child_type_from_relationship(entity_type, relationship_name, atlas_typedefs, normalize=True):
+def child_type_from_relationship(relationship_name, atlas_typedefs, normalize=True):
+    """
+    Extract the child type of of a relationship attribute def 
+    inside a type def.
+
+    :param str relationship_name:
+    :param list(dict) atlas_typedefs:
+    :param bool normalize: If True, remove the array<X> reference and return
+        only X.
+    :return: The child type name of a relationship attribute.
+    :rtype: str
+    """
     output = None
     for typdedf in atlas_typedefs:
         for relationshipDef in typdedf["relationshipAttributeDefs"]:
@@ -60,6 +70,19 @@ def child_type_from_relationship(entity_type, relationship_name, atlas_typedefs,
     return output
 
 def first_entity_matching_attribute(attribute, value, atlas_entities):
+    """
+    Return the first entity in a list that matches the passed in attribute
+    and value.
+
+    :param str attribute: The name of the attribute to search on each
+        atlas entity.
+    :param str value: The value of the attribute to search on each
+        atlas entity.
+    :param atlas_entities: The list of atlas entities to search over.
+        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :return: The atlas entity that maches or None
+    :rtype: Union(:class:`~pyapacheatlas.core.entity.AtlasEntity`, None)
+    """
     output = None
     for entity in atlas_entities:
         if attribute in entity.attributes:
@@ -69,6 +92,16 @@ def first_entity_matching_attribute(attribute, value, atlas_entities):
     return output
 
 def first_process_matching_io(input_name, output_name, atlas_entities):
+    """
+    Return the first entity in a list that contains the inputs and outputs.
+
+    :param str inputs: The qualified name of an atlas entity.
+    :param str outputs: The qualified name of an atlas entity.
+    :param atlas_entities: The list of atlas entities to search over.
+        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :return: The atlas entity that maches or None
+    :rtype: Union(:class:`~pyapacheatlas.core.entity.AtlasEntity`, None)
+    """
     output_entity = None
     for entity in atlas_entities:
         input_matches = False
@@ -90,23 +123,23 @@ def first_process_matching_io(input_name, output_name, atlas_entities):
             output_entity = entity
     
     return output_entity
-        
 
-def from_tablename_lookup_col(table_name, existing_mapping, atlas_entities, atlas_typedefs):
-    if table_name in existing_mapping:
-        column_type = existing_mapping[table_name]["column_type"]
-    else:
-        target_table = first_entity_matching_attribute("name", table_name, atlas_entities)
-        # TODO: Make "column" dynamic so that you can control which attribute you're searching for
-        column_type = child_type_from_relationship(target_table.typeName, "columns", atlas_typedefs)
-        existing_mapping[table_name] = {
-            "column_type": column_type,
-            "table_type": target_table.typeName
-        }
-    
-    return existing_mapping, column_type
 
 def from_process_lookup_col_lineage(process_name, existing_mapping, atlas_entities, atlas_typedefs):
+    """
+    Given a process name, find
+
+    existing_mapping is expected to follow `{process:{column_lineage_type, process_type}}`
+
+    :param str process_name: 
+    :param dict(str,dict(str,str)) existing_mapping: 
+        An existing mapping to act as a cache and speed up searching.
+    :param atlas_entities: The list of atlas entities to search over.
+        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :param list(dict) atlas_typedefs: The list of type definitions to extract from.
+    :return: The atlas entity that maches or None
+    :rtype: Union(:class:`~pyapacheatlas.core.entity.AtlasEntity`, None)
+    """
     column_lineage_type = None
     if process_name in existing_mapping:
         column_lineage_type = existing_mapping[process_name]["column_lineage_type"]
@@ -114,7 +147,7 @@ def from_process_lookup_col_lineage(process_name, existing_mapping, atlas_entiti
         target_entity = first_entity_matching_attribute("name", process_name, atlas_entities)
         if target_entity is not None:
             # TODO: Make "columnLineages" dynamic so that you can control which attribute you're searching for
-            column_lineage_type = child_type_from_relationship(target_entity.typeName, "columnLineages", atlas_typedefs)
+            column_lineage_type = child_type_from_relationship("columnLineages", atlas_typedefs)
             existing_mapping[process_name] = {
                 "column_lineage_type":column_lineage_type,
                 "process_type":target_entity.typeName
@@ -123,6 +156,14 @@ def from_process_lookup_col_lineage(process_name, existing_mapping, atlas_entiti
     return existing_mapping, column_lineage_type
 
 def string_to_classification(string, sep=";"):
+    """
+    Converts a string of text into classifications.
+
+    :param str string: The string that contains one or more classifications.
+    :param str sep: The separator to split the `string` parameter on.
+    :return: A list of AtlasClassification objects as dicts.
+    :rtype: list(dict)
+    """
     if string is None:
         return []
     # TODO: How do we bring in attributes if they're required?

@@ -31,7 +31,7 @@ def test_child_type_from_relationship():
     entity_type = "demo_table",
     relationship_name = "columns"
 
-    results = child_type_from_relationship(entity_type, relationship_name, type_defs, normalize=True)
+    results = child_type_from_relationship(relationship_name, type_defs, normalize=True)
 
     assert(results == "demo_column")
 

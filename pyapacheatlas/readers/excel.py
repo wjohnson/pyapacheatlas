@@ -9,13 +9,43 @@ from .util import (
     first_entity_matching_attribute, 
     first_process_matching_io,
     from_process_lookup_col_lineage,
-    from_tablename_lookup_col,
     string_to_classification
 )
 
 class ExcelConfiguration():
+    """
+    A configuration utility to understand how your Excel file is structured.
+
+    You must have a "Columns" and "Tables" sheet.  The name is configurable
+    with the column_sheet and table_sheet properties.
+
+    The Columns sheet must contain a "Source/Target" Column and Table header.
+    Optionally, a Classifications column can be provided for each Source/Target.
+
+    The Tables sheet must contain a "Source/Target" Table and Type along with a 
+    Process Name and Process Type.  The Process is related to the mechanism by
+    which source becomes the target (e.g. a Stored Procedure or Query).
+    """
 
     def __init__(self, **kwargs):
+        """
+        The following parameters apply to the 
+        :param str column_sheet: Defaults to "Columns"
+        :param str table_sheet: Defaults to "Tables"
+        :param str entity_source_prefix:
+            Defaults to "source" and represents the prefix of the columns
+            in Excel to be considered related to the source table or column.
+        :param str entity_target_prefix: 
+            Defaults to "target" and represents the prefix of the columns
+            in Excel to be considered related to the target table or column.
+        :param str entity_process_prefix: 
+            Defaults to "process" and represents the prefix of the columns
+            in Excel to be considered related to the table process.
+        :param str column_transformation_name: 
+            Defaults to "transformation" and identifies the column that
+            represents the transformation for a specific column.        
+        """
+
         super().__init__()
         # Required attributes:
         # qualifiedName, column, transformation, table
@@ -27,6 +57,24 @@ class ExcelConfiguration():
         self.column_transformation_name = kwargs.get("column_transformation_name", "transformation").lower()
 
 def from_excel(filepath, excel_config, type_defs, use_column_mapping = False):
+    """
+    The core function that wraps the rest of the excel reader.
+
+    :param str filepath: The xlsx file that contains your table and columns.
+    :param excel_config: 
+        An excel configuration object that is customized to
+        your intended spreadsheet.
+        :type: :class:`~pyapacheatlas.readers.excel.ExcelConfiguration`
+    :param type_defs:
+        A list of Atlas type definitions as dictionaries.
+        :type: list(dict)
+    :param bool use_column_mapping:
+        Should the table processes include the columnMappings attribute
+        that represents Column Lineage in Azure Data Catalog.
+        Defaults to False.
+    :return: A list of Atlas Entities representing the spreadsheet's inputs.
+    :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    """
 
     wb = load_workbook(filepath)
 
@@ -56,6 +104,19 @@ def from_excel(filepath, excel_config, type_defs, use_column_mapping = False):
     return output
 
 def _columns_matching_pattern(row, starts_with, does_not_match = []):
+    """
+    Takes in a json "row" and filters the keys to match the `starts_with`
+    parameter.  In addition, it will remove any match that is included
+    in the `does_not_match` parameter.
+
+    :param dict row: A dictionary with string keys to be filtered.
+    :param str starts_with: 
+        The required substring that all filtered results must start with.
+    :param list(str) does_not_match:
+        A list of key values that should be omitted from the results.
+    :return: A dictionary that contains only the filtered results.
+    :rtype: dict
+    """
     candidates =  {k:v for k,v in row.items() if str(k).startswith(starts_with)}
     for bad_key in does_not_match:
         if bad_key in candidates:
@@ -66,6 +127,21 @@ def _columns_matching_pattern(row, starts_with, does_not_match = []):
 
 
 def _parse_table_mapping(json_rows, excel_config, guid_tracker):
+    """
+    Converts the "tables" information into Atlas Entities for Target, Source,
+    and Process types.  Currently only support one target from one source.
+
+    :param json_rows:
+            A list of dicts that contain the converted tables of your column spreadsheet.
+        :type json_rows: list(dict(str,str))
+    :param ~pyapacheatlas.readers.excel.ExcelConfiguration excel_config:
+            An excel configuration object to indicate any customizations to the template excel.
+    :param ~pyapacheatlas.core.util.GuidTracker guid_tracker:
+            A guid tracker to be used in incrementing / decrementing the guids in use.
+    :return: A list of atlas entities that represent your source, target,
+        and table processes.
+    :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    """
     # Required attributes
     # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute
     source_table_name_header = excel_config.entity_source_prefix+" table"
@@ -145,6 +221,13 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
     :param atlas_typedefs:
             A list of :class:`~pyapacheatlas.core.typedef.EntityTypeDef` containing the referred typedefs.
         :type atlas_typedefs: list(:class:`~pyapacheatlas.core.typedef.EntityTypeDef`)
+    :param bool use_column_mapping:
+            Should the table processes include the columnMappings attribute
+            that represents Column Lineage in Azure Data Catalog.
+            Defaults to False.
+    :return: A list of atlas entities that represent your column source, target,
+        and column lineage processes.
+    :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
     """
     # Required attributes
     # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute
@@ -176,7 +259,7 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             target_table_entity = first_entity_matching_attribute("name", target_entity_table_name, atlas_entities)
             tables[target_entity_table_name] = target_table_entity
         
-        target_col_type = child_type_from_relationship(target_table_entity, "columns", atlas_typedefs, normalize=True)
+        target_col_type = child_type_from_relationship("columns", atlas_typedefs, normalize=True)
 
         
         # There should always be a target
@@ -203,7 +286,7 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
                 source_table_entity = first_entity_matching_attribute("name", source_entity_table_name, atlas_entities)
                 tables[source_entity_table_name] = source_table_entity
             
-            source_col_type = child_type_from_relationship(tables[source_entity_table_name], "columns", atlas_typedefs, normalize=True)
+            source_col_type = child_type_from_relationship("columns", atlas_typedefs, normalize=True)
 
             source_entity = AtlasEntity(
                 name=row[source_column_name_header],
@@ -280,6 +363,7 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
                         "DatasetMapping": data_map_dict
                     }
                 }
+    # Update the passed in atlas_entities if we are using column mapping
     if use_column_mapping:
         for entity in atlas_entities:
             if entity.guid in dataset_mapping:
@@ -287,13 +371,20 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
                 entity.attributes.update(
                     {"columnMapping":json.dumps(column_mapping_attribute)}
                 )
-                    
-
 
     return output
 
 
 def _parse_spreadsheet(worksheet):
+    """
+    Standardizes the excel worksheet into a json format and lowercases
+    the column headers.
+
+    :param openpyxl.workbook.Workbook worksheet:
+        A worksheet class from openpyxl.
+    :return: The standardized version of the excel spreadsheet in json form.
+    :rtype: list(dict(str,str))
+    """
     
     # Standardize the column header
     column_headers = list(
