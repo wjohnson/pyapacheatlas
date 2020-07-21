@@ -53,7 +53,8 @@ def column_lineage_scaffold(datasource,
             "isLegacyAttribute":False,
             "relationshipTypeName": src_table_columns_typeName,
             "cardinality":"SET",
-            "name": "columns"
+            "name": "columns",
+            "typeName":"array<{}>".format(column_entity.name)
             }
         ]
     )
