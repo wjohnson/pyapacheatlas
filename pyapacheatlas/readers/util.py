@@ -177,6 +177,7 @@ def from_process_lookup_col_lineage(process_name, existing_mapping, atlas_entiti
         target_entity = first_entity_matching_attribute("name", process_name, atlas_entities)
         if target_entity is not None:
             # TODO: Make "columnLineages" dynamic so that you can control which attribute you're searching for
+            # TODO: Reduce the set of type defs I'm looking through.  This is way too broad!
             column_lineage_type = child_type_from_relationship("columnLineages", atlas_typedefs)
             existing_mapping[process_name] = {
                 "column_lineage_type":column_lineage_type,

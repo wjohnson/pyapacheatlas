@@ -33,6 +33,9 @@ def column_lineage_scaffold(datasource,
     :param list(dict), optional table_process_column_lineage_relationship_attributes:
         Attribute Defs to add to the table process column lineage relationship type.
     """
+
+    src_table_columns_typeName = "{}_table_columns".format(datasource)
+
     # TODO: Create all combinations of datasource
     # Define {datasource}_column
     column_entity = EntityTypeDef(
@@ -44,12 +47,20 @@ def column_lineage_scaffold(datasource,
     table_entity = EntityTypeDef(
         name="{}_table".format(datasource),
         superTypes=["DataSet"],
-        attributeDefs=table_attributes
-        # TODO: Add the relationship attribute to support scaffolding to upload
+        attributeDefs=table_attributes,
+        relationshipAttributeDefs=[
+            {
+            "isLegacyAttribute":False,
+            "relationshipTypeName": src_table_columns_typeName,
+            "cardinality":"SET",
+            "name": "columns",
+            "typeName":"array<{}>".format(column_entity.name)
+            }
+        ]
     )
     # Define {datasource}_table_columns relationship ()
     table_column_relationship = RelationshipTypeDef(
-        name="{}_table_columns".format(datasource),
+        name=src_table_columns_typeName,
         attributeDefs=table_column_relationship_attributes,
         relationshipCategory = "COMPOSITION",
         endDef1 = {
