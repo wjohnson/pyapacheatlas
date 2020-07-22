@@ -123,3 +123,17 @@ def test_from_process_lookup_col_lineage():
     mapping, process_col_lineage = from_process_lookup_col_lineage("demo_process_name", {}, entities, type_defs)
 
     assert(process_col_lineage == "demo_column_lineage")
+
+    
+def test_columns_matching_pattern():
+    row = {"source attrib1":"test", "target attrib2":"results"}
+    results = columns_matching_pattern(row, "source")
+    assert(len(results) == 1)
+    assert(set(results) == set(["attrib1"]))
+
+def test_columns_matching_pattern_eliminate():
+    row = {"source attrib1":"test", "source data_type":"test2", "source req":"test3","target attrib2":"results"}
+    results = columns_matching_pattern(row, "source", does_not_match=["source req"])
+    assert(len(results)==2)
+    assert(set(results) == set(["attrib1", "data_type"]))
+

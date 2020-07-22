@@ -48,15 +48,7 @@ def column_lineage_scaffold(datasource,
         name="{}_table".format(datasource),
         superTypes=["DataSet"],
         attributeDefs=table_attributes,
-        relationshipAttributeDefs=[
-            {
-            "isLegacyAttribute":False,
-            "relationshipTypeName": src_table_columns_typeName,
-            "cardinality":"SET",
-            "name": "columns",
-            "typeName":"array<{}>".format(column_entity.name)
-            }
-        ]
+        relationshipAttributeDefs=[]
     )
     # Define {datasource}_table_columns relationship ()
     table_column_relationship = RelationshipTypeDef(

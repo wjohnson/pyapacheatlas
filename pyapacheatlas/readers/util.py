@@ -1,3 +1,25 @@
+def columns_matching_pattern(row, starts_with, does_not_match = []):
+    """
+    Takes in a json "row" and filters the keys to match the `starts_with`
+    parameter.  In addition, it will remove any match that is included
+    in the `does_not_match` parameter.
+
+    :param dict row: A dictionary with string keys to be filtered.
+    :param str starts_with: 
+        The required substring that all filtered results must start with.
+    :param list(str) does_not_match:
+        A list of key values that should be omitted from the results.
+    :return: A dictionary that contains only the filtered results.
+    :rtype: dict
+    """
+    candidates =  {k:v for k,v in row.items() if str(k).startswith(starts_with)}
+    for bad_key in does_not_match:
+        if bad_key in candidates:
+            candidates.pop(bad_key)
+    candidates = {k[len(starts_with):].strip():v for k,v in candidates.items()}
+    
+    return candidates
+
 def apply_columnMapping_to_Process(atlas_entities):
     """
     Update the table processes to use the columnMapping attribute to
