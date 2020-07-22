@@ -2,49 +2,79 @@ def apply_columnMapping_to_Process(atlas_entities):
     """
     Update the table processes to use the columnMapping attribute to
     represent column lineages in the Data Catalog UI.
+
+    This is used for post-hoc application of the column mapping attribute.
     """
     # Find all processes
-    procs_for_tables = []
-
-    guids = {}
-    # guid: {
-    # type:(table/column/table_process/columnLineageProcess),
-    # parent: guid
-    # child: 
-    # }
+    table_processes = {}
+    guid_map = {e.guid:{"name":e.get_name(), "entity":e} for e in atlas_entities}
+    
+    # Guid: {parent:##, child_in:##, child_out:##, name:##, sudoType:##}
 
     for entity in atlas_entities:
-
         # Column Lineage Process
-        if "query" in entity.relationshipAttributeDefs:
-            # TODO: Make this more dynamic and not hard code query
-            parent_guid = entity.relationshipAttributes["query"]["guid"]
-            guid[parent_guid] = {
-                "type":"column_lineage_process",
-                "input_guid":next(iter(entity.attributes["inputs"]), None), # There may not be a first element
-                "output_guid":entity.attributes["outputs"][0] # Always assuming there is an output
-            }
-        # Non column lineage process
-        elif "inputs" in entity.attributes and "outputs" in entity.attributes:
-            guids[entity.guid] = {
-                "type":"table_process",
-                "input_guid":next(iter(entity.attributes["inputs"]), None), # There may not be a first element
-                "output_guid":entity.attributes["outputs"][0] # Always assuming there is an output
-            }
-            procs_for_tables.append(entity)
+        # TODO: Make this more dynamic so query is not hard coded
+        if "query" in entity.relationshipAttributes:
+            # Get the parent guid and add this entity as a dependency
+            # TODO: Make this more dynamic so query is not hard coded
+            _table_proc_guid = entity.relationshipAttributes["query"]["guid"]
+            # Assuming only one column is being used for input and output
+            input_col_guid = entity.inputs[0]["guid"] if len(entity.inputs) > 0 else None
+            output_col_guid = entity.outputs[0]["guid"] if len(entity.inputs) > 0 else None
+        
+            input_col_name = "*"
+            output_col_name = "*"
+            input_table_name = "*"
+            output_table_name = "*"
+            if input_col_guid:
+                input_col_name = guid_map[input_col_guid]["name"]
+                # TODO: Make this dynamic so table is not hardcoded
+                input_table_guid = guid_map[input_col_guid]["entity"].relationshipAttributes["table"]["guid"]
+                input_table_name = guid_map[input_table_guid]["name"]
+            if output_col_guid:
+                output_col_name = guid_map[output_col_guid]["name"]
+                # TODO: Make this dynamic so table is not hardcoded
+                output_table_guid = guid_map[output_col_guid]["entity"].relationshipAttributes["table"]["guid"]
+                output_table_name = guid_map[output_table_guid]["name"]
+            
+            _columnMapping = {"Source":input_col_name, "Sink":output_col_name}
+            _datasetMapping = {"Source":input_table_name, "Sink":output_table_name}
+            _datasetMapKey = json.dumps(_datasetMapping, sort_keys=True)
 
+            # Dealing with a nested dict
+            # If the table_process guid exists, have to see if the key is
+            # present. If it's present, append to the list.
+            # IF it's not present build the initial mapping
+            # If the table_process guid doesn't exist have to build it all!
+            if _table_proc_guid in table_processes:
+                if _datasetMapKey in table_processes[_table_proc_guid]:
+                    table_processes[_table_proc_guid][_datasetMapKey]["ColumnMapping"].append(_columnMapping)
+                else:
+                    table_processes[_table_proc_guid][_datasetMapKey] = {
+                        "ColumnMapping":[_columnMapping],
+                        "DataSetMapping":_datasetMapping
+                    }
+            else:
+                table_processes[_table_proc_guid] = {
+                    _datasetMapKey:{
+                        "ColumnMapping":[_columnMapping],
+                        "DataSetMapping":_datasetMapping
+                    }
+                }            
+        # All other entity types
         else:
-            guids[entity.guid] = {"name":entity.get_name()}
+            pass
 
-    for proc in procs_for_tables:
-        input_table_name = guids.get(guids[proc.guid]["input_guid"], {}).get("name")
-        output_table_name = guids.get(guids[proc.guid]["output_guid"], {}).get("name")
-    # Extract the tables from input output
-    # Find all columns that point to that table
-    # Find the column lineages processes
-    # TODO: MAJOR!
+    changed = []
+    for table_proc_guid, colMapAttrib in table_processes.items():
+        guid_map[table_proc_guid]["entity"].attributes.update(
+            {"columnMapping":
+            [v for k,v in colMapAttrib.items()]
+            }
+        )
+        changed.append(table_proc_guid)
 
-    return NotImplementedError
+    return changed
 
 
 def child_type_from_relationship(relationship_name, atlas_typedefs, normalize=True):

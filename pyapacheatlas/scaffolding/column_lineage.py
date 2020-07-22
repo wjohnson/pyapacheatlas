@@ -45,6 +45,7 @@ def column_lineage_scaffold(datasource,
         name="{}_table".format(datasource),
         superTypes=["DataSet"],
         attributeDefs=table_attributes
+        # TODO: Add the relationship attribute to support scaffolding to upload
     )
     # Define {datasource}_table_columns relationship ()
     table_column_relationship = RelationshipTypeDef(

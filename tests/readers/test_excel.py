@@ -1,3 +1,5 @@
+import json
+
 from pyapacheatlas.core.util import GuidTracker
 from pyapacheatlas.readers.excel import (
     _columns_matching_pattern,
@@ -188,9 +190,20 @@ def test_parse_column_mapping_with_attributes():
 def test_parse_column_mapping_with_columnMapping():
     excel_config = ExcelConfiguration()
     guid_tracker = GuidTracker(-1000)
-    expected = "[{\"ColumnMapping\": [{\"Source\": \"col0\", \"Sink\": \"col1\"}], \"DatasetMapping\": {\"Source\": \"table0\", \"Sink\": \"table1\"}}]"
+    expected_obj = [
+        {"ColumnMapping":[{"Source":"col0","Sink":"col1"}, {"Source":"col90","Sink":"col99"}],
+        "DatasetMapping":{"Source":"table0", "Sink":"table1"}
+        }
+    ]
+    expected = json.dumps(expected_obj)# "[{\"ColumnMapping\": [{\"Source\": \"col0\", \"Sink\": \"col1\"}], \"DatasetMapping\": {\"Source\": \"table0\", \"Sink\": \"table1\"}}]"
 
     json_tables, json_columns, atlas_typedefs = setup_parse_column_mapping()
+    json_columns.append({
+            "target column":"col99","target table": "table1",
+            "source column":"col90","source table": "table0",
+            "transformation":"col90 + 1"
+        }
+    )
     
     # Outputs -1003 as the last guid
     tables_and_processes = _parse_table_mapping(json_tables, excel_config, guid_tracker)

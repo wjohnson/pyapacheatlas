@@ -344,29 +344,34 @@ def _parse_column_mapping(json_rows, excel_config, guid_tracker, atlas_entities,
             col_map_target_col = target_entity.get_name()
             col_map_source_table = next(iter(table_process.attributes["inputs"]), {}).get("qualifiedName") or "*"
             col_map_target_table = table_process.attributes["outputs"][0]["qualifiedName"]
-            hash_key = hash(col_map_source_col + col_map_source_table)
+            hash_key = hash(col_map_source_table + col_map_target_table)
             col_map_dict = {"Source":col_map_source_col ,"Sink":col_map_target_col}
             data_map_dict = {"Source":col_map_source_table,"Sink":col_map_target_table}
 
             if table_process.guid in dataset_mapping:
                 if hash_key in dataset_mapping[table_process.guid]:
+                    # Hash Key has not been seen before
                     dataset_mapping[table_process.guid][hash_key]["ColumnMapping"].append(col_map_dict)
                 else:
+                    # Hash key has been seen before
                     dataset_mapping[table_process.guid][hash_key]={
                         "ColumnMapping":[col_map_dict],
                         "DatasetMapping": data_map_dict
                     }
             else:
+                # This guid has never been seen before
                 dataset_mapping[table_process.guid]={
                     hash_key:{
                         "ColumnMapping":[col_map_dict],
                         "DatasetMapping": data_map_dict
                     }
                 }
+            print(dataset_mapping)
     # Update the passed in atlas_entities if we are using column mapping
     if use_column_mapping:
         for entity in atlas_entities:
             if entity.guid in dataset_mapping:
+                # hash_key: {DSMap:{}, ColumnMapping}
                 column_mapping_attribute = [mappings for mappings in dataset_mapping[entity.guid].values()]
                 entity.attributes.update(
                     {"columnMapping":json.dumps(column_mapping_attribute)}
