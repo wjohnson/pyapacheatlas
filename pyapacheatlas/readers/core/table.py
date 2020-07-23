@@ -21,7 +21,7 @@ def to_table_entities(json_rows, excel_config, guid_tracker):
     # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute
     source_table_name_header = excel_config.entity_source_prefix+" table"
     source_table_type_column = excel_config.entity_source_prefix+" type"
-    source_table_classifications_header = excel_config.entity_target_prefix+" classifications"
+    source_table_classifications_header = excel_config.entity_source_prefix+" classifications"
     required_source_headers = [source_table_name_header, source_table_type_column, source_table_classifications_header]
 
     target_table_name_header = excel_config.entity_target_prefix+" table"

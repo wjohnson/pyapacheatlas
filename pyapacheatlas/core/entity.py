@@ -101,7 +101,8 @@ class AtlasEntity():
                 "typeName": self.typeName,
                 "guid": self.guid,
                 "attributes": self.attributes,
-                "relationshipAttributes": self.relationshipAttributes
+                "relationshipAttributes": self.relationshipAttributes,
+                "classifications": self.classifications
             }
         return output
     
@@ -119,7 +120,7 @@ class AtlasEntity():
         _new_keys_in_other = _other_attr_keys.difference(_self_attr_keys)
         self.attributes.update({k:v for k,v in other.attributes.items() if k in _new_keys_in_other})
         # TODO: Handle duplicate classifications
-        self.classifications.append(other.classifications)
+        self.classifications.extend(other.classifications)
 
 class AtlasProcess(AtlasEntity):
     """
