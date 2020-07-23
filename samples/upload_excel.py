@@ -1,3 +1,4 @@
+import json
 import os
 
 from pyapacheatlas.core import AtlasClient
@@ -22,9 +23,9 @@ if __name__ == "__main__":
     batch = pyaa.from_excel("./sample.xlsx")
 
     # Investigate batch
-    print(len(batch.keys()))
+    print(len(batch))
 
-    print(batch["entityDefs"])
+    print(json.dumps(batch[0:5], indent=2))
 
     results = atlas_client.upload_entities(batch)
 

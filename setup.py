@@ -13,6 +13,10 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/wjohnson/pyapacheatlas",
     packages=setuptools.find_packages(),
+    install_requires=[
+          'openpyxl>=3.0',
+          'requests>=2.0'
+      ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

@@ -154,7 +154,6 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
     """
     target_entity = first_entity_matching_attribute("name", process_name, atlas_entities)
     # TODO: Make "columnLineages" dynamic so that you can control which attribute you're searching for
-    # TODO: Reduce the set of type defs I'm looking through.  This is way too broad!
     
     lineage_relationship = first_relationship_that_matches(
         end_def ="endDef2", 
