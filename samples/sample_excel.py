@@ -21,10 +21,11 @@ if __name__ == "__main__":
     # "Target Table", "Target Type", "Target Classifications",
     # "Source Table", "Source Type", "Source Classifications",
     # "Process Name", "Process Type"
+    # LIMITATION: Does not support multiple outputs from same process
     tables_to_load = [
         ["DestTable01", "demo_table", None, "SourceTable01", "demo_table", None, "Daily_ETL", "demo_process"],
         ["DestTable01", "demo_table", None, "SourceTable02", "demo_table", None, "Daily_ETL", "demo_process"],
-        ["DestTable02", "demo_table", None, "SourceTable03", "demo_table", None, "Daily_ETL", "demo_process"],
+        ["DestTable02", "demo_table", None, "SourceTable03", "demo_table", None, "Weekly_ETL", "demo_process"],
         ["DestTable03", "demo_table", None, None, None, None, "Stored_Proc:Do_Something", "demo_process"]
     ]
     # COLUMNS Sheet SCHEMA
