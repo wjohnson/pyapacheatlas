@@ -34,6 +34,33 @@ class AtlasEntity():
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
         self.classifications = kwargs.get("classifications", {})
     
+
+    def __eq__(self, other):
+        return self.get_qualified_name() == other.get_qualified_name()
+
+
+    def __hash__(self):
+        return harsh(self.get_qualified_name())
+    
+
+    def __ne__(self, other):
+        return self.get_qualified_name() != other.get_qualified_name()
+
+
+    def __repr__(self):
+        return "AtlasEntity({type_name},{qual_name})".format(
+            type_name=self.typeName,
+            qual_name=self.get_qualified_name()
+        )
+
+
+    def __str__(self):
+        return "AtlasEntity({type_name},{qual_name})".format(
+            type_name=self.typeName,
+            qual_name=self.get_qualified_name()
+        )
+
+
     def get_name(self):
         """
         Retrieve the name of this entity.
