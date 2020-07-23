@@ -22,7 +22,7 @@ class ExcelConfiguration():
     which source becomes the target (e.g. a Stored Procedure or Query).
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, column_sheet="Columns", table_sheet="Tables",**kwargs):
         """
         The following parameters apply to the 
         :param str column_sheet: Defaults to "Columns"
@@ -44,8 +44,8 @@ class ExcelConfiguration():
         super().__init__()
         # Required attributes:
         # qualifiedName, column, transformation, table
-        self.column_sheet = kwargs.get("column_sheet","Columns")
-        self.table_sheet = kwargs.get("table_sheet", "Tables")
+        self.column_sheet = column_sheet
+        self.table_sheet = table_sheet
         self.entity_source_prefix = kwargs.get("entity_source_prefix", "source").lower()
         self.entity_target_prefix = kwargs.get("entity_target_prefix", "target").lower()
         self.entity_process_prefix = kwargs.get("entity_process_prefix", "process").lower()
