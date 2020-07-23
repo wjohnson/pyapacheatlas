@@ -32,7 +32,7 @@ class AtlasEntity():
         #   "typeName": ""
         # }}
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
-        self.classifications = kwargs.get("classifications", {})
+        self.classifications = kwargs.get("classifications", [])
     
 
     def __eq__(self, other):
@@ -40,7 +40,7 @@ class AtlasEntity():
 
 
     def __hash__(self):
-        return harsh(self.get_qualified_name())
+        return hash(self.get_qualified_name())
     
 
     def __ne__(self, other):
@@ -104,6 +104,22 @@ class AtlasEntity():
                 "relationshipAttributes": self.relationshipAttributes
             }
         return output
+    
+    def merge(self, other):
+        if self.get_qualified_name() != other.get_qualified_name():
+            raise TypeError("Type:{} cannot be merged with {}".format(type(other), type(self)))
+
+        # Take the "earlier" defined entity's guid
+        self.guid = other.guid
+        # Add attributes that are not present in the later row's attributes
+        # Meaning, later attributes SUPERCEDE attributes
+        # This helps with updating input and output attributes later in process entities.
+        _other_attr_keys = set(other.attributes.keys())
+        _self_attr_keys = set(self.attributes.keys())
+        _new_keys_in_other = _other_attr_keys.difference(_self_attr_keys)
+        self.attributes.update({k:v for k,v in other.attributes.items() if k in _new_keys_in_other})
+        # TODO: Handle duplicate classifications
+        self.classifications.append(other.classifications)
 
 class AtlasProcess(AtlasEntity):
     """
@@ -133,3 +149,51 @@ class AtlasProcess(AtlasEntity):
     def __init__(self, name, typeName, qualified_name, inputs, outputs, guid=None, **kwargs):
         super().__init__(name, typeName, qualified_name, guid=guid, **kwargs)
         self.attributes.update({"inputs": inputs, "outputs": outputs})
+    
+    def merge(self, other):
+        super().merge(other)
+        # Requires that the input and output attributes have not been altered on self.
+        _combined_inputs = self.get_inputs()+other.get_inputs()
+        _combined_outputs = self.get_outputs()+other.get_outputs()
+
+        _deduped_inputs = [dict(t) for t in set(tuple(d.items()) for d in _combined_inputs)]
+        _deduped_outputs = [dict(t) for t in set(tuple(d.items()) for d in _combined_outputs)]
+        self.set_inputs(_deduped_inputs)
+        self.set_outputs(_deduped_outputs)
+
+    def set_inputs(self, inputs):
+        """
+        Set the inputs to the process.  Inputs should be AtlasEntity minimum 
+        json of `{qualifiedName:..., guid:..., typeName:...}`.
+
+        :param list(dict) inputs: The minimum json inputs.
+        """
+        self.attributes["inputs"] = inputs
+    
+    def set_outputs(self, outputs):
+        """
+        Set the outputs to the process.  Outputs should be AtlasEntity minimum 
+        json of `{qualifiedName:..., guid:..., typeName:...}`.
+
+        :param list(dict) outputs: The minimum json outputs.
+        """
+        self.attributes["outputs"] = outputs
+    
+    def get_inputs(self):
+        """
+        Return the inputs to the process.
+
+        :return: The minimum json inputs.
+        :rtype: list(dict)
+        """
+        return self.attributes["inputs"]
+    
+    def get_outputs(self):
+        """
+        Set the outputs to the process.
+
+        :return: The minimum json inputs.
+        :rtype: list(dict)
+        """
+        return self.attributes["outputs"]
+    

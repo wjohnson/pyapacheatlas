@@ -42,9 +42,9 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
     # No required process headers
 
     output = []
-    tables = {}
+    tables = {} # Stores all of the table entities by their name seen in the loop for faster lookup
     dataset_mapping = {} # table_process_guid: {"input_table":"","output_table":"","columnMapping":[]}
-    table_and_proc_mappings ={}
+    table_and_proc_mappings ={} # Caches all of the table processes seen in the loop for faster lookup
 
     for row in json_rows:
         # Set up defaults
@@ -70,13 +70,17 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
             name=row[target_column_name_header],
             typeName=target_col_type,
             # qualifiedName can be overwritten via the attributes functionality
-            qualified_name=target_entity_table_name+"."+row[target_column_name_header],
+            qualified_name=target_entity_table_name+"#"+row[target_column_name_header],
             guid=guid_tracker.get_guid(),
             attributes = columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers),
             # TODO: Make the relationship name more dynamic instead of hard coding table
             relationshipAttributes = {"table":tables[target_entity_table_name].to_json(minimum=True)},
             classifications = string_to_classification(row.get(target_column_classifications_header))
         )
+        if target_entity in output:
+            poppable_index = output.index(target_entity)
+            popped_target = output.pop(poppable_index)
+            target_entity.merge(popped_target)
         # Add to outputs
         output.append(target_entity)
     
@@ -101,19 +105,33 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
                 name=row[source_column_name_header],
                 typeName=source_col_type,
                 # qualifiedName can be overwritten via the attributes functionality
-                qualified_name=source_entity_table_name+"."+row[source_column_name_header],
+                qualified_name=source_entity_table_name+"#"+row[source_column_name_header],
                 guid=guid_tracker.get_guid(),
                 attributes = columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers),
                 # TODO: Make the relationship name more dynamic instead of hard coding query
                 relationshipAttributes = {"table":tables[source_entity_table_name].to_json(minimum=True)},
                 classifications = string_to_classification(row.get(source_column_classifications_header))
             )
+            if source_entity in output:
+                poppable_index = output.index(source_entity)
+                popped_source = output.pop(poppable_index)
+                source_entity.merge(popped_source)
             # Add to outputs
             output.append(source_entity)
     
         # Given the existing process that with target table and source table types, 
         # look up the appropriate column_lineage type
-        table_process = first_process_matching_io(source_entity_table_name, target_entity_table_name, atlas_entities)
+        # LIMITATION: Prevents you from specifying multiple processes for the same input and output tables
+        try:
+            table_process = first_process_containing_io(source_entity_table_name, target_entity_table_name, atlas_entities)
+        except ValueError as e:
+            # ValueError means we didn't find anything that matched
+            # Try using a wildcard search if the source entity is none
+            # to match to any process that at least includes the target entity table
+            if source_entity_table_name is None:
+                table_process = first_process_containing_io("*", target_entity_table_name, atlas_entities)
+            else:
+                raise e
 
         if table_process.get_name() in table_and_proc_mappings:
             process_type = table_and_proc_mappings[table_process.get_name()]["column_lineage_type"]
@@ -137,8 +155,7 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
             name=table_process.get_name(),
             typeName=process_type,
             # qualifiedName can be overwritten via the attributes functionality
-            qualified_name=table_process.get_name() + "derived_column:{}_{}".format(
-                "NA" if source_entity is None else source_entity.get_name(),
+            qualified_name=table_process.get_name() + "@derived_column:{}".format(
                 target_entity.get_name()
             ),
             guid=guid_tracker.get_guid(),
@@ -149,14 +166,18 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
             # TODO: Make the relationship name more dynamic instead of hard coding query
             relationshipAttributes = {"query":table_process.to_json(minimum=True)}
         )
+        if process_entity in output:
+                poppable_index = output.index(process_entity)
+                popped_process = output.pop(poppable_index)
+                process_entity.merge(popped_process)
         output.append(process_entity)
 
         if use_column_mapping:
-            # This is assuming only one dataset in the table process
+            # Handles multiple source columns from multiple source datasets
             col_map_source_col = "*" if source_entity is None else source_entity.get_name()
             col_map_target_col = target_entity.get_name()
-            col_map_source_table = next(iter(table_process.attributes["inputs"]), {}).get("qualifiedName") or "*"
-            col_map_target_table = table_process.attributes["outputs"][0]["qualifiedName"]
+            col_map_source_table = row[source_table_name_header] or "*"
+            col_map_target_table = row[target_table_name_header]
             hash_key = hash(col_map_source_table + col_map_target_table)
             col_map_dict = {"Source":col_map_source_col ,"Sink":col_map_target_col}
             data_map_dict = {"Source":col_map_source_table,"Sink":col_map_target_table}
@@ -179,7 +200,6 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
                         "DatasetMapping": data_map_dict
                     }
                 }
-            print(dataset_mapping)
     # Update the passed in atlas_entities if we are using column mapping
     if use_column_mapping:
         for entity in atlas_entities:

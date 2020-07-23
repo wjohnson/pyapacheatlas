@@ -91,11 +91,15 @@ def first_entity_matching_attribute(attribute, value, atlas_entities):
         )    
     return output
 
-def first_process_matching_io(input_name, output_name, atlas_entities):
+def first_process_containing_io(input_name, output_name, atlas_entities):
     """
     Return the first entity in a list that contains the inputs and outputs.
+    If input_name and output_name are the only or one of the many inputs and
+    outputs (respectively), it will count as a match.
 
-    :param str inputs: The qualified name of an atlas entity.
+    :param str inputs: 
+        The qualified name of an atlas entity or a '*' wildcard
+        that matches to any input (empty list or filled in values)
     :param str outputs: The qualified name of an atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
         :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
@@ -110,15 +114,18 @@ def first_process_matching_io(input_name, output_name, atlas_entities):
         if "inputs" in entity.attributes and "outputs" in entity.attributes:
             num_inputs = len(entity.attributes["inputs"])
             num_outputs = len(entity.attributes["outputs"])
-            input_matches = ((
-                (input_name is None) and (num_inputs == 0)) or
+            input_matches = (
+                (input_name == "*") or # Wildcard
+                ((input_name is None) and (num_inputs == 0)) or
                 ((input_name is not None) and (num_inputs >0) and 
-                    (entity.attributes["inputs"][0]["qualifiedName"] == input_name))
+                    (any([e["qualifiedName"] == input_name for e in entity.get_inputs()]))
+                )
             )
-            output_matches = ((
-                (output_name is None) and (num_outputs == 0)) or
+            output_matches = (
+                ((output_name is None) and (num_outputs == 0)) or
                 ((output_name is not None) and (num_outputs >0) and 
-                    (entity.attributes["outputs"][0]["qualifiedName"] == output_name))
+                    (any([e["qualifiedName"] == output_name for e in entity.get_outputs()]))
+                )
             )
         if input_matches and output_matches:
             output_entity = entity

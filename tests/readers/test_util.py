@@ -2,7 +2,7 @@ from pyapacheatlas.core import AtlasEntity, AtlasProcess
 from pyapacheatlas.readers.util import *
 
 RELATIONSHIP_TYPE_DEFS = [
-        {
+    {
       "category": "RELATIONSHIP",
       "name": "demo_table_columns",
       "endDef1": {
@@ -36,6 +36,47 @@ RELATIONSHIP_TYPE_DEFS = [
     }
     ]
 
+def setup_batch_entities():
+    atlas_entities = [
+          AtlasEntity(
+              name="demoentity",
+              typeName="demo_table",
+              qualified_name="demoentity",
+              guid = -1000
+          ),
+          AtlasEntity(
+              name="demoentity2",
+              typeName="demo2_table",
+              qualified_name="demoentity2",
+              guid = -1001
+          )
+      ]
+    atlas_proc = AtlasProcess(
+              name="demo_process_name",
+              typeName="demo_process",
+              qualified_name="demo_process_qualifier",
+              inputs=[atlas_entities[0].to_json(minimum=True)],
+              outputs=[atlas_entities[1].to_json(minimum=True)],
+              guid = -1002
+      )
+    atlas_proc_no_in = AtlasProcess(
+              name="demo_process_qualifier_no_in",
+              typeName="demo_process1",
+              qualified_name="demo_process_qualifier_no_in",
+              inputs=[],
+              outputs=[atlas_entities[1].to_json(minimum=True)],
+              guid = -1003
+      )
+    atlas_proc_no_out = AtlasProcess(
+              name="demo_process_qualifier_no_out",
+              typeName="demo_process2",
+              qualified_name="demo_process_qualifier_no_out",
+              inputs=[atlas_entities[0].to_json(minimum=True)],
+              outputs=[],
+              guid = -1004
+      )
+    atlas_entities.extend([atlas_proc, atlas_proc_no_in, atlas_proc_no_out])
+    return atlas_entities
 
 def test_first_entity_matching_attribute():
     atlas_entities = [
@@ -58,7 +99,6 @@ def test_first_entity_matching_attribute():
 
 
 def test_first_relationship_that_matches():
-
     results = first_relationship_that_matches("endDef1", "demo_column_lineage", "query", RELATIONSHIP_TYPE_DEFS)
     expected = {
       "category": "RELATIONSHIP",
@@ -78,49 +118,11 @@ def test_first_relationship_that_matches():
     assert(results == expected)
 
 
-def test_first_process_matching_io():
-    atlas_entities = [
-        AtlasEntity(
-            name="demoentity",
-            typeName="demo_table",
-            qualified_name="demoentity",
-            guid = -1000
-        ),
-        AtlasEntity(
-            name="demoentity2",
-            typeName="demo2_table",
-            qualified_name="demoentity2",
-            guid = -1001
-        )
-    ]
-    atlas_proc = AtlasProcess(
-            name="demo_process_name",
-            typeName="demo_process",
-            qualified_name="demo_process_qualifier",
-            inputs=[atlas_entities[0].to_json(minimum=True)],
-            outputs=[atlas_entities[1].to_json(minimum=True)],
-            guid = -1002
-    )
-    atlas_proc_no_in = AtlasProcess(
-            name="demo_process_qualifier_no_in",
-            typeName="demo_process1",
-            qualified_name="demo_process_qualifier_no_in",
-            inputs=[],
-            outputs=[atlas_entities[1].to_json(minimum=True)],
-            guid = -1003
-    )
-    atlas_proc_no_out = AtlasProcess(
-            name="demo_process_qualifier_no_out",
-            typeName="demo_process2",
-            qualified_name="demo_process_qualifier_no_out",
-            inputs=[atlas_entities[0].to_json(minimum=True)],
-            outputs=[],
-            guid = -1004
-    )
-    atlas_entities.extend([atlas_proc, atlas_proc_no_in, atlas_proc_no_out])
+def test_first_process_containing_io():
     
+    atlas_entities = setup_batch_entities()
 
-    results = first_process_matching_io(
+    results = first_process_containing_io(
         atlas_entities[0].attributes["qualifiedName"], 
         atlas_entities[1].attributes["qualifiedName"], 
         atlas_entities
@@ -128,6 +130,19 @@ def test_first_process_matching_io():
 
     assert(results.typeName == "demo_process")
     assert(results.attributes["qualifiedName"] == "demo_process_qualifier")
+
+def test_first_process_containing_io_no_input():
+    
+    atlas_entities = setup_batch_entities()
+    
+    results = first_process_containing_io(
+        None, 
+        atlas_entities[1].attributes["qualifiedName"], 
+        atlas_entities
+    )
+
+    assert(results.typeName == "demo_process1")
+    assert(results.attributes["qualifiedName"] == "demo_process_qualifier_no_in")
 
 
 def test_from_process_lookup_col_lineage():
@@ -174,4 +189,3 @@ def test_columns_matching_pattern_eliminate():
     results = columns_matching_pattern(row, "source", does_not_match=["source req"])
     assert(len(results)==2)
     assert(set(results) == set(["attrib1", "data_type"]))
-

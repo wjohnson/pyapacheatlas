@@ -20,7 +20,7 @@ if __name__ == "__main__":
         authentication = oauth
     )
 
-    batch = pyaa.from_excel("./sample.xlsx")
+    batch = pyaa.from_excel("./atlas_excel_template.xlsx")
 
     # Investigate batch
     print(len(batch))

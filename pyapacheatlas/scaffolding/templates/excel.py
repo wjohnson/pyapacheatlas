@@ -13,7 +13,7 @@ TABLE_TEMPLATE = [
 ]
 
 
-def make_template(filepath):
+def excel_template(filepath):
     """
     Generate an Excel template file and write it out to the given filepath.
 

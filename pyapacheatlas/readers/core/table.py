@@ -34,7 +34,7 @@ def to_table_entities(json_rows, excel_config, guid_tracker):
     required_process_headers = [process_name_column, process_type_column]
 
     # Read in all Source and Target entities
-    output = []
+    output = list() # TODO: Change to a dict to facilitate lookups
     for row in json_rows:
         # Set up defaults
         target_entity, source_entity, process_entity = None, None, None
@@ -48,6 +48,13 @@ def to_table_entities(json_rows, excel_config, guid_tracker):
             attributes = columns_matching_pattern(row, excel_config.entity_target_prefix, does_not_match = required_target_headers),
             classifications = string_to_classification(row.get(target_table_classifications_header))
         )
+        # TODO: Look up if this is in the output append if not; update attributes and classifications if it is present.
+        if target_entity in output:
+            # Assumes things like name, type name, are consistent
+            poppable_index = output.index(target_entity)
+            popped_target = output.pop(poppable_index)
+            target_entity.merge(popped_target)
+
         output.append(target_entity)
         
         if row[source_table_name_header] is not None:
@@ -61,6 +68,12 @@ def to_table_entities(json_rows, excel_config, guid_tracker):
                 attributes = columns_matching_pattern(row, excel_config.entity_source_prefix, does_not_match = required_source_headers),
                 classifications = string_to_classification(row.get(source_table_classifications_header))
             )
+            if source_entity in output:
+                # Assumes things like name, type name, are consistent
+                poppable_index = output.index(source_entity)
+                popped_source = output.pop(poppable_index)
+                source_entity.merge(popped_source)
+
             output.append(source_entity)
 
         # Map the source and target tables to a process       
@@ -75,6 +88,13 @@ def to_table_entities(json_rows, excel_config, guid_tracker):
                 outputs=[target_entity.to_json(minimum=True)],
                 attributes = columns_matching_pattern(row, excel_config.entity_process_prefix, does_not_match = required_process_headers)
             )
+            # TODO: Lookup if it exists already and if it does, update the inputs and outputs and attributes
+            if process_entity in output:
+                # Assumes things like name, type name, are consistent
+                poppable_index = output.index(process_entity)
+                popped_process = output.pop(poppable_index)
+                process_entity.merge(popped_process)
+                
             output.append(process_entity)
         
     # Return all entities

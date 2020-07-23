@@ -1,5 +1,6 @@
 import json
 
+from pyapacheatlas.core import AtlasProcess
 from pyapacheatlas.core.util import GuidTracker
 from pyapacheatlas.readers.util import *
 from pyapacheatlas.readers.core import (
@@ -8,42 +9,8 @@ from pyapacheatlas.readers.core import (
 )
 from pyapacheatlas.readers.excel import ExcelConfiguration
 
-
-def test_to_table_entities():
-    excel_config = ExcelConfiguration()
-    guid_tracker = GuidTracker(-1000)
-    json_rows = [
-        {
-            "target table":"table1", "target type": "demo_type",
-            "source table":"table0", "source type": "demo_type2",
-            "process name":"proc01", "process type": "proc_type"
-        }
-    ]
-
-    results = to_table_entities(json_rows, excel_config, guid_tracker)
-
-    assert(results[0].to_json(minimum = True) == {"typeName":"demo_type", "guid":-1001, "qualifiedName": "table1"})
-    assert(results[1].to_json(minimum = True) == {"typeName":"demo_type2", "guid":-1002, "qualifiedName": "table0"})
-    assert(results[2].to_json(minimum = True) == {"typeName":"proc_type", "guid":-1003, "qualifiedName": "proc01"})
-
-
-def test_to_table_entities_with_attributes():
-    excel_config = ExcelConfiguration()
-    guid_tracker = GuidTracker(-1000)
-    json_rows = [
-        {
-            "target table":"table1", "target type": "demo_type","target data_type":"str",
-            "source table":"table0", "source type": "demo_type2","source foo":"bar",
-            "process name":"proc01", "process type": "proc_type", "process fizz":"buzz"
-        }
-    ]
-
-    results = to_table_entities(json_rows, excel_config, guid_tracker)
-
-    assert(results[0].attributes["data_type"] == "str")
-    assert(results[1].attributes["foo"] == "bar")
-    assert(results[2].attributes["fizz"] == "buzz")
-
+# Set up some cross-test objects and functions
+EXCEL_CONFIG = ExcelConfiguration()
 
 def setupto_column_entities():
     json_tables = [
@@ -53,6 +20,7 @@ def setupto_column_entities():
             "process name":"proc01", "process type": "demo_process"
         }
     ]
+    
     json_columns = [
         {
             "target column":"col1","target table": "table1",
@@ -60,6 +28,7 @@ def setupto_column_entities():
             "transformation":None
         }
     ]
+
     atlas_typedefs = {"entityDefs":[
         {"typeName":"demo_table","relationshipAttributeDefs":[{"relationshipTypeName":"demo_table_columns","name":"columns","typeName":"array<demo_column>"}]},
         {"typeName":"demo_process","relationshipAttributeDefs":[{"relationshipTypeName":"demo_process_column_lineage","name":"columnLineages","typeName":"array<demo_column_lineage>"}]}
@@ -76,16 +45,80 @@ def setupto_column_entities():
     return json_tables, json_columns, atlas_typedefs
 
 
+# Begin actual tests
+def test_to_table_entities():
+    guid_tracker = GuidTracker(-1000)
+    json_rows = [
+        {
+            "target table":"table1", "target type": "demo_type",
+            "source table":"table0", "source type": "demo_type2",
+            "process name":"proc01", "process type": "proc_type"
+        }
+    ]
+
+    results = to_table_entities(json_rows, EXCEL_CONFIG, guid_tracker)
+
+    assert(results[0].to_json(minimum = True) == {"typeName":"demo_type", "guid":-1001, "qualifiedName": "table1"})
+    assert(results[1].to_json(minimum = True) == {"typeName":"demo_type2", "guid":-1002, "qualifiedName": "table0"})
+    assert(results[2].to_json(minimum = True) == {"typeName":"proc_type", "guid":-1003, "qualifiedName": "proc01"})
+
+
+def test_to_table_entities_with_attributes():
+    guid_tracker = GuidTracker(-1000)
+    json_rows = [
+        {
+            "target table":"table1", "target type": "demo_type","target data_type":"str",
+            "source table":"table0", "source type": "demo_type2","source foo":"bar",
+            "process name":"proc01", "process type": "proc_type", "process fizz":"buzz"
+        }
+    ]
+
+    results = to_table_entities(json_rows, EXCEL_CONFIG, guid_tracker)
+
+    assert(results[0].attributes["data_type"] == "str")
+    assert(results[1].attributes["foo"] == "bar")
+    assert(results[2].attributes["fizz"] == "buzz")
+
+
+def test_to_table_entities_multiple_inputs():
+    guid_tracker = GuidTracker(-1000)
+    json_tables = [
+        {
+            "target table":"table1", "target type": "demo_type",
+            "source table":"table0", "source type": "demo_type",
+            "process name":"proc01", "process type": "proc_type"
+        },
+        {
+            "target table":"table1", "target type": "demo_type",
+            "source table":"tableB", "source type": "demo_type",
+            "process name":"proc01", "process type": "proc_type"
+        }
+    ]
+
+    results = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+
+    assert(len(results) == 4)
+    assert(results[3].to_json(minimum = True) == {"typeName":"proc_type", "guid":-1003, "qualifiedName": "proc01"})
+    process_inputs_qualified_names = [p["qualifiedName"] for p in results[3].get_inputs()]
+    process_outputs_qualified_names = [p["qualifiedName"] for p in results[3].get_outputs()]
+    assert(len(process_inputs_qualified_names) == 2)
+    assert(len(process_outputs_qualified_names) == 1)
+
+    assert(set(process_inputs_qualified_names) == set(["table0","tableB"]))
+    assert(set(process_outputs_qualified_names) == set(["table1"]))
+
+
+
+
 def test_to_column_entities():
-    excel_config = ExcelConfiguration()
     guid_tracker = GuidTracker(-1000)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, excel_config, guid_tracker)
+    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
 
-    results = to_column_entities(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -112,7 +145,6 @@ def test_to_column_entities():
     
     
 def test_to_column_entities_with_attributes():
-    excel_config = ExcelConfiguration()
     guid_tracker = GuidTracker(-1000)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
@@ -121,9 +153,9 @@ def test_to_column_entities_with_attributes():
     json_columns[0].update({"target test_attrib1":"value", "target test_attrib2":"value2", "source foo":"bar"})
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, excel_config, guid_tracker)
+    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
 
-    results = to_column_entities(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -136,7 +168,6 @@ def test_to_column_entities_with_attributes():
     assert(source_col_entity.attributes["foo"] == "bar")
 
 def test_to_column_entities_with_classifications():
-    excel_config = ExcelConfiguration()
     guid_tracker = GuidTracker(-1000)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
@@ -145,9 +176,9 @@ def test_to_column_entities_with_classifications():
     json_columns[0].update({"target classifications":"CustomerInfo; PII", "source classifications":""})
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, excel_config, guid_tracker)
+    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
 
-    results = to_column_entities(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -162,7 +193,6 @@ def test_to_column_entities_with_classifications():
 
 
 def test_to_column_entities_with_attributes():
-    excel_config = ExcelConfiguration()
     guid_tracker = GuidTracker(-1000)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
@@ -171,9 +201,9 @@ def test_to_column_entities_with_attributes():
     json_columns[0].update({"target test_attrib1":"value", "target test_attrib2":"value2", "source foo":"bar"})
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, excel_config, guid_tracker)
+    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
 
-    results = to_column_entities(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -186,7 +216,6 @@ def test_to_column_entities_with_attributes():
     assert(source_col_entity.attributes["foo"] == "bar")
 
 def test_to_column_entities_with_columnMapping():
-    excel_config = ExcelConfiguration()
     guid_tracker = GuidTracker(-1000)
     expected_obj = [
         {"ColumnMapping":[{"Source":"col0","Sink":"col1"}, {"Source":"col90","Sink":"col99"}],
@@ -196,6 +225,7 @@ def test_to_column_entities_with_columnMapping():
     expected = json.dumps(expected_obj)# "[{\"ColumnMapping\": [{\"Source\": \"col0\", \"Sink\": \"col1\"}], \"DatasetMapping\": {\"Source\": \"table0\", \"Sink\": \"table1\"}}]"
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
+
     json_columns.append({
             "target column":"col99","target table": "table1",
             "source column":"col90","source table": "table0",
@@ -204,10 +234,66 @@ def test_to_column_entities_with_columnMapping():
     )
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, excel_config, guid_tracker)
+    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
 
-    results = to_column_entities(json_columns, excel_config, guid_tracker, tables_and_processes, atlas_typedefs, use_column_mapping=True)
+    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs, use_column_mapping=True)
 
     # Demonstrating column lineage
     assert("columnMapping" in tables_and_processes[2].attributes)
     assert(tables_and_processes[2].attributes["columnMapping"] == expected)
+
+
+def test_to_column_entities_when_multi_tabled_inputs():
+    guid_tracker = GuidTracker(-1000)
+    json_tables, json_columns, atlas_typedefs = setupto_column_entities()
+    # Adding in an extra table
+    json_tables.append(
+        {
+            "target table":"table1", "target type": "demo_table",
+            "source table":"tableB", "source type": "demo_table",
+            "process name":"proc01", "process type": "demo_process"
+        }
+    )
+    json_columns[0].update({"transformation":"colB + col0"})
+    # Adding in an extra column
+    json_columns.append(
+        {
+            "target column":"col1","target table": "table1",
+            "source column":"colB","source table": "tableB",
+            "transformation":"colB + col0"
+        }
+    )
+    expected_col_map_obj = [
+        {"ColumnMapping":[{"Source":"col0","Sink":"col1"}],
+        "DatasetMapping":{"Source":"table0", "Sink":"table1"}
+        },
+        {"ColumnMapping":[{"Source":"colB","Sink":"col1"}],
+        "DatasetMapping":{"Source":"tableB", "Sink":"table1"}
+        }
+    ]
+
+    table_entities = to_table_entities(json_tables,EXCEL_CONFIG, guid_tracker)
+    column_entities = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, 
+    table_entities, atlas_typedefs, use_column_mapping=True)
+
+    # Three columns and one process entity
+    assert(len(column_entities) == 4)
+    process_entities = [e for e in column_entities if isinstance(e, AtlasProcess)]
+    assert(len(process_entities) == 1)
+    process_entity = process_entities[0]
+    
+    process_inputs_qualified_names = [p["qualifiedName"] for p in process_entity.get_inputs()]
+    process_outputs_qualified_names = [p["qualifiedName"] for p in process_entity.get_outputs()]
+    assert(len(process_inputs_qualified_names) == 2)
+    assert(len(process_outputs_qualified_names) == 1)
+
+    assert(set(process_inputs_qualified_names) == set(["table0#col0","tableB#colB"]))
+    assert(set(process_outputs_qualified_names) == set(["table1#col1"]))
+
+    table_process_entities = [e for e in table_entities if isinstance(e, AtlasProcess)]
+    table_process_entity = table_process_entities[0]
+    # Should now contain the expected column Mappings
+    assert("columnMapping" in table_process_entity.attributes)
+    resulting_colmap = json.loads(table_process_entity.attributes["columnMapping"])
+    assert(len(expected_col_map_obj) == len(resulting_colmap))
+    assert(all([res in expected_col_map_obj for res in resulting_colmap]))
