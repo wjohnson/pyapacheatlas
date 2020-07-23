@@ -14,9 +14,10 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
     :param atlas_entities:
             A list of :class:`~pyapacheatlas.core.entity.AtlasEntity` containing the referred entities.
         :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :param atlas_typedefs:
-            A list of :class:`~pyapacheatlas.core.typedef.EntityTypeDef` containing the referred typedefs.
-        :type atlas_typedefs: list(:class:`~pyapacheatlas.core.typedef.EntityTypeDef`)
+    :param dict(str,list(dict)) atlas_typedefs:
+            The results of requesting all type defs from Apache Atlas, including
+            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
+            values used.
     :param bool use_column_mapping:
             Should the table processes include the columnMappings attribute
             that represents Column Lineage in Azure Data Catalog.
@@ -55,7 +56,13 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
             target_table_entity = first_entity_matching_attribute("name", target_entity_table_name, atlas_entities)
             tables[target_entity_table_name] = target_table_entity
         
-        target_col_type = child_type_from_relationship("columns", atlas_typedefs, normalize=True)
+        columns_relationship = first_relationship_that_matches(
+            end_def="endDef1",
+            end_def_type=target_table_entity.typeName,
+            end_def_name="columns",
+            relationship_typedefs=atlas_typedefs["relationshipDefs"]
+        )
+        target_col_type = columns_relationship["endDef2"]["type"]
 
         
         # There should always be a target
@@ -82,7 +89,13 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
                 source_table_entity = first_entity_matching_attribute("name", source_entity_table_name, atlas_entities)
                 tables[source_entity_table_name] = source_table_entity
             
-            source_col_type = child_type_from_relationship("columns", atlas_typedefs, normalize=True)
+            columns_relationship_source = first_relationship_that_matches(
+            end_def="endDef1",
+            end_def_type=source_table_entity.typeName,
+            end_def_name="columns",
+            relationship_typedefs=atlas_typedefs["relationshipDefs"]
+            )
+            source_col_type = columns_relationship_source["endDef2"]["type"]
 
             source_entity = AtlasEntity(
                 name=row[source_column_name_header],
@@ -102,14 +115,18 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
         # look up the appropriate column_lineage type
         table_process = first_process_matching_io(source_entity_table_name, target_entity_table_name, atlas_entities)
 
-        table_and_proc_mappings, process_type =(
-            from_process_lookup_col_lineage(
-                table_process.get_name(), 
-                table_and_proc_mappings, 
+        if table_process.get_name() in table_and_proc_mappings:
+            process_type = table_and_proc_mappings[table_process.get_name()]["column_lineage_type"]
+        else:
+            process_type = from_process_lookup_col_lineage(
+                table_process.get_name(),
                 atlas_entities, 
-                atlas_typedefs
+                atlas_typedefs["relationshipDefs"]
             )
-        )
+            table_and_proc_mappings[table_process.get_name()] = {
+                "column_lineage_type":process_type
+            }
+
         # Assuming there is always a Process for adding at least the target table
         process_attributes = columns_matching_pattern(row, excel_config.entity_process_prefix)
         process_attributes.update({"dependencyType":"SIMPLE"})

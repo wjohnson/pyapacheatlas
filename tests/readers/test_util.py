@@ -1,6 +1,42 @@
 from pyapacheatlas.core import AtlasEntity, AtlasProcess
 from pyapacheatlas.readers.util import *
 
+RELATIONSHIP_TYPE_DEFS = [
+        {
+      "category": "RELATIONSHIP",
+      "name": "demo_table_columns",
+      "endDef1": {
+        "type": "demo_table",
+        "name": "columns",
+        "cardinality": "SET",
+      },
+      "endDef2": {
+        "type": "demo_column",
+        "name": "table",
+        "cardinality": "SINGLE",
+      },
+      "relationshipCategory": "COMPOSITION"
+    },
+    # adding bad data
+    {"category":"RELATIONSHIP"},
+    {
+      "category": "RELATIONSHIP",
+      "name": "demo_process_column_lineage",
+      "endDef1": {
+        "type": "demo_column_lineage",
+        "name": "query",
+        "cardinality": "SINGLE",
+      },
+      "endDef2": {
+        "type": "demo_process",
+        "name": "columnLineages",
+        "cardinality": "SET",
+      },
+      "relationshipCategory": "COMPOSITION"
+    }
+    ]
+
+
 def test_first_entity_matching_attribute():
     atlas_entities = [
         AtlasEntity(
@@ -21,19 +57,25 @@ def test_first_entity_matching_attribute():
     assert (results.typeName == "demo_table")
 
 
-def test_child_type_from_relationship():
-    
-    type_defs = [
-        {"name":"demo_table","relationshipAttributeDefs":[{"name":"columns","typeName":"array<demo_column>"}]},
-        {"name":"demo2_table","relationshipAttributeDefs":[{"name":"xcolumns","typeName":"array<demo2_column>"}]}
+def test_first_relationship_that_matches():
 
-    ]
-    entity_type = "demo_table",
-    relationship_name = "columns"
-
-    results = child_type_from_relationship(relationship_name, type_defs, normalize=True)
-
-    assert(results == "demo_column")
+    results = first_relationship_that_matches("endDef1", "demo_column_lineage", "query", RELATIONSHIP_TYPE_DEFS)
+    expected = {
+      "category": "RELATIONSHIP",
+      "name": "demo_process_column_lineage",
+      "endDef1": {
+        "type": "demo_column_lineage",
+        "name": "query",
+        "cardinality": "SINGLE",
+      },
+      "endDef2": {
+        "type": "demo_process",
+        "name": "columnLineages",
+        "cardinality": "SET",
+      },
+      "relationshipCategory": "COMPOSITION"
+    }
+    assert(results == expected)
 
 
 def test_first_process_matching_io():
@@ -89,10 +131,6 @@ def test_first_process_matching_io():
 
 
 def test_from_process_lookup_col_lineage():
-    type_defs = [
-        {"name":"demo_process","relationshipAttributeDefs":[{"name":"columnLineages","typeName":"array<demo_column_lineage>"}]},
-        {"name":"demo2_table","relationshipAttributeDefs":[{"name":"xcolumns","typeName":"array<demo2_column>"}]}
-    ]
     entities = [
         AtlasProcess(
             name="demo_process_name",
@@ -120,7 +158,7 @@ def test_from_process_lookup_col_lineage():
                 guid = -1004
         )
     ]
-    mapping, process_col_lineage = from_process_lookup_col_lineage("demo_process_name", {}, entities, type_defs)
+    process_col_lineage = from_process_lookup_col_lineage("demo_process_name", entities, RELATIONSHIP_TYPE_DEFS)
 
     assert(process_col_lineage == "demo_column_lineage")
 

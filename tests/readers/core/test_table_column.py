@@ -60,10 +60,19 @@ def setupto_column_entities():
             "transformation":None
         }
     ]
-    atlas_typedefs = [
+    atlas_typedefs = {"entityDefs":[
         {"typeName":"demo_table","relationshipAttributeDefs":[{"relationshipTypeName":"demo_table_columns","name":"columns","typeName":"array<demo_column>"}]},
         {"typeName":"demo_process","relationshipAttributeDefs":[{"relationshipTypeName":"demo_process_column_lineage","name":"columnLineages","typeName":"array<demo_column_lineage>"}]}
+    ],
+    "relationshipDefs":[
+        {"name": "demo_table_columns","endDef1": {"type": "demo_table","name": "columns"},
+            "endDef2": {"type": "demo_column","name": "table"}
+        },
+        {"name": "demo_process_column_lineage","endDef1": {"type": "demo_column_lineage","name": "query"},
+            "endDef2": {"type": "demo_process","name": "columnLineages"}
+        }
     ]
+    }
     return json_tables, json_columns, atlas_typedefs
 
 

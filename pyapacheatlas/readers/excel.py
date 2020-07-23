@@ -51,7 +51,7 @@ class ExcelConfiguration():
         self.entity_process_prefix = kwargs.get("entity_process_prefix", "process").lower()
         self.column_transformation_name = kwargs.get("column_transformation_name", "transformation").lower()
 
-def from_excel(filepath, excel_config, type_defs, use_column_mapping = False):
+def from_excel(filepath, excel_config, atlas_typedefs, use_column_mapping = False):
     """
     The core function that wraps the rest of the excel reader.
 
@@ -60,9 +60,10 @@ def from_excel(filepath, excel_config, type_defs, use_column_mapping = False):
         An excel configuration object that is customized to
         your intended spreadsheet.
         :type: :class:`~pyapacheatlas.readers.excel.ExcelConfiguration`
-    :param type_defs:
-        A list of Atlas type definitions as dictionaries.
-        :type: list(dict)
+    :param dict(str,list(dict)) atlas_typedefs:
+            The results of requesting all type defs from Apache Atlas, including
+            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
+            values used.
     :param bool use_column_mapping:
         Should the table processes include the columnMappings attribute
         that represents Column Lineage in Azure Data Catalog.
@@ -91,7 +92,7 @@ def from_excel(filepath, excel_config, type_defs, use_column_mapping = False):
     column_sheet = wb.get_sheet_by_name(excel_config.column_sheet)
     json_columns = _parse_spreadsheet(column_sheet)
     
-    _temp_columns = to_column_entities(json_columns, excel_config, guid_tracker, entities, type_defs, use_column_mapping=use_column_mapping)
+    _temp_columns = to_column_entities(json_columns, excel_config, guid_tracker, entities, atlas_typedefs, use_column_mapping=use_column_mapping)
     entities.extend(_temp_columns)
     
     output = [e.to_json() for e in entities]

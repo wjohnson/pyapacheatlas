@@ -22,14 +22,7 @@ def test_column_lineage_scaffolding():
       "category": "ENTITY",
       "name": "demo_table",
       "attributeDefs": [],
-      "relationshipAttributeDefs": [
-        {
-          "isLegacyAttribute": false,
-          "relationshipTypeName": "demo_table_columns",
-          "cardinality": "SET",
-          "name": "columns"
-        }
-      ],
+      "relationshipAttributeDefs": [],
       "superTypes": [
         "DataSet"
       ]

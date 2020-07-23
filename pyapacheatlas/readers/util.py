@@ -1,3 +1,5 @@
+import json
+
 def columns_matching_pattern(row, starts_with, does_not_match = []):
     """
     Takes in a json "row" and filters the keys to match the `starts_with`
@@ -20,106 +22,42 @@ def columns_matching_pattern(row, starts_with, does_not_match = []):
     
     return candidates
 
-def apply_columnMapping_to_Process(atlas_entities):
+def first_relationship_that_matches(end_def, end_def_type, end_def_name, relationship_typedefs):
     """
-    Update the table processes to use the columnMapping attribute to
-    represent column lineages in the Data Catalog UI.
+    Find the first relationship type that matches the end_def number, type
+    and name from the provided typedefs.
 
-    This is used for post-hoc application of the column mapping attribute.
-    """
-    # Find all processes
-    table_processes = {}
-    guid_map = {e.guid:{"name":e.get_name(), "entity":e} for e in atlas_entities}
-    
-    # Guid: {parent:##, child_in:##, child_out:##, name:##, sudoType:##}
-
-    for entity in atlas_entities:
-        # Column Lineage Process
-        # TODO: Make this more dynamic so query is not hard coded
-        if "query" in entity.relationshipAttributes:
-            # Get the parent guid and add this entity as a dependency
-            # TODO: Make this more dynamic so query is not hard coded
-            _table_proc_guid = entity.relationshipAttributes["query"]["guid"]
-            # Assuming only one column is being used for input and output
-            input_col_guid = entity.inputs[0]["guid"] if len(entity.inputs) > 0 else None
-            output_col_guid = entity.outputs[0]["guid"] if len(entity.inputs) > 0 else None
-        
-            input_col_name = "*"
-            output_col_name = "*"
-            input_table_name = "*"
-            output_table_name = "*"
-            if input_col_guid:
-                input_col_name = guid_map[input_col_guid]["name"]
-                # TODO: Make this dynamic so table is not hardcoded
-                input_table_guid = guid_map[input_col_guid]["entity"].relationshipAttributes["table"]["guid"]
-                input_table_name = guid_map[input_table_guid]["name"]
-            if output_col_guid:
-                output_col_name = guid_map[output_col_guid]["name"]
-                # TODO: Make this dynamic so table is not hardcoded
-                output_table_guid = guid_map[output_col_guid]["entity"].relationshipAttributes["table"]["guid"]
-                output_table_name = guid_map[output_table_guid]["name"]
-            
-            _columnMapping = {"Source":input_col_name, "Sink":output_col_name}
-            _datasetMapping = {"Source":input_table_name, "Sink":output_table_name}
-            _datasetMapKey = json.dumps(_datasetMapping, sort_keys=True)
-
-            # Dealing with a nested dict
-            # If the table_process guid exists, have to see if the key is
-            # present. If it's present, append to the list.
-            # IF it's not present build the initial mapping
-            # If the table_process guid doesn't exist have to build it all!
-            if _table_proc_guid in table_processes:
-                if _datasetMapKey in table_processes[_table_proc_guid]:
-                    table_processes[_table_proc_guid][_datasetMapKey]["ColumnMapping"].append(_columnMapping)
-                else:
-                    table_processes[_table_proc_guid][_datasetMapKey] = {
-                        "ColumnMapping":[_columnMapping],
-                        "DataSetMapping":_datasetMapping
-                    }
-            else:
-                table_processes[_table_proc_guid] = {
-                    _datasetMapKey:{
-                        "ColumnMapping":[_columnMapping],
-                        "DataSetMapping":_datasetMapping
-                    }
-                }            
-        # All other entity types
-        else:
-            pass
-
-    changed = []
-    for table_proc_guid, colMapAttrib in table_processes.items():
-        guid_map[table_proc_guid]["entity"].attributes.update(
-            {"columnMapping":
-            [v for k,v in colMapAttrib.items()]
-            }
-        )
-        changed.append(table_proc_guid)
-
-    return changed
-
-
-def child_type_from_relationship(relationship_name, atlas_typedefs, normalize=True):
-    """
-    Extract the child type of of a relationship attribute def 
-    inside a type def.
-
-    :param str relationship_name:
-    :param list(dict) atlas_typedefs:
-    :param bool normalize: If True, remove the array<X> reference and return
-        only X.
-    :return: The child type name of a relationship attribute.
-    :rtype: str
+    :param str end_def: Either 'endDef1' or 'endDef2'
+    :param str end_def_type: The type within the end_def.
+    :param str end_def_name: 
+        The name of the relationship attribute applied to the end def's entity.
+        (e.g. columns, table, columnLineages, query)
+    :param list(dict) relationship_typedefs:
+        A list of dictionaries that follow the relationship type defs.
+    :raises ValueError: An relationship dict was not found in the provided typedefs.
+    :return: The matching relationship type definition.
+    :rtype: dict
     """
     output = None
-    for typdedf in atlas_typedefs:
-        for relationshipDef in typdedf["relationshipAttributeDefs"]:
-            if relationshipDef.get("name", None) == relationship_name:
-                output = relationshipDef.get("typeName")
-                if normalize and output.startswith("array<") and output.endswith(">"):
-                    # Assuming typename looks like array<{typename}>
-                    output = output[6:-1]
+    for typedef in relationship_typedefs:
+        if ((end_def in typedef) 
+        and (typedef[end_def]["type"] == end_def_type) 
+        and (typedef[end_def]["name"] == end_def_name)):
+            output = typedef
+    
+    if output is None:
+        raise ValueError(
+        "Unable to find a relationship type that matches: {endDef} "\
+        "with type {end_def_type} and the name {end_def_name} from "\
+        "the {num_defs} provided."\
+        .format(
+            endDef = end_def, end_def_type = end_def_type, 
+            end_def_name = end_def_name, num_defs = len(relationship_typedefs)
+        )
+        )
+
     return output
+
 
 def first_entity_matching_attribute(attribute, value, atlas_entities):
     """
@@ -132,15 +70,25 @@ def first_entity_matching_attribute(attribute, value, atlas_entities):
         atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
         :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :return: The atlas entity that maches or None
-    :rtype: Union(:class:`~pyapacheatlas.core.entity.AtlasEntity`, None)
+    :raises ValueError: A matching entity was not found in the provided entities.
+    :return: The atlas entity that maches the attribute and value.
+    :rtype: :class:`~pyapacheatlas.core.entity.AtlasEntity`
     """
     output = None
     for entity in atlas_entities:
         if attribute in entity.attributes:
             if entity.attributes[attribute] == value:
                 output = entity
-                break        
+                break    
+    if output is None:
+        raise ValueError(
+        "Unable to find an entity that matches the value of {value} in "\
+        "an attribute of {attribute} from the {num_entities} provided."\
+        .format(
+            value = value, attribute = attribute, 
+            num_entities = len(atlas_entities)
+        )
+        )    
     return output
 
 def first_process_matching_io(input_name, output_name, atlas_entities):
@@ -151,8 +99,9 @@ def first_process_matching_io(input_name, output_name, atlas_entities):
     :param str outputs: The qualified name of an atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
         :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :return: The atlas entity that maches or None
-    :rtype: Union(:class:`~pyapacheatlas.core.entity.AtlasEntity`, None)
+    :raises ValueError: A matching entity was not found in the provided entities.
+    :return: The atlas entity that maches.
+    :rtype: :class:`~pyapacheatlas.core.entity.AtlasEntity`
     """
     output_entity = None
     for entity in atlas_entities:
@@ -174,39 +123,50 @@ def first_process_matching_io(input_name, output_name, atlas_entities):
         if input_matches and output_matches:
             output_entity = entity
     
+    if output_entity is None:
+        raise ValueError(
+        "Unable to find a process that includes input qualified names: {input_name} "\
+        "and output qualified names: {output_name} from the {num_entities} provided."\
+        .format(
+            input_name = input_name, output_name = output_name, 
+            num_entities = len(atlas_entities)
+        )
+        )   
+
     return output_entity
 
 
-def from_process_lookup_col_lineage(process_name, existing_mapping, atlas_entities, atlas_typedefs):
+def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_typedefs):
     """
-    Given a process name, find
+    Given a process name, find the first entity that matches that process name.
+    Given that process entity, find the first relationship that contains that
+    process type as an endDef2.
 
-    existing_mapping is expected to follow `{process:{column_lineage_type, process_type}}`
-
-    :param str process_name: 
-    :param dict(str,dict(str,str)) existing_mapping: 
-        An existing mapping to act as a cache and speed up searching.
+    :param str process_name: The name of the process that you want to find.
     :param atlas_entities: The list of atlas entities to search over.
         :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :param list(dict) atlas_typedefs: The list of type definitions to extract from.
-    :return: The atlas entity that maches or None
-    :rtype: Union(:class:`~pyapacheatlas.core.entity.AtlasEntity`, None)
+    :param list(dict) relationship_typedefs: The list of relationship type definitions to extract from.
+    :raises ValueError: 
+        A matching entity or matching relationship type was not found in 
+        the provided entities or type def.
+    :return: The endDef1 type from the discovered process relationship type.
+    :rtype: str
     """
-    column_lineage_type = None
-    if process_name in existing_mapping:
-        column_lineage_type = existing_mapping[process_name]["column_lineage_type"]
-    else:
-        target_entity = first_entity_matching_attribute("name", process_name, atlas_entities)
-        if target_entity is not None:
-            # TODO: Make "columnLineages" dynamic so that you can control which attribute you're searching for
-            # TODO: Reduce the set of type defs I'm looking through.  This is way too broad!
-            column_lineage_type = child_type_from_relationship("columnLineages", atlas_typedefs)
-            existing_mapping[process_name] = {
-                "column_lineage_type":column_lineage_type,
-                "process_type":target_entity.typeName
-            }
+    target_entity = first_entity_matching_attribute("name", process_name, atlas_entities)
+    # TODO: Make "columnLineages" dynamic so that you can control which attribute you're searching for
+    # TODO: Reduce the set of type defs I'm looking through.  This is way too broad!
     
-    return existing_mapping, column_lineage_type
+    lineage_relationship = first_relationship_that_matches(
+        end_def ="endDef2", 
+        end_def_type = target_entity.typeName, 
+        end_def_name = "columnLineages", 
+        relationship_typedefs = relationship_typedefs
+    )
+    
+    column_lineage_type = lineage_relationship["endDef1"]["type"]
+
+    return column_lineage_type
+
 
 def string_to_classification(string, sep=";"):
     """
