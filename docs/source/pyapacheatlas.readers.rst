@@ -1,9 +1,6 @@
 pyapacheatlas.readers package
 =============================
 
-Submodules
-----------
-
 pyapacheatlas.readers.excel module
 ----------------------------------
 

@@ -1,9 +1,6 @@
 pyapacheatlas.core package
 ==========================
 
-Submodules
-----------
-
 pyapacheatlas.core.client module
 --------------------------------
 

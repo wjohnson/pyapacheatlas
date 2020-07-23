@@ -1,9 +1,6 @@
 pyapacheatlas.auth package
 ==========================
 
-Submodules
-----------
-
 pyapacheatlas.auth.base module
 ------------------------------
 
