@@ -1,1 +1,2 @@
-from .ouathmsft import OAuthMSFT
+from .serviceprincipal import ServicePrincipalAuthentication
+from .basic import BasicAuthentication

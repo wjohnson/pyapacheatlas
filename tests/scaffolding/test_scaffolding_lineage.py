@@ -5,9 +5,9 @@ from pyapacheatlas.scaffolding import column_lineage_scaffold
 def test_column_lineage_scaffolding():
     scaffolding = column_lineage_scaffold("demo", useColumnMapping=True)
 
-    results = json.dumps(scaffolding).replace(" ", "")
+    results = scaffolding
 
-    expected = """{
+    expected = json.loads("""{
   "entityDefs": [
     {
       "category": "ENTITY",
@@ -64,15 +64,16 @@ def test_column_lineage_scaffolding():
         "name": "columns",
         "isContainer": true,
         "cardinality": "SET",
-        "isLegacyAttribute": true
+        "isLegacyAttribute": false
       },
       "endDef2": {
         "type": "demo_column",
         "name": "table",
         "isContainer": false,
         "cardinality": "SINGLE",
-        "isLegacyAttribute": true
-      }
+        "isLegacyAttribute": false
+      },
+      "relationshipCategory": "COMPOSITION"
     },
     {
       "category": "RELATIONSHIP",
@@ -90,9 +91,10 @@ def test_column_lineage_scaffolding():
         "isContainer": true,
         "cardinality": "SET",
         "isLegacyAttribute": false
-      }
+      },
+      "relationshipCategory": "COMPOSITION"
     }
   ]
 }
-""".strip().replace('\n', ' ').replace(" ", "")
+""")
     assert(expected == results)

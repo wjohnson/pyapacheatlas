@@ -1,2 +1,1 @@
-# TODO 
-# from .readers import from_excel
+from .readers import from_excel
