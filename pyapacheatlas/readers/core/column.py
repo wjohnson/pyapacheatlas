@@ -5,26 +5,28 @@ from ..util import *
 def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, atlas_typedefs, use_column_mapping=False):
     """
     :param json_rows:
-            A list of dicts that contain the converted rows of your column spreadsheet.
-        :type json_rows: list(dict(str,str))
+        A list of dicts that contain the converted rows of your column spreadsheet.
+    :type json_rows: list(dict(str,str))
     :param ~pyapacheatlas.readers.excel.ExcelConfiguration excel_config:
-            An excel configuration object to indicate any customizations to the template excel.
+        An excel configuration object to indicate any customizations to the template excel.
     :param ~pyapacheatlas.core.util.GuidTracker guid_tracker:
-            A guid tracker to be used in incrementing / decrementing the guids in use.
+        A guid tracker to be used in incrementing / decrementing the guids in use.
     :param atlas_entities:
-            A list of :class:`~pyapacheatlas.core.entity.AtlasEntity` containing the referred entities.
-        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+        A list of :class:`~pyapacheatlas.core.entity.AtlasEntity` containing the referred entities.
+    :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
     :param dict(str,list(dict)) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, including
-            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
-            values used.
+        The results of requesting all type defs from Apache Atlas, including
+        entityDefs, relationshipDefs, etc.  relationshipDefs are the only
+        values used.
     :param bool use_column_mapping:
-            Should the table processes include the columnMappings attribute
-            that represents Column Lineage in Azure Data Catalog.
-            Defaults to False.
-    :return: A list of atlas entities that represent your column source, target,
+        Should the table processes include the columnMappings attribute
+        that represents Column Lineage in Azure Data Catalog.
+        Defaults to False.
+    :return: 
+        A list of atlas entities that represent your column source, target,
         and column lineage processes.
     :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+
     """
     # Required attributes
     # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute

@@ -7,15 +7,17 @@ def to_table_entities(json_rows, excel_config, guid_tracker):
     and Process types.  Currently only support one target from one source.
 
     :param json_rows:
-            A list of dicts that contain the converted tables of your column spreadsheet.
-        :type json_rows: list(dict(str,str))
+        A list of dicts that contain the converted tables of your column spreadsheet.
+    :type json_rows: list(dict(str,str))
     :param ~pyapacheatlas.readers.excel.ExcelConfiguration excel_config:
-            An excel configuration object to indicate any customizations to the template excel.
+        An excel configuration object to indicate any customizations to the template excel.
     :param ~pyapacheatlas.core.util.GuidTracker guid_tracker:
-            A guid tracker to be used in incrementing / decrementing the guids in use.
-    :return: A list of atlas entities that represent your source, target,
+        A guid tracker to be used in incrementing / decrementing the guids in use.
+    :return: 
+        A list of atlas entities that represent your source, target,
         and table processes.
     :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    
     """
     # Required attributes
     # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute

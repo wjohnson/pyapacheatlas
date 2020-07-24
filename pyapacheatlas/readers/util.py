@@ -69,7 +69,7 @@ def first_entity_matching_attribute(attribute, value, atlas_entities):
     :param str value: The value of the attribute to search on each
         atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
-        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
     :raises ValueError: A matching entity was not found in the provided entities.
     :return: The atlas entity that maches the attribute and value.
     :rtype: :class:`~pyapacheatlas.core.entity.AtlasEntity`
@@ -102,7 +102,7 @@ def first_process_containing_io(input_name, output_name, atlas_entities):
         that matches to any input (empty list or filled in values)
     :param str outputs: The qualified name of an atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
-        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
     :raises ValueError: A matching entity was not found in the provided entities.
     :return: The atlas entity that maches.
     :rtype: :class:`~pyapacheatlas.core.entity.AtlasEntity`
@@ -151,7 +151,7 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
 
     :param str process_name: The name of the process that you want to find.
     :param atlas_entities: The list of atlas entities to search over.
-        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
     :param list(dict) relationship_typedefs: The list of relationship type definitions to extract from.
     :raises ValueError: 
         A matching entity or matching relationship type was not found in 

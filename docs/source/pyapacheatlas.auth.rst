@@ -9,19 +9,18 @@ pyapacheatlas.auth.base module
    :undoc-members:
    :show-inheritance:
 
-pyapacheatlas.auth.ouathmsft module
------------------------------------
+pyapacheatlas.auth.basic module
+-------------------------------
 
-.. automodule:: pyapacheatlas.auth.ouathmsft
+.. automodule:: pyapacheatlas.auth.basic
    :members:
    :undoc-members:
    :show-inheritance:
 
+pyapacheatlas.auth.serviceprincipal module
+------------------------------------------
 
-Module contents
----------------
-
-.. automodule:: pyapacheatlas.auth
+.. automodule:: pyapacheatlas.auth.serviceprincipal
    :members:
    :undoc-members:
    :show-inheritance:

@@ -16,9 +16,9 @@ class AtlasClient():
             The http url for communicating with your Apache Atlas server.
             It will most likely end in /api/atlas/v2.
         :param authentication:
-                The method of authentication.
-            :type authentication: 
-                :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
+            The method of authentication.
+        :type authentication: 
+            :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
         """
         super().__init__()
         self.authentication = authentication
@@ -83,7 +83,7 @@ class AtlasClient():
         (guid or name).
 
         :param type_category: The type category your type def belongs to.
-            :type type_category: 
+        :type type_category: 
             :class:`~pyapacheatlas.core.typedef.TypeCategory`
         :param str,optional guid: A valid guid. Optional if name is specified.
         :param str,optional name: A valid name. Optional if guid is specified.

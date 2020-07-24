@@ -33,11 +33,10 @@ pyapacheatlas.core.util module
    :undoc-members:
    :show-inheritance:
 
+pyapacheatlas.core.whatif module
+--------------------------------
 
-Module contents
----------------
-
-.. automodule:: pyapacheatlas.core
+.. automodule:: pyapacheatlas.core.whatif
    :members:
    :undoc-members:
    :show-inheritance:

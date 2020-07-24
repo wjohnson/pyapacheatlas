@@ -16,12 +16,3 @@ pyapacheatlas.readers.core.table module
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: pyapacheatlas.readers.core
-   :members:
-   :undoc-members:
-   :show-inheritance:
