@@ -5,7 +5,7 @@ class GuidTracker():
     negative integer to provide an entity with a temporary unique id.
     """
 
-    def __init__(self, starting, direction="decrease"):
+    def __init__(self, starting=-1000, direction="decrease"):
         """
         :param int starting: A negative integer to start your guid tracker on.
         :param str direction: Either increase or decrease. It controls

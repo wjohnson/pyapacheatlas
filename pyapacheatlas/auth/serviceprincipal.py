@@ -4,7 +4,7 @@ import requests
 
 from .base import AtlasAuthBase
 
-class OAuthMSFT(AtlasAuthBase):
+class ServicePrincipalAuthentication(AtlasAuthBase):
     """
     Authenticates to the Azure OAuth provider using a service principal.
     """

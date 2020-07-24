@@ -32,7 +32,7 @@ class AtlasClient():
         later use.
 
         :param guid: The guid or guids you want to retrieve
-        :type guid: Union[str or list(str)]
+        :type guid: Union[str, list(str)]
         :return: A list of entities wrapped in the {"entities"} dict.
         :rtype: dict(str, list(dict))
         """
@@ -155,6 +155,7 @@ class AtlasClient():
     def _prepare_entity_upload(batch):
         """
         Massages the batch to be in the right format and coerces to json/dict.
+        Supports list of dicts, dict of single entity, dict of AtlasEntitiesWithExtInfo.
 
         :param batch: The batch of entities you want to upload.
         :type batch: Union(list(dict), dict))

@@ -5,3 +5,4 @@ from .typedef import (
     EntityTypeDef,
     TypeCategory
 )
+from .util import GuidTracker
