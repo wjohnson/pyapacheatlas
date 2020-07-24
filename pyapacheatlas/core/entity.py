@@ -101,9 +101,12 @@ class AtlasEntity():
                 "typeName": self.typeName,
                 "guid": self.guid,
                 "attributes": self.attributes,
-                "relationshipAttributes": self.relationshipAttributes,
-                "classifications": self.classifications
+                "relationshipAttributes": self.relationshipAttributes
             }
+            # Add ins for optional top level attributes
+            if len(self.classifications) > 0:
+                output.update({"classifications":self.classifications})
+            
         return output
     
     def merge(self, other):

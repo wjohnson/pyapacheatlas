@@ -16,8 +16,7 @@ class AtlasClient():
             The http url for communicating with your Apache Atlas server.
             It will most likely end in /api/atlas/v2.
         :param authentication:
-                The method of authentication. The only defined method is
-                :class:`~pyapacheatlas.auth.oauthmsft.OAuthMSFT`
+                The method of authentication.
             :type authentication: 
                 :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
         """
@@ -45,7 +44,7 @@ class AtlasClient():
             guid_str = guid
         
         atlas_endpoint = self.endpoint_url + "/entity/bulk?guid={}".format(guid_str)
-        getEntity = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
+        getEntity = requests.get(atlas_endpoint, headers=self.authentication.get_authentication_headers())
         results = json.loads(getEntity.text)
         try:
             getEntity.raise_for_status()
@@ -58,7 +57,7 @@ class AtlasClient():
 
     def get_all_typedefs(self):
         """
-        Retrieve all of the type defs available on the Apache Atals server.
+        Retrieve all of the type defs available on the Apache Atlas server.
         
         :return: A dict containing lists of type defs wrapped in their
          corresponding definition types {"entityDefs", "relationshipDefs"}.
@@ -67,7 +66,7 @@ class AtlasClient():
         results = None
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
-        getTypeDefs = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
+        getTypeDefs = requests.get(atlas_endpoint, headers=self.authentication.get_authentication_headers())
         results = json.loads(getTypeDefs.text)
         try:
             getTypeDefs.raise_for_status()
@@ -99,7 +98,7 @@ class AtlasClient():
         elif name:
             atlas_endpoint = atlas_endpoint + '/name/{}'.format(name)
 
-        getTypeDef = requests.get(atlas_endpoint, headers=self.authentication.get_headers())
+        getTypeDef = requests.get(atlas_endpoint, headers=self.authentication.get_authentication_headers())
         results = json.loads(getTypeDef.text)
         try:
             getTypeDef.raise_for_status()
@@ -141,7 +140,7 @@ class AtlasClient():
             payload = {typedefs.category.lower()+"Defs":[typedefs]}
         
         postTypeDefs = requests.post(atlas_endpoint, json=payload, 
-            headers=self.authentication.get_headers()
+            headers=self.authentication.get_authentication_headers()
         )
         results = json.loads(postTypeDefs.text)
         try:
@@ -203,7 +202,7 @@ class AtlasClient():
         payload = AtlasClient._prepare_entity_upload(batch)
 
         postBulkEntities = requests.post(atlas_endpoint, json=payload, 
-            headers=self.authentication.get_headers()
+            headers=self.authentication.get_authentication_headers()
         )
         results = json.loads(postBulkEntities.text)
         try:
