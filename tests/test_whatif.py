@@ -51,3 +51,19 @@ def test_using_invalid_attributes():
 
     assert(results[0] == False)
     assert(results[1] == True)
+
+def test_would_it_overwrite():
+    entities = [
+        AtlasEntity("dummy1", "demo_table", "dummy1", -99, attributes = {"req_attrib":"1"}).to_json(),
+        AtlasEntity("dummy2", "demo_table", "dummy1", -100, attributes = {"foo":"bar"}).to_json()
+    ]
+
+    new_entity = AtlasEntity("dummy1", "demo_table", "dummy1", -99, attributes = {"req_attrib":"1"}).to_json()
+
+    demo_table_type = {"entityDefs":[]}
+    
+    local_what_if = WhatIfValidator(existing_entities=entities)
+
+    results = local_what_if.entity_would_overwrite(new_entity)
+
+    assert(results)
