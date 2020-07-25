@@ -1,15 +1,32 @@
 import json
+import os
 
 import openpyxl
 from openpyxl import Workbook
 from openpyxl import load_workbook
 
+# PyApacheAtlas packages
+from pyapacheatlas.auth import ServicePrincipalAuthentication # Connect to Atlas via a Service Principal
+from pyapacheatlas.core import AtlasClient # Communicate with your Atlas server
 from pyapacheatlas.scaffolding import column_lineage_scaffold # Create dummy types
 from pyapacheatlas.scaffolding.templates import excel_template # Create the excel template file to be populated
 from pyapacheatlas.readers import from_excel # Read in the populated excel file.
 from pyapacheatlas.readers.excel import ExcelConfiguration # Customize header prefixes (e.g. "Sink" rather than "Target") and sheet names
 
 if __name__ == "__main__":
+
+    # Authenticate against your Atlas server
+    oauth = ServicePrincipalAuthentication(
+        tenant_id = os.environ.get("TENANT_ID"),
+        client_id = os.environ.get("CLIENT_ID"),
+        client_secret = os.environ.get("CLIENT_SECRET")
+    )
+    atlas_client = AtlasClient(
+        endpoint_url =  os.environ.get("ENDPOINT_URL"),
+        authentication = oauth
+    )
+
+    # Create an empty excel template to be populated
     file_path = "./atlas_excel_template.xlsx"
     excel_template(file_path)
 
@@ -62,16 +79,21 @@ if __name__ == "__main__":
         
     wb.save(file_path)
 
-    # Generate the base atlas type defs
+    # Generate the base atlas type defs for the demo of table and column lineage
     atlas_type_defs = column_lineage_scaffold("demo", useColumnMapping=True)
+    # Alternatively, you can get all atlas types via...
+    # all_type_defs = client.get_all_typedefs()
 
-    print("="*5+"TYPEDEFS"+"="*5)
-    print(json.dumps(atlas_type_defs, indent=1))
+    # Upload scaffolded type defs and view the results of upload
+    _upload_typedef = client.upload_typedefs(atlas_type_defs)
+    print(json.dumps(_upload_typedef,indent=2))
 
-    # Instantiate some required objects
+    # Instantiate some required objects and generate the atlas entities!
     excel_config = ExcelConfiguration()
-    # Generate the atlas entities!
-    results = from_excel(file_path, excel_config, atlas_type_defs, use_column_mapping=True)
+    excel_results = from_excel(file_path, excel_config, atlas_type_defs, use_column_mapping=True)
 
-    print("="*5+"RESULTS"+"="*5)
-    print(json.dumps(results, indent = 2))
+    # Upload excel file's content to Atlas and view the guid assignments to confirm successful upload
+    _upload_entities = client.upload_entities(excel_results)
+    print(json.dumps(_upload_entities,indent=2))
+
+    # Be sure to clean up the excel file stored in file_path

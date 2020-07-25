@@ -53,7 +53,17 @@ class ExcelConfiguration():
 
 def from_excel(filepath, excel_config, atlas_typedefs, use_column_mapping = False):
     """
-    The core function that wraps the rest of the excel reader.
+    Read a given excel file that conforms to the excel atlas template and 
+    parse the tables, processes, and columns into table and column lineages.
+    Requires that the relationship attributes are already defined in the
+    provided atlas type defs.
+
+    Infers column type from the target table type and an assumed "columns"
+    relationship attribute on the table type.
+
+    Infers the column lineage process based on the provided table process
+    (provided in the template's table excel sheet).  Looks for the first
+    relationship type def with an endDef2 of `columnLineages`.
 
     :param str filepath: The xlsx file that contains your table and columns.
     :param excel_config: 
@@ -61,15 +71,15 @@ def from_excel(filepath, excel_config, atlas_typedefs, use_column_mapping = Fals
         your intended spreadsheet.
         :type: :class:`~pyapacheatlas.readers.excel.ExcelConfiguration`
     :param dict(str,list(dict)) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, including
-            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
-            values used.
+        The results of requesting all type defs from Apache Atlas, including
+        entityDefs, relationshipDefs, etc.  relationshipDefs are the only
+        values used.
     :param bool use_column_mapping:
         Should the table processes include the columnMappings attribute
         that represents Column Lineage in Azure Data Catalog.
         Defaults to False.
-    :return: A list of Atlas Entities representing the spreadsheet's inputs.
-    :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+    :return: A list of Atlas Entities representing the spreadsheet's inputs as their json dicts.
+    :rtype: list(dict)
     """
 
     wb = load_workbook(filepath)
