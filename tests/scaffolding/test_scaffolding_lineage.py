@@ -3,7 +3,7 @@ from pyapacheatlas.scaffolding import column_lineage_scaffold
 
 
 def test_column_lineage_scaffolding():
-    scaffolding = column_lineage_scaffold("demo", useColumnMapping=True)
+    scaffolding = column_lineage_scaffold("demo", use_column_mapping=True)
 
     results = scaffolding
 
@@ -30,7 +30,30 @@ def test_column_lineage_scaffolding():
     {
       "category": "ENTITY",
       "name": "demo_column_lineage",
-      "attributeDefs": [],
+      "attributeDefs": [
+        {
+          "name": "dependencyType",
+          "typeName": "string",
+          "isOptional": false,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 1,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        },
+        {
+          "name": "expression",
+          "typeName": "string",
+          "isOptional": true,
+          "cardinality": "SINGLE",
+          "valuesMinCount": 0,
+          "valuesMaxCount": 1,
+          "isUnique": false,
+          "isIndexable": false,
+          "includeInNotification": false
+        }
+      ],
       "relationshipAttributeDefs": [],
       "superTypes": [
         "Process"

@@ -41,7 +41,7 @@ def test_using_invalid_attributes():
     'attributeDefs': [
         {"name":"req_attrib","isOptional":False},
         {"name":"name","isOptional":False},
-        {"qualifiedName":"name","isOptional":False},
+        {"name":"qualifiedName","isOptional":False},
     ], 
     'relationshipAttributeDefs': [], 'superTypes': ['DataSet']}]}
 
@@ -67,3 +67,38 @@ def test_would_it_overwrite():
     results = local_what_if.entity_would_overwrite(new_entity)
 
     assert(results)
+
+
+def test_whatif_validation():
+
+    expected = {
+        "counts":{"TypeDoesNotExist":1, "UsingInvalidAttributes":1, "MissingRequiredAttributes":1},
+        "total":3,
+        "values":{"TypeDoesNotExist":[-101], "UsingInvalidAttributes":[-100], "MissingRequiredAttributes":[-98]}
+    }
+
+    entities = [
+        # Valid attribute
+        AtlasEntity("dummy1", "demo_table", "dummy1", -99, attributes = {"req_attrib":"1"}).to_json(),
+        # Missing attribute
+        AtlasEntity("dummy10", "demo_table", "dummy10", -98, attributes = {}).to_json(),
+        # Non-Required attribute
+        AtlasEntity("dummy20", "demo_table", "dummy20", -100, attributes = {"foo":"bar", "req_attrib":"abc"}).to_json(),
+        # Bad Type
+        AtlasEntity("dummy30", "bad_table", "dummy30", -101, attributes = {"foo":"bar"}).to_json()
+    ]
+
+    demo_table_type = {"entityDefs":[{'category': 'ENTITY', 'name': 'demo_table', 
+    'attributeDefs': [
+        {"name":"req_attrib","isOptional":False},
+        {"name":"name","isOptional":False},
+        {"name":"qualifiedName","isOptional":False},
+    ], 
+    'relationshipAttributeDefs': [], 'superTypes': ['DataSet']}]}
+
+    local_what_if = WhatIfValidator(demo_table_type)
+
+    results = local_what_if.validate_entities(entities)
+    
+    assert(set(local_what_if.entity_required_fields["demo_table"]) == set(["req_attrib","name", "qualifiedName"]))
+    assert(results == expected)

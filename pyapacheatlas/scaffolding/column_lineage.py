@@ -1,7 +1,7 @@
 from ..core.typedef import *
 
 def column_lineage_scaffold(datasource,
-    useColumnMapping = False,
+    use_column_mapping = False,
     column_attributes = None,
     table_attributes = None,
     table_column_relationship_attributes = None,
@@ -16,7 +16,7 @@ def column_lineage_scaffold(datasource,
 
     :param str datasource: The name of the data source. Acts as a prefix
         for all other type defs.
-    :param bool useColumnMapping: If True, add the columnMapping attribute
+    :param bool use_column_mapping: If True, add the columnMapping attribute
         to the table process.
     :param list(dict), optional column_attributes: 
         Attribute Defs to add to the column entity type.
@@ -74,9 +74,9 @@ def column_lineage_scaffold(datasource,
     # Define {datasource}_column_lineage
     column_lineage_process_entity = EntityTypeDef(
         name="{}_column_lineage".format(datasource),
-        attributeDefs=column_lineage_process_attributes,
         superTypes=["Process"],
-        attributes=[
+        attributeDefs=((column_lineage_process_attributes or []) +
+        [
             {
             "name": "dependencyType",
             "typeName": "string",
@@ -100,6 +100,7 @@ def column_lineage_scaffold(datasource,
             "includeInNotification": False
             }
         ]
+        )
     )
 
     # Define {datasource}_process
@@ -108,7 +109,7 @@ def column_lineage_scaffold(datasource,
         superTypes=["Process"],
         attributeDefs=table_process_attributes
     )
-    if useColumnMapping:
+    if use_column_mapping:
         table_process_entity.attributeDefs.append(
             {
             "name": "columnMapping",

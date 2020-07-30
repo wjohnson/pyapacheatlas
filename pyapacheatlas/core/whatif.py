@@ -6,16 +6,35 @@ EntityField = namedtuple("EntityField",["name","isOptional"])
 
 class WhatIfValidator():
     """
+    Provides a simple way to validate that your entities will successfully
+    upload.  Provides functions to validate the type, check if required
+    attributes are missing, and check if superfluous attributes are inclded.
     """
+    ASSET_ATTRIBUTES = ["name", "description", "owner"]
+    REFERENCABLE_ATTRIBUTES = ["qualifiedName"]
+
+    ATLAS_MODEL = {
+    "ASSET": ["name", "description", "owner"],
+    "REFERENCABLE": ["qualifiedName"],
+    "PROCESS": ["inputs", "outputs"] + ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
+    "DATASET": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
+    "INFRASTRUCTURE": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES
+    }
 
     def __init__(self, type_defs = {}, existing_entities = []):
+        """
+        :param dict type_defs: 
+            The list of type definitions to be validated against.  Should be
+            in the form of an AtlasTypeDef composite wrapper.
+        :param list(dict) existing_entities: 
+            The existing entities that should be validated against.
+        """
         if len(type_defs) == 0 and len(existing_entities) == 0:
             warnings.warn("WARNING: Provided type_defs and existing_entities are empty.  All validations will pass.")
 
         self.classification_defs = type_defs.get("classificationDefs", [])
         self.entity_defs = type_defs.get("entityDefs", [])
         # Create a dict of all entities by name, then find the name of all attributes and whether they are optional
-        # entity_fields = {e["name"]: [{"name":attr["name"], "isOptional":attr.get("isOptional", True)} for attr in e] for e in self.entity_defs}
         entity_fields = {e["name"]:[EntityField(attr.get("name"), attr.get("isOptional")) for attr in e.get("attributeDefs", {})]  for e in self.entity_defs}
         # Adding Qualified Name to the set of valid fields as it doesn't show up in the entity type def
         self.entity_valid_fields = {k: set([field.name for field in v ]+["qualifiedName"]) for k,v in entity_fields.items()}
@@ -71,7 +90,14 @@ class WhatIfValidator():
         """
         current_attributes = set(entity.get("attributes", {}).keys())
         valid_attributes = set(self.entity_valid_fields[entity["typeName"]])
+        # Append inherited attributes:
+        _entity_type = entity["typeName"]
+        # Assuming only one entity matches and only one super type
+        super_type = [e["superTypes"] for e in self.entity_defs if e["name"] == _entity_type][0][0].upper()
+        if super_type in self.ATLAS_MODEL:
+            valid_attributes = valid_attributes.union(self.ATLAS_MODEL[super_type])
         invalid_attributes = current_attributes.difference(valid_attributes)
+
         if len(invalid_attributes) > 0:
             return True
         else:
@@ -94,3 +120,36 @@ class WhatIfValidator():
             return True
         else: 
             return False
+    
+
+    def validate_entities(self, entities):
+        """
+        Provide a report of invalid entities.  Includes TypeDoesNotExist,
+        UsingInvalidAttributes, and MissingRequiredAttributes.
+
+        :param list(dict) entities: A list of entities to validate.
+        :return: A dictionary containing counts values for the above values.
+        :rtype: dict
+        """
+        report = {"TypeDoesNotExist":[], "UsingInvalidAttributes":[], "MissingRequiredAttributes":[]}
+
+        for entity in entities:
+            if not self.entity_type_exists(entity):
+                report["TypeDoesNotExist"].append(entity["guid"])
+                # If it's an invalid type, we have to skip over the rest of this
+                continue
+            if self.entity_has_invalid_attributes(entity):
+                report["UsingInvalidAttributes"].append(entity["guid"])
+
+            if self.entity_missing_attributes(entity):
+                report["MissingRequiredAttributes"].append(entity["guid"])
+        
+        output = {
+            "counts":{k:len(v) for k,v in report.items()},
+            "values":report
+        }
+        output.update({"total":sum(output["counts"].values())})
+
+        return output
+        
+    

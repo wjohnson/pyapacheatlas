@@ -12,17 +12,18 @@ from pyapacheatlas.scaffolding import column_lineage_scaffold # Create dummy typ
 from pyapacheatlas.scaffolding.templates import excel_template # Create the excel template file to be populated
 from pyapacheatlas.readers import from_excel # Read in the populated excel file.
 from pyapacheatlas.readers.excel import ExcelConfiguration # Customize header prefixes (e.g. "Sink" rather than "Target") and sheet names
+from pyapacheatlas.core.whatif import WhatIfValidator # To do what if analysis
 
 if __name__ == "__main__":
 
     # Authenticate against your Atlas server
     oauth = ServicePrincipalAuthentication(
-        tenant_id = os.environ.get("TENANT_ID"),
-        client_id = os.environ.get("CLIENT_ID"),
-        client_secret = os.environ.get("CLIENT_SECRET")
+        tenant_id = os.environ.get("TENANT_ID", ""),
+        client_id = os.environ.get("CLIENT_ID", ""),
+        client_secret = os.environ.get("CLIENT_SECRET", "")
     )
     atlas_client = AtlasClient(
-        endpoint_url =  os.environ.get("ENDPOINT_URL"),
+        endpoint_url =  os.environ.get("ENDPOINT_URL", ""),
         authentication = oauth
     )
 
@@ -80,18 +81,31 @@ if __name__ == "__main__":
     wb.save(file_path)
 
     # Generate the base atlas type defs for the demo of table and column lineage
-    atlas_type_defs = column_lineage_scaffold("demo", useColumnMapping=True)
+    atlas_type_defs = column_lineage_scaffold("demo", use_column_mapping=True)
     # Alternatively, you can get all atlas types via...
-    # all_type_defs = client.get_all_typedefs()
+    # atlas_type_defs = client.get_all_typedefs()
 
     # Upload scaffolded type defs and view the results of upload
-    _upload_typedef = client.upload_typedefs(atlas_type_defs)
-    print(json.dumps(_upload_typedef,indent=2))
+    # _upload_typedef = client.upload_typedefs(atlas_type_defs)
+    # print(json.dumps(_upload_typedef,indent=2))
 
     # Instantiate some required objects and generate the atlas entities!
     excel_config = ExcelConfiguration()
     excel_results = from_excel(file_path, excel_config, atlas_type_defs, use_column_mapping=True)
 
+    print(excel_results)
+
+    # Validate What IF
+    whatif = WhatIfValidator(type_defs=atlas_type_defs)
+    
+    report = whatif.validate_entities(excel_results)
+    
+    if sum([len(v) for v in report.items()]) > 0:
+        print("There were errors in the provided typedefs")
+        print(json.dumps(report))
+        exit(1)
+
+    
     # Upload excel file's content to Atlas and view the guid assignments to confirm successful upload
     _upload_entities = client.upload_entities(excel_results)
     print(json.dumps(_upload_entities,indent=2))
