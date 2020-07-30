@@ -20,6 +20,13 @@ The package currently supports:
 
 ## Quickstart
 
+### Build and Install from Source
+
+```
+python setup.py bdist_wheel
+python -m pip install ./dist/pyapacheatlas-0.0.2-py3-none-any.whl
+```
+
 ### Create a Client Connection
 
 Provides connectivity to your Atlas / Data Catalog service. Supports getting and uploading entities and type defs.

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyapacheatlas",
-    version="0.0.1",
+    version="0.0.2",
     author="Will Johnson",
     author_email="will@willj.com",
     description="A package to simplify working with the Apache Atlas REST APIs and support bulk loading from files.",
