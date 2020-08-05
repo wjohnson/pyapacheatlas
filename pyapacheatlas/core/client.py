@@ -109,7 +109,7 @@ class AtlasClient():
         return results
     
 
-    def upload_typedefs(self, typedefs):
+    def upload_typedefs(self, typedefs, force_update = False):
         """
         Provides a way to upload a single or multiple type definitions.
         If you provide one type def, it will format the required wrapper
@@ -122,6 +122,9 @@ class AtlasClient():
 
         :param typedefs: The set of type definitions you want to upload.
         :type typedefs: dict
+        :param bool force_update: 
+            Whether changes should be forced (True) or whether changes
+            to existing types should be discarded (False).
         :return: The results of your upload attempt from the Atlas server.
         :rtype: dict
         """
@@ -139,12 +142,17 @@ class AtlasClient():
             # Assuming this is a single typedef
             payload = {typedefs.category.lower()+"Defs":[typedefs]}
         
-        postTypeDefs = requests.post(atlas_endpoint, json=payload, 
-            headers=self.authentication.get_authentication_headers()
-        )
-        results = json.loads(postTypeDefs.text)
+        if force_update:
+            upload_typedefs_results = requests.put(atlas_endpoint, json=payload, 
+                headers=self.authentication.get_authentication_headers()
+            )
+        else:
+            upload_typedefs_results = requests.post(atlas_endpoint, json=payload, 
+                headers=self.authentication.get_authentication_headers()
+            )
+        results = json.loads(upload_typedefs_results.text)
         try:
-            postTypeDefs.raise_for_status()
+            upload_typedefs_results.raise_for_status()
         except requests.RequestException as e:
             print(results)
             raise e
