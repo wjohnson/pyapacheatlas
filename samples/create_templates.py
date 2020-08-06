@@ -6,6 +6,9 @@ from pyapacheatlas.scaffolding import column_lineage_scaffold # Create dummy typ
 from pyapacheatlas.scaffolding.templates import excel_template # Create the excel template file to be populated
 
 if __name__ == "__main__":
+    """
+    Generates the demo scaffolding and excel template file.
+    """
     # Create the demo scaffolding
     print("Creating the scaffolding json file")
     scaffold = column_lineage_scaffold("demo")
