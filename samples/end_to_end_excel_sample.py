@@ -86,7 +86,9 @@ if __name__ == "__main__":
     wb.save(file_path)
 
     # Generate the base atlas type defs for the demo of table and column lineage
-    atlas_type_defs = column_lineage_scaffold("demo", use_column_mapping=True)
+    atlas_type_defs = column_lineage_scaffold("demo", use_column_mapping=True,
+    column_attributes={"name":"datatype","isOptional":True, "cardinality":"SINGLE"}
+    )
     # Alternatively, you can get all atlas types if you've  via...
     # atlas_type_defs = client.get_all_typedefs()
 
@@ -113,7 +115,7 @@ if __name__ == "__main__":
 
     
     # Upload excel file's content to Atlas and view the guid assignments to confirm successful upload
-    uploaded_entities = client.upload_entities(excel_results)
-    print(json.dumps(uploaded_entities, indent=2))
+    # uploaded_entities = client.upload_entities(excel_results)
+    # print(json.dumps(uploaded_entities, indent=2))
 
     # Be sure to clean up the excel file stored in file_path
