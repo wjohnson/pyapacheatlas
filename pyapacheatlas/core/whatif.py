@@ -76,7 +76,7 @@ class WhatIfValidator():
         required_attributes = set(self.entity_required_fields[entity["typeName"]])
         missing_attributes = required_attributes.difference(current_attributes)
         if len(missing_attributes) > 0:
-            return True
+            return missing_attributes
         else:
             return False
 
@@ -99,7 +99,7 @@ class WhatIfValidator():
         invalid_attributes = current_attributes.difference(valid_attributes)
 
         if len(invalid_attributes) > 0:
-            return True
+            return invalid_attributes
         else:
             return False
         
@@ -131,18 +131,22 @@ class WhatIfValidator():
         :return: A dictionary containing counts values for the above values.
         :rtype: dict
         """
-        report = {"TypeDoesNotExist":[], "UsingInvalidAttributes":[], "MissingRequiredAttributes":[]}
+        report = {"TypeDoesNotExist":{}, "UsingInvalidAttributes":{}, "MissingRequiredAttributes":{}}
 
         for entity in entities:
             if not self.entity_type_exists(entity):
                 report["TypeDoesNotExist"].append(entity["guid"])
                 # If it's an invalid type, we have to skip over the rest of this
                 continue
-            if self.entity_has_invalid_attributes(entity):
-                report["UsingInvalidAttributes"].append(entity["guid"])
+            
+            using_invalid = self.entity_has_invalid_attributes(entity)
+            is_missing = self.entity_missing_attributes(entity)
 
-            if self.entity_missing_attributes(entity):
-                report["MissingRequiredAttributes"].append(entity["guid"])
+            if using_invalid:
+                report["UsingInvalidAttributes"][entity["guid"]] = using_invalid
+
+            if is_missing:
+                report["MissingRequiredAttributes"][entity["guid"]] = using_invalid
         
         output = {
             "counts":{k:len(v) for k,v in report.items()},
