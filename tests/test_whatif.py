@@ -29,7 +29,7 @@ def test_missing_req_attributes():
     results = [local_what_if.entity_missing_attributes(e) for e in entities]
 
     assert(results[0] == False)
-    assert(results[1] == True)
+    assert(results[1] == {'req_attrib'})
 
 def test_using_invalid_attributes():
     entities = [
@@ -50,7 +50,7 @@ def test_using_invalid_attributes():
     results = [local_what_if.entity_has_invalid_attributes(e) for e in entities]
 
     assert(results[0] == False)
-    assert(results[1] == True)
+    assert(results[1] == {"foo"})
 
 def test_would_it_overwrite():
     entities = [
@@ -74,7 +74,12 @@ def test_whatif_validation():
     expected = {
         "counts":{"TypeDoesNotExist":1, "UsingInvalidAttributes":1, "MissingRequiredAttributes":1},
         "total":3,
-        "values":{"TypeDoesNotExist":[-101], "UsingInvalidAttributes":[-100], "MissingRequiredAttributes":[-98]}
+        "values":{
+            "TypeDoesNotExist":[-101], 
+            "UsingInvalidAttributes":{-100:{"foo"}}, 
+            "MissingRequiredAttributes":{-98:{"req_attrib"}
+            }
+        }
     }
 
     entities = [

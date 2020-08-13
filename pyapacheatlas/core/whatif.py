@@ -35,7 +35,13 @@ class WhatIfValidator():
         self.classification_defs = type_defs.get("classificationDefs", [])
         self.entity_defs = type_defs.get("entityDefs", [])
         # Create a dict of all entities by name, then find the name of all attributes and whether they are optional
-        entity_fields = {e["name"]:[EntityField(attr.get("name"), attr.get("isOptional")) for attr in e.get("attributeDefs", {})]  for e in self.entity_defs}
+        entity_fields = {}
+        for e in self.entity_defs:
+            entity_fields[e["name"]] = []
+            for attr in e.get("attributeDefs", []):
+                ef = EntityField(attr.get("name"), attr.get("isOptional"))
+                entity_fields[e["name"]].append(ef)
+        
         # Adding Qualified Name to the set of valid fields as it doesn't show up in the entity type def
         self.entity_valid_fields = {k: set([field.name for field in v ]+["qualifiedName"]) for k,v in entity_fields.items()}
         # Adding Qualified Name to the set of required entity fields as it doesn't show up in the entity type def
@@ -131,7 +137,7 @@ class WhatIfValidator():
         :return: A dictionary containing counts values for the above values.
         :rtype: dict
         """
-        report = {"TypeDoesNotExist":{}, "UsingInvalidAttributes":{}, "MissingRequiredAttributes":{}}
+        report = {"TypeDoesNotExist":[], "UsingInvalidAttributes":{}, "MissingRequiredAttributes":{}}
 
         for entity in entities:
             if not self.entity_type_exists(entity):
@@ -146,7 +152,7 @@ class WhatIfValidator():
                 report["UsingInvalidAttributes"][entity["guid"]] = using_invalid
 
             if is_missing:
-                report["MissingRequiredAttributes"][entity["guid"]] = using_invalid
+                report["MissingRequiredAttributes"][entity["guid"]] = is_missing
         
         output = {
             "counts":{k:len(v) for k,v in report.items()},

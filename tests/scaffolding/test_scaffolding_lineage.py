@@ -21,6 +21,9 @@ def test_column_lineage_scaffolding():
     {
       "category": "ENTITY",
       "name": "demo_table",
+      "options": {
+        "schemaElementsAttribute": "columns"
+      },
       "attributeDefs": [],
       "relationshipAttributeDefs": [],
       "superTypes": [
