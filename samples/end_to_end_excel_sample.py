@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     # Generate the base atlas type defs for the demo of table and column lineage
     atlas_type_defs = column_lineage_scaffold("demo", use_column_mapping=True,
-    column_attributes={"name":"datatype","isOptional":True, "cardinality":"SINGLE"}
+    column_attributes=[{"name":"datatype","isOptional":True, "cardinality":"SINGLE"}]
     )
     # Alternatively, you can get all atlas types if you've  via...
     # atlas_type_defs = client.get_all_typedefs()
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     excel_results = from_excel(file_path, excel_config, atlas_type_defs, use_column_mapping=True)
 
     print("Results from excel transformation")
-    print(excel_results)
+    print(json.dumps(excel_results, indent=2))
 
     # Validate What IF
     whatif = WhatIfValidator(type_defs=atlas_type_defs)
@@ -112,6 +112,8 @@ if __name__ == "__main__":
         print("There were errors in the provided typedefs")
         print(json.dumps(report))
         exit(1)
+    else:
+        print("There were no errors in the excel file")
 
     
     # Upload excel file's content to Atlas and view the guid assignments to confirm successful upload
