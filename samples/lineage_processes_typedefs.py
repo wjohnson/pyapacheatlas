@@ -17,7 +17,7 @@ if __name__ == "__main__":
     column_lineage_process_entity = EntityTypeDef(
         name="{}_column_lineage".format(datasource),
         superTypes=["Process"],
-        attributeDefs=((column_lineage_process_attributes or []) +
+        attributeDefs=(
         [
             {
             "name": "dependencyType",
