@@ -30,4 +30,8 @@ if __name__ == "__main__":
 
     report = whatif.validate_entities(results)
 
-    print(report)
+    print("===REPORT===")
+    print(json.dumps(report,indent=2))
+
+    print("===EXCEL RESULTS===")
+    print(json.dumps(results,indent=2))

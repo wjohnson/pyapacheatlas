@@ -124,7 +124,9 @@ class AtlasClient():
         :type typedefs: dict
         :param bool force_update: 
             Whether changes should be forced (True) or whether changes
-            to existing types should be discarded (False).
+            to existing types should be discarded (False).  When forcing
+            an update, the type definition must exist already or you
+            will receive a 404 error.
         :return: The results of your upload attempt from the Atlas server.
         :rtype: dict
         """
@@ -150,11 +152,12 @@ class AtlasClient():
             upload_typedefs_results = requests.post(atlas_endpoint, json=payload, 
                 headers=self.authentication.get_authentication_headers()
             )
-        results = json.loads(upload_typedefs_results.text)
+        
         try:
             upload_typedefs_results.raise_for_status()
+            results = json.loads(upload_typedefs_results.text)
         except requests.RequestException as e:
-            print(results)
+            print(upload_typedefs_results)
             raise e
 
         return results
