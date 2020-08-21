@@ -62,7 +62,7 @@ if __name__ == "__main__":
         ["DestTable01", "dest_combo01", None, "SourceTable01", "source_c03", None, "source_c03 + source_c04"],
         ["DestTable01", "dest_combo01", None, "SourceTable02", "source_c04", None, "source_c03 + source_c04"],
         # Demonstrate a simple, straightforward table with classifications
-        ["DestTable02", "dest_c03", None, "SourceTable03", "source_c05", "PII", None],
+        ["DestTable02", "dest_c03", None, "SourceTable03", "source_c05", "MICROSOFT.PERSONAL.IPADDRESS", None],
         ["DestTable02", "dest_c04_express", None, None, None, None, "CURRENT_TIMESTAMP()"],
         # Demonstrate a table with no sources at all
         ["DestTable03", "dest_c100_express", None, None, None, None, "CURRENT_TIMESTAMP()"],
@@ -86,14 +86,23 @@ if __name__ == "__main__":
     wb.save(file_path)
 
     # Generate the base atlas type defs for the demo of table and column lineage
-    atlas_type_defs = column_lineage_scaffold("demo", use_column_mapping=True,
-    column_attributes=[{"name":"datatype","isOptional":True, "cardinality":"SINGLE"}]
+    atlas_type_defs = column_lineage_scaffold("demoZ123", use_column_mapping=True,
+    column_attributes=[{
+        "name":"datatype",
+        "typeName": "string",
+        "isOptional":True, 
+        "cardinality":"SINGLE",
+        "valuesMinCount": 1,
+        "valuesMaxCount": 1,
+        "isUnique": False,
+        "isIndexable": False,
+        "includeInNotification": False
+    }]
     )
     # Alternatively, you can get all atlas types if you've  via...
     # atlas_type_defs = client.get_all_typedefs()
-
     # Upload scaffolded type defs and view the results of upload
-    # _upload_typedef = client.upload_typedefs(atlas_type_defs, force_update=True)
+    _upload_typedef = client.upload_typedefs(atlas_type_defs, force_update=False)
     # print(json.dumps(_upload_typedef,indent=2))
 
     # Instantiate some required objects and generate the atlas entities!
@@ -117,7 +126,7 @@ if __name__ == "__main__":
 
     
     # Upload excel file's content to Atlas and view the guid assignments to confirm successful upload
-    # uploaded_entities = client.upload_entities(excel_results)
-    # print(json.dumps(uploaded_entities, indent=2))
+    uploaded_entities = client.upload_entities(excel_results)
+    print(json.dumps(uploaded_entities, indent=2))
 
     # Be sure to clean up the excel file stored in file_path
