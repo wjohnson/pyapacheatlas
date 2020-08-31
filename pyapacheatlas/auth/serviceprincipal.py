@@ -4,6 +4,7 @@ import requests
 
 from .base import AtlasAuthBase
 
+
 class ServicePrincipalAuthentication(AtlasAuthBase):
     """
     Authenticates to the Azure OAuth provider using a service principal.
@@ -21,13 +22,12 @@ class ServicePrincipalAuthentication(AtlasAuthBase):
 
         self.ouath_url = "https://login.microsoftonline.com/" + tenant_id + "/oauth2/token"
         self.data = {"resource": "https://management.core.windows.net/",
-            "client_id": client_id,
-            "grant_type": "client_credentials",
-            "client_secret": client_secret}
+                     "client_id": client_id,
+                     "grant_type": "client_credentials",
+                     "client_secret": client_secret}
         self.access_token = None
         self.expiration = datetime.now()
 
-        
     def _set_access_token(self):
         """
         Sets the access token for your session.
@@ -35,16 +35,15 @@ class ServicePrincipalAuthentication(AtlasAuthBase):
         authResponse = requests.post(self.ouath_url, data=self.data)
         if authResponse.status_code != 200:
             authResponse.raise_for_status()
-        
+
         authJson = json.loads(authResponse.text)
 
         self.access_token = authJson["access_token"]
         self.expiration = datetime.fromtimestamp(int(authJson["expires_in"]))
 
-
     def get_authentication_headers(self):
         """
-        Gets the current access token or refreshes the token if it 
+        Gets the current access token or refreshes the token if it
         has expired.
         :return: The authorization headers.
         :rtype: dict(str, str)

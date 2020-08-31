@@ -14,7 +14,9 @@ class GuidTracker():
         _ALLOWED_DIRECTIONS = ["increase", "decrease"]
 
         if direction not in _ALLOWED_DIRECTIONS:
-            raise NotImplementedError("The direction of {} is not supported.  Only {}".format(direction, _ALLOWED_DIRECTIONS))
+            raise NotImplementedError(
+                "The direction of {} is not supported.  Only {}".format(
+                    direction, _ALLOWED_DIRECTIONS))
 
         self._guid = starting
         self._direction = direction
@@ -38,13 +40,12 @@ class GuidTracker():
         """
         self._guid = self._decide_next_guid()
         return self._guid
-    
+
     def peek_next_guid(self):
         """
         Peek at the next guid without updating the guid.
-        
+
         :return: The next guid you would receive.
         :rtype: int
         """
         return self._decide_next_guid()
-

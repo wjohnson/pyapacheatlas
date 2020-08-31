@@ -1,23 +1,25 @@
-import json
 from enum import Enum
+
 
 class TypeCategory(Enum):
     """
     An implementation of an Atlas TypeCategory used in relationshipDefs.
     """
-    CLASSIFICATION="classification"
-    ENTITY="entity"
-    ENUM="enum"
-    RELATIONSHIP="relationship"
-    STRUCT="struct"
+    CLASSIFICATION = "classification"
+    ENTITY = "entity"
+    ENUM = "enum"
+    RELATIONSHIP = "relationship"
+    STRUCT = "struct"
+
 
 class Cardinality(Enum):
     """
     An implementation of an Atlas Cardinality used in relationshipDefs.
     """
-    SINGLE="SINGLE"
-    LIST="LIST"
-    SET="SET"
+    SINGLE = "SINGLE"
+    LIST = "LIST"
+    SET = "SET"
+
 
 class AtlasAttributeDef():
     """
@@ -25,39 +27,44 @@ class AtlasAttributeDef():
     """
 
     propertiesEnum = ["cardinality", "constraints", "defaultValue", "description",
-        "displayName", "includeInNotification", "indexType", "isIndexable",
-        "isOptional", "isUnique", "name", "options", "searchWeight", "typeName",
-        "valuesMaxCount", "valuesMinCount"
-    ]
+                      "displayName", "includeInNotification", "indexType", "isIndexable",
+                      "isOptional", "isUnique", "name", "options", "searchWeight", "typeName",
+                      "valuesMaxCount", "valuesMinCount"
+                      ]
 
     def __init__(self, name, **kwargs):
         """
         Default arguments are chosen assuming you want a single attribute
         """
         super().__init__()
-        self.cardinality = kwargs.get("cardinality", Cardinality.SINGLE.value)  #Cardinality
-        self.constraints = kwargs.get("constraints") #array of AtlasConstraintDef	
-        self.defaultValue = kwargs.get("defaultValue") #string	
-        self.description = kwargs.get("description") #string	
-        self.displayName = kwargs.get("displayName") #string	
-        self.includeInNotification = kwargs.get("includeInNotification", False) #boolean	
-        self.indexType = kwargs.get("indexType") #IndexType	
-        self.isIndexable = kwargs.get("isIndexable", False) #boolean	
-        self.isOptional = kwargs.get("isOptional", True) #boolean	
-        self.isUnique = kwargs.get("isUnique", False)  #boolean	
-        self.name = name #string	
-        self.options = kwargs.get("options") #map of string	
-        self.searchWeight = kwargs.get("searchWeight") 	#number	
+        self.cardinality = kwargs.get(
+            "cardinality", Cardinality.SINGLE.value)  # Cardinality
+        # array of AtlasConstraintDef
+        self.constraints = kwargs.get("constraints")
+        self.defaultValue = kwargs.get("defaultValue")  # string
+        self.description = kwargs.get("description")  # string
+        self.displayName = kwargs.get("displayName")  # string
+        self.includeInNotification = kwargs.get(
+            "includeInNotification", False)  # boolean
+        self.indexType = kwargs.get("indexType")  # IndexType
+        self.isIndexable = kwargs.get("isIndexable", False)  # boolean
+        self.isOptional = kwargs.get("isOptional", True)  # boolean
+        self.isUnique = kwargs.get("isUnique", False)  # boolean
+        self.name = name  # string
+        self.options = kwargs.get("options")  # map of string
+        self.searchWeight = kwargs.get("searchWeight")  # number
         # TODO: Figure out if there is a need for supporting another type that may add extra attributes?
-        self.typeName = kwargs.get("typeName", "string") #string	
-        self.valuesMaxCount = kwargs.get("valuesMaxCount", 1) #number	
-        self.valuesMinCount = kwargs.get("valuesMinCount", 0)	#number
+        self.typeName = kwargs.get("typeName", "string")  # string
+        self.valuesMaxCount = kwargs.get("valuesMaxCount", 1)  # number
+        self.valuesMinCount = kwargs.get("valuesMinCount", 0)  # number
 
-    def to_json(self, omit_nulls = True):
+    def to_json(self, omit_nulls=True):
         output = self.__dict__
         if omit_nulls:
-            output = {k:v for k,v in output.items() if v is not None and omit_nulls}
+            output = {k: v for k, v in output.items(
+            ) if v is not None and omit_nulls}
         return output
+
 
 class BaseTypeDef():
     """
@@ -82,8 +89,8 @@ class BaseTypeDef():
         self.updateTime = kwargs.get("updateTime")
         self.updatedBy = kwargs.get("updatedBy")
         self.version = kwargs.get("version")
-    
-    def to_json(self, omit_nulls = True):
+
+    def to_json(self, omit_nulls=True):
         """
         Converts the typedef object to a dict / json.
 
@@ -93,9 +100,10 @@ class BaseTypeDef():
         """
         output = self.__dict__
         if omit_nulls:
-            output = {k:v for k,v in output.items() if v is not None and omit_nulls}
+            output = {k: v for k, v in output.items(
+            ) if v is not None and omit_nulls}
         return output
-        
+
 
 class EntityTypeDef(BaseTypeDef):
     """
@@ -109,14 +117,15 @@ class EntityTypeDef(BaseTypeDef):
         kwargs["category"] = TypeCategory.ENTITY
         super().__init__(name, **kwargs)
         self.attributeDefs = kwargs.get("attributeDefs", []) or []
-        self.relationshipAttributeDefs = kwargs.get("relationshipAttributeDefs", []) or []
+        self.relationshipAttributeDefs = kwargs.get(
+            "relationshipAttributeDefs", []) or []
         self.superTypes = kwargs.get("superTypes", []) or []
         # Process supertype inherits inputs and outputs relationshipattribute
-            
+
     def __str__(self):
         return self.name
 
-    
+
 class RelationshipTypeDef(BaseTypeDef):
     """
     An implementation of AtlasRelationshipDef
@@ -132,11 +141,11 @@ class RelationshipTypeDef(BaseTypeDef):
         :rtype: dict
         """
         return {
-        "type": typeName,
-        "name": "columns",
-        "isContainer": True,
-        "cardinality": "SET",
-        "isLegacyAttribute": True
+            "type": typeName,
+            "name": "columns",
+            "isContainer": True,
+            "cardinality": "SET",
+            "isLegacyAttribute": True
         }
 
     @staticmethod
@@ -149,17 +158,17 @@ class RelationshipTypeDef(BaseTypeDef):
         :rtype: dict
         """
         return {
-        "type": typeName,
-        "name": "table",
-        "isContainer": False,
-        "cardinality": "SINGLE",
-        "isLegacyAttribute": True
+            "type": typeName,
+            "name": "table",
+            "isContainer": False,
+            "cardinality": "SINGLE",
+            "isLegacyAttribute": True
         }
 
     @staticmethod
     def _decide_endDef(endDef, default_func):
         """
-        
+
         :param Union(str, dict) endDef: Either a string to be passed into
             the default_func or a dict.  If dict, it will be assumed that
             it's a valid end def.
@@ -167,14 +176,15 @@ class RelationshipTypeDef(BaseTypeDef):
             is not a dict.  default_func must take one str parameter.
         """
         output = None
-        
+
         if isinstance(endDef, dict):
             output = endDef
         elif isinstance(endDef, str):
             output = default_func(endDef)
 
         else:
-            raise NotImplementedError("endDef1 of type {} is not supported. Use string or dict.".format(type(endDef)))
+            raise NotImplementedError(
+                "endDef1 of type {} is not supported. Use string or dict.".format(type(endDef)))
         return output
 
     def __init__(self, name, endDef1, endDef2, **kwargs):
@@ -188,6 +198,8 @@ class RelationshipTypeDef(BaseTypeDef):
         kwargs["category"] = TypeCategory.RELATIONSHIP
         super().__init__(name, **kwargs)
 
-        self.endDef1 = RelationshipTypeDef._decide_endDef(endDef1, RelationshipTypeDef.default_columns_endDef)
-        self.endDef2 = RelationshipTypeDef._decide_endDef(endDef2, RelationshipTypeDef.default_table_endDef)
+        self.endDef1 = RelationshipTypeDef._decide_endDef(
+            endDef1, RelationshipTypeDef.default_columns_endDef)
+        self.endDef2 = RelationshipTypeDef._decide_endDef(
+            endDef2, RelationshipTypeDef.default_table_endDef)
         self.relationshipCategory = kwargs.get("relationshipCategory")

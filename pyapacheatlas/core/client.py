@@ -1,8 +1,8 @@
 import json
 import requests
 
-from .typedef import TypeCategory
 from .entity import AtlasEntity
+
 
 class AtlasClient():
     """
@@ -10,22 +10,21 @@ class AtlasClient():
     server with your entities and type definitions.
     """
 
-    def __init__(self, endpoint_url, authentication = None):
+    def __init__(self, endpoint_url, authentication=None):
         """
-        :param str endpoint_url: 
+        :param str endpoint_url:
             The http url for communicating with your Apache Atlas server.
             It will most likely end in /api/atlas/v2.
         :param authentication:
             The method of authentication.
-        :type authentication: 
+        :type authentication:
             :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
         """
         super().__init__()
         self.authentication = authentication
         self.endpoint_url = endpoint_url
-    
 
-    def get_entity(self, guid, use_cache = False):
+    def get_entity(self, guid, use_cache=False):
         """
         Retrieve one or many guids from your Apache Atlas server.
         The use_cache parameter is currently not used but reserved for
@@ -42,23 +41,24 @@ class AtlasClient():
             guid_str = '&guid='.join(guid)
         else:
             guid_str = guid
-        
-        atlas_endpoint = self.endpoint_url + "/entity/bulk?guid={}".format(guid_str)
-        getEntity = requests.get(atlas_endpoint, headers=self.authentication.get_authentication_headers())
+
+        atlas_endpoint = self.endpoint_url + \
+            "/entity/bulk?guid={}".format(guid_str)
+        getEntity = requests.get(
+            atlas_endpoint, headers=self.authentication.get_authentication_headers())
         results = json.loads(getEntity.text)
         try:
             getEntity.raise_for_status()
         except requests.RequestException as e:
             print(results)
             raise e
-        
-        return results
 
+        return results
 
     def get_all_typedefs(self):
         """
         Retrieve all of the type defs available on the Apache Atlas server.
-        
+
         :return: A dict containing lists of type defs wrapped in their
          corresponding definition types {"entityDefs", "relationshipDefs"}.
         :rtype: dict(str, list(dict))
@@ -66,24 +66,24 @@ class AtlasClient():
         results = None
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
-        getTypeDefs = requests.get(atlas_endpoint, headers=self.authentication.get_authentication_headers())
+        getTypeDefs = requests.get(
+            atlas_endpoint, headers=self.authentication.get_authentication_headers())
         results = json.loads(getTypeDefs.text)
         try:
             getTypeDefs.raise_for_status()
         except requests.RequestException as e:
             print(results)
             raise e
-        
-        return results
-    
 
-    def get_typedef(self, type_category, guid = None, name = None, use_cache = False):
+        return results
+
+    def get_typedef(self, type_category, guid=None, name=None, use_cache=False):
         """
-        Retrieve a single type def based on its type category and 
+        Retrieve a single type def based on its type category and
         (guid or name).
 
         :param type_category: The type category your type def belongs to.
-        :type type_category: 
+        :type type_category:
             :class:`~pyapacheatlas.core.typedef.TypeCategory`
         :param str,optional guid: A valid guid. Optional if name is specified.
         :param str,optional name: A valid name. Optional if guid is specified.
@@ -91,25 +91,26 @@ class AtlasClient():
         :rtype: dict
         """
         results = None
-        atlas_endpoint = self.endpoint_url + "/types/{}def".format(type_category.value)
+        atlas_endpoint = self.endpoint_url + \
+            "/types/{}def".format(type_category.value)
 
         if guid:
             atlas_endpoint = atlas_endpoint + '/guid/{}'.format(guid)
         elif name:
             atlas_endpoint = atlas_endpoint + '/name/{}'.format(name)
 
-        getTypeDef = requests.get(atlas_endpoint, headers=self.authentication.get_authentication_headers())
+        getTypeDef = requests.get(
+            atlas_endpoint, headers=self.authentication.get_authentication_headers())
         results = json.loads(getTypeDef.text)
         try:
             getTypeDef.raise_for_status()
         except requests.RequestException as e:
             print(results)
             raise e
-        
-        return results
-    
 
-    def upload_typedefs(self, typedefs, force_update = False):
+        return results
+
+    def upload_typedefs(self, typedefs, force_update=False):
         """
         Provides a way to upload a single or multiple type definitions.
         If you provide one type def, it will format the required wrapper
@@ -122,7 +123,7 @@ class AtlasClient():
 
         :param typedefs: The set of type definitions you want to upload.
         :type typedefs: dict
-        :param bool force_update: 
+        :param bool force_update:
             Whether changes should be forced (True) or whether changes
             to existing types should be discarded (False).  When forcing
             an update, the type definition must exist already or you
@@ -136,23 +137,24 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
         payload = typedefs
-        required_keys = ["classificationDefs", "entityDefs", "enumDefs", "relationshipDefs", "structDefs"]
+        required_keys = ["classificationDefs", "entityDefs",
+                         "enumDefs", "relationshipDefs", "structDefs"]
         current_keys = list(typedefs.keys())
 
         # Does the typedefs conform to the required pattern?
         if not any([req in current_keys for req in required_keys]):
             # Assuming this is a single typedef
-            payload = {typedefs.category.lower()+"Defs":[typedefs]}
-        
+            payload = {typedefs.category.lower() + "Defs": [typedefs]}
+
         if force_update:
-            upload_typedefs_results = requests.put(atlas_endpoint, json=payload, 
-                headers=self.authentication.get_authentication_headers()
-            )
+            upload_typedefs_results = requests.put(atlas_endpoint, json=payload,
+                                                   headers=self.authentication.get_authentication_headers()
+                                                   )
         else:
-            upload_typedefs_results = requests.post(atlas_endpoint, json=payload, 
-                headers=self.authentication.get_authentication_headers()
-            )
-        
+            upload_typedefs_results = requests.post(atlas_endpoint, json=payload,
+                                                    headers=self.authentication.get_authentication_headers()
+                                                    )
+
         try:
             upload_typedefs_results.raise_for_status()
             results = json.loads(upload_typedefs_results.text)
@@ -179,7 +181,7 @@ class AtlasClient():
         if isinstance(batch, list):
             # It's a list, so we're assuming it's a list of entities
             # TODO Incorporate AtlasEntity
-            payload = {"entities":batch}
+            payload = {"entities": batch}
         elif isinstance(batch, dict):
             current_keys = list(batch.keys())
 
@@ -187,18 +189,17 @@ class AtlasClient():
             if not any([req in current_keys for req in required_keys]):
                 # Assuming this is a single entity
                 # TODO Incorporate AtlasEntity
-                payload = {"entities":[batch]}
+                payload = {"entities": [batch]}
         elif isinstance(batch, AtlasEntity):
-            payload = {"entities":[batch.to_json()]}
-        
+            payload = {"entities": [batch.to_json()]}
+
         return payload
-    
+
     @staticmethod
     def validate_entities(batch):
         raise NotImplementedError
 
-
-    def upload_entities(self,batch):
+    def upload_entities(self, batch):
         """
         Upload entities to your Apache Atlas server.
 
@@ -213,9 +214,9 @@ class AtlasClient():
 
         payload = AtlasClient._prepare_entity_upload(batch)
 
-        postBulkEntities = requests.post(atlas_endpoint, json=payload, 
-            headers=self.authentication.get_authentication_headers()
-        )
+        postBulkEntities = requests.post(atlas_endpoint, json=payload,
+                                         headers=self.authentication.get_authentication_headers()
+                                         )
         results = json.loads(postBulkEntities.text)
         try:
             postBulkEntities.raise_for_status()
@@ -224,6 +225,3 @@ class AtlasClient():
             raise e
 
         return results
-
-
-    

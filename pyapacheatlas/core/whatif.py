@@ -2,7 +2,8 @@ from collections import namedtuple
 import json
 import warnings
 
-EntityField = namedtuple("EntityField",["name","isOptional"])
+EntityField = namedtuple("EntityField", ["name", "isOptional"])
+
 
 class WhatIfValidator():
     """
@@ -14,23 +15,24 @@ class WhatIfValidator():
     REFERENCABLE_ATTRIBUTES = ["qualifiedName"]
 
     ATLAS_MODEL = {
-    "ASSET": ["name", "description", "owner"],
-    "REFERENCABLE": ["qualifiedName"],
-    "PROCESS": ["inputs", "outputs"] + ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
-    "DATASET": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
-    "INFRASTRUCTURE": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES
+        "ASSET": ["name", "description", "owner"],
+        "REFERENCABLE": ["qualifiedName"],
+        "PROCESS": ["inputs", "outputs"] + ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
+        "DATASET": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
+        "INFRASTRUCTURE": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES
     }
 
-    def __init__(self, type_defs = {}, existing_entities = []):
+    def __init__(self, type_defs={}, existing_entities=[]):
         """
-        :param dict type_defs: 
+        :param dict type_defs:
             The list of type definitions to be validated against.  Should be
             in the form of an AtlasTypeDef composite wrapper.
-        :param list(dict) existing_entities: 
+        :param list(dict) existing_entities:
             The existing entities that should be validated against.
         """
         if len(type_defs) == 0 and len(existing_entities) == 0:
-            warnings.warn("WARNING: Provided type_defs and existing_entities are empty.  All validations will pass.")
+            warnings.warn(
+                "WARNING: Provided type_defs and existing_entities are empty.  All validations will pass.")
 
         self.classification_defs = type_defs.get("classificationDefs", [])
         self.entity_defs = type_defs.get("entityDefs", [])
@@ -41,18 +43,20 @@ class WhatIfValidator():
             for attr in e.get("attributeDefs", []):
                 ef = EntityField(attr.get("name"), attr.get("isOptional"))
                 entity_fields[e["name"]].append(ef)
-        
+
         # Adding Qualified Name to the set of valid fields as it doesn't show up in the entity type def
-        self.entity_valid_fields = {k: set([field.name for field in v ]+["qualifiedName"]) for k,v in entity_fields.items()}
+        self.entity_valid_fields = {k: set(
+            [field.name for field in v] + ["qualifiedName"]) for k, v in entity_fields.items()}
         # Adding Qualified Name to the set of required entity fields as it doesn't show up in the entity type def
-        self.entity_required_fields = {k: set([field.name for field in v if not field.isOptional]+["qualifiedName"]) for k,v in entity_fields.items()}
-        
-        self.existing_entities = set([e.get("attributes", {}).get("qualifiedName") for e in existing_entities])
-        
+        self.entity_required_fields = {k: set([field.name for field in v if not field.isOptional] + [
+                                              "qualifiedName"]) for k, v in entity_fields.items()}
+
+        self.existing_entities = set(
+            [e.get("attributes", {}).get("qualifiedName") for e in existing_entities])
+
         self.enum_defs = type_defs.get("enumDefs", [])
         self.relationship_defs = type_defs.get("relationshipDefs", [])
-        self.struct_defs = type_defs.get("structDefs", [])        
-        
+        self.struct_defs = type_defs.get("structDefs", [])
 
     def entity_type_exists(self, entity):
         """
@@ -67,7 +71,7 @@ class WhatIfValidator():
             return True
         else:
             return False
-    
+
     def entity_missing_attributes(self, entity):
         """
         Check if the entity is missing required attributes.
@@ -77,9 +81,10 @@ class WhatIfValidator():
         :return: Whether the entity matches the list of known entity types.
         :rtype: bool
         """
-        
+
         current_attributes = set(entity.get("attributes", {}).keys())
-        required_attributes = set(self.entity_required_fields[entity["typeName"]])
+        required_attributes = set(
+            self.entity_required_fields[entity["typeName"]])
         missing_attributes = required_attributes.difference(current_attributes)
         if len(missing_attributes) > 0:
             return missing_attributes
@@ -99,34 +104,37 @@ class WhatIfValidator():
         # Append inherited attributes:
         _entity_type = entity["typeName"]
         # Assuming only one entity matches and only one super type
-        super_type = [e["superTypes"] for e in self.entity_defs if e["name"] == _entity_type][0][0].upper()
+        super_type = [e["superTypes"]
+                      for e in self.entity_defs if e["name"] == _entity_type][0][0].upper()
         if super_type in self.ATLAS_MODEL:
-            valid_attributes = valid_attributes.union(self.ATLAS_MODEL[super_type])
+            valid_attributes = valid_attributes.union(
+                self.ATLAS_MODEL[super_type])
         invalid_attributes = current_attributes.difference(valid_attributes)
 
         if len(invalid_attributes) > 0:
             return invalid_attributes
         else:
             return False
-        
+
     def entity_would_overwrite(self, entity):
         """
-        Based on the qualified name attributes, does the provided entity exist in the 
+        Based on the qualified name attributes, does the provided entity exist in the
         entities provided to the What If Validator?
 
         :param dict entity:
         :return: Whether the entity matches an existing entity.
         :rtype: bool
         """
-        current_qualifiedName = entity.get("attributes",{}).get("qualifiedName")
+        current_qualifiedName = entity.get(
+            "attributes", {}).get("qualifiedName")
         if current_qualifiedName is None:
-            raise KeyError("Entity has no qualifiedName:\n{}".format(json.dumps(entity,indent=1)))
-        
+            raise KeyError("Entity has no qualifiedName:\n{}".format(
+                json.dumps(entity, indent=1)))
+
         if current_qualifiedName in self.existing_entities:
             return True
-        else: 
+        else:
             return False
-    
 
     def validate_entities(self, entities):
         """
@@ -137,14 +145,15 @@ class WhatIfValidator():
         :return: A dictionary containing counts values for the above values.
         :rtype: dict
         """
-        report = {"TypeDoesNotExist":[], "UsingInvalidAttributes":{}, "MissingRequiredAttributes":{}}
+        report = {"TypeDoesNotExist": [], "UsingInvalidAttributes": {},
+                  "MissingRequiredAttributes": {}}
 
         for entity in entities:
             if not self.entity_type_exists(entity):
                 report["TypeDoesNotExist"].append(entity["guid"])
                 # If it's an invalid type, we have to skip over the rest of this
                 continue
-            
+
             using_invalid = self.entity_has_invalid_attributes(entity)
             is_missing = self.entity_missing_attributes(entity)
 
@@ -153,13 +162,11 @@ class WhatIfValidator():
 
             if is_missing:
                 report["MissingRequiredAttributes"][entity["guid"]] = is_missing
-        
+
         output = {
-            "counts":{k:len(v) for k,v in report.items()},
-            "values":report
+            "counts": {k: len(v) for k, v in report.items()},
+            "values": report
         }
-        output.update({"total":sum(output["counts"].values())})
+        output.update({"total": sum(output["counts"].values())})
 
         return output
-        
-    

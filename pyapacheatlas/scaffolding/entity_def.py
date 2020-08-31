@@ -1,6 +1,7 @@
 from ..core.typedef import *
 
-def to_entity_def(entity_name, attributes, super_types = ["DataSet"]):
+
+def to_entity_def(entity_name, attributes, super_types=["DataSet"]):
     """
     :param list(str) attributes: The attributes that should be converted into an
         entity def list of attributes.
@@ -16,8 +17,7 @@ def to_entity_def(entity_name, attributes, super_types = ["DataSet"]):
     entityDef = EntityTypeDef(
         name=entity_name,
         superTypes=super_types,
-        attributeDefs= attributeDefs
+        attributeDefs=attributeDefs
     )
 
     return entityDef.to_json()
-

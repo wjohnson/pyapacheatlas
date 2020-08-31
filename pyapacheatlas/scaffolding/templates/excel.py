@@ -24,7 +24,7 @@ def excel_template(filepath):
     """
     Generate an Excel template file and write it out to the given filepath.
 
-    :param str filepath: The file path to store an XLSX file with the 
+    :param str filepath: The file path to store an XLSX file with the
         template Tables and Columns sheets.
     """
     wb = Workbook()
