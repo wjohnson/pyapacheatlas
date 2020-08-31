@@ -1,1 +1,1 @@
-from .excel import from_excel
+from .excel import excel_typeDefs, from_excel

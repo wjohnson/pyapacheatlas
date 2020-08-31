@@ -11,6 +11,13 @@ TABLE_TEMPLATE = [
     "Source Table", "Source Type", "Source Classifications",
     "Process Name", "Process Type"
 ]
+ENTITYDEF_TEMPLATE = [
+    "Entity TypeName", "name", "description",
+    "isOptional", "isUnique", "defaultValue",
+    "typeName", "displayName", "valuesMinCount",
+    "valuesMaxCount", "cardinality", "includeInNotification",
+    "indexType", "isIndexable"
+]
 
 
 def excel_template(filepath):
@@ -24,6 +31,7 @@ def excel_template(filepath):
     columns = wb.active
     columns.title = "Columns"
     tables = wb.create_sheet("Tables")
+    entityDefs = wb.create_sheet("EntityDefs")
 
     for idx, val in enumerate(COLUMN_TEMPLATE):
         # TODO: Not the best way once we get past 26 columns in the template
@@ -40,6 +48,14 @@ def excel_template(filepath):
         active_cell = "{}1".format(active_column)
         tables[active_cell] = active_value
         tables.column_dimensions[active_column].width = len(active_value)
+
+    for idx, val in enumerate(ENTITYDEF_TEMPLATE):
+        # TODO: Not the best way once we get past 26 columns in the template
+        active_column = ascii_uppercase[idx]
+        active_value = ENTITYDEF_TEMPLATE[idx]
+        active_cell = "{}1".format(active_column)
+        entityDefs[active_cell] = active_value
+        entityDefs.column_dimensions[active_column].width = len(active_value)
 
     wb.save(filepath)
     wb.close()

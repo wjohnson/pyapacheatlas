@@ -70,9 +70,12 @@ def test_column_lineage_scaffolding():
           "name": "columnMapping",
           "typeName": "string",
           "cardinality": "SINGLE",
+          "includeInNotification": false,
           "isIndexable": false,
           "isOptional": true,
-          "isUnique": false
+          "isUnique": false,
+          "valuesMaxCount":1,
+          "valuesMinCount":0
         }
       ],
       "relationshipAttributeDefs": [],

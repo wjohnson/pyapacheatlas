@@ -37,8 +37,8 @@ if __name__ == "__main__":
     excel_template(file_path)
 
     wb = load_workbook(file_path)
-    table_sheet = wb.get_sheet_by_name("Tables")
-    columns_sheet = wb.get_sheet_by_name("Columns")
+    table_sheet = wb["Tables"]
+    columns_sheet = wb["Columns"]
 
     # TABLE Sheet SCHEMA
     # "Target Table", "Target Type", "Target Classifications",
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     wb.save(file_path)
 
     # Generate the base atlas type defs for the demo of table and column lineage
-    atlas_type_defs = column_lineage_scaffold("demoZ123", use_column_mapping=True,
+    atlas_type_defs = column_lineage_scaffold("demo", use_column_mapping=True,
     column_attributes=[{
         "name":"datatype",
         "typeName": "string",

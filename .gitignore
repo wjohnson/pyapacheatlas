@@ -144,3 +144,4 @@ cython_debug/
 hive-reference/
 tester.py
 *.xlsx
+*.bat

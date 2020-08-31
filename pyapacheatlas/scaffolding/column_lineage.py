@@ -78,28 +78,15 @@ def column_lineage_scaffold(datasource,
         superTypes=["Process"],
         attributeDefs=((column_lineage_process_attributes or []) +
         [
-            {
-            "name": "dependencyType",
-            "typeName": "string",
-            "isOptional": False,
-            "cardinality": "SINGLE",
-            "valuesMinCount": 1,
-            "valuesMaxCount": 1,
-            "isUnique": False,
-            "isIndexable": False,
-            "includeInNotification": False
-            },
-            {
-            "name": "expression",
-            "typeName": "string",
-            "isOptional": True,
-            "cardinality": "SINGLE",
-            "valuesMinCount": 0,
-            "valuesMaxCount": 1,
-            "isUnique": False,
-            "isIndexable": False,
-            "includeInNotification": False
-            }
+            AtlasAttributeDef(
+                name="dependencyType",
+                isOptional=False,
+                valuesMinCount = 1,
+                valuesMaxCount = 1
+            ).to_json(),
+            AtlasAttributeDef(
+                name="expression"
+            ).to_json()
         ]
         )
     )
@@ -112,14 +99,9 @@ def column_lineage_scaffold(datasource,
     )
     if use_column_mapping:
         table_process_entity.attributeDefs.append(
-            {
-            "name": "columnMapping",
-            "typeName": "string",
-            "cardinality": "SINGLE",
-            "isIndexable": False,
-            "isOptional": True,
-            "isUnique": False
-            }
+            AtlasAttributeDef(
+                name = "columnMapping"
+            ).to_json()
         )
 
     # Define {datasource}_process_column_lineage
