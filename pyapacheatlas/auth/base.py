@@ -1,6 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 
+
 class AtlasAuthBase(ABC):
     """
     The base class for authentication to your Apache Atlas server.
@@ -8,7 +9,7 @@ class AtlasAuthBase(ABC):
 
     def __init__(self):
         super().__init__()
-    
+
     @abstractmethod
     def get_authentication_headers(self, **kwargs):
         """
