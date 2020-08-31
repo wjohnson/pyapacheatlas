@@ -19,6 +19,46 @@ class Cardinality(Enum):
     LIST="LIST"
     SET="SET"
 
+class AtlasAttributeDef():
+    """
+    An implementation of AtlasAttributeDef.
+    """
+
+    propertiesEnum = ["cardinality", "constraints", "defaultValue", "description",
+        "displayName", "includeInNotification", "indexType", "isIndexable",
+        "isOptional", "isUnique", "name", "options", "searchWeight", "typeName",
+        "valuesMaxCount", "valuesMinCount"
+    ]
+
+    def __init__(self, name, **kwargs):
+        """
+        Default arguments are chosen assuming you want a single attribute
+        """
+        super().__init__()
+        self.cardinality = kwargs.get("cardinality", Cardinality.SINGLE.value)  #Cardinality
+        self.constraints = kwargs.get("constraints") #array of AtlasConstraintDef	
+        self.defaultValue = kwargs.get("defaultValue") #string	
+        self.description = kwargs.get("description") #string	
+        self.displayName = kwargs.get("displayName") #string	
+        self.includeInNotification = kwargs.get("includeInNotification", False) #boolean	
+        self.indexType = kwargs.get("indexType") #IndexType	
+        self.isIndexable = kwargs.get("isIndexable", False) #boolean	
+        self.isOptional = kwargs.get("isOptional", True) #boolean	
+        self.isUnique = kwargs.get("isUnique", False)  #boolean	
+        self.name = name #string	
+        self.options = kwargs.get("options") #map of string	
+        self.searchWeight = kwargs.get("searchWeight") 	#number	
+        # TODO: Figure out if there is a need for supporting another type that may add extra attributes?
+        self.typeName = kwargs.get("typeName", "string") #string	
+        self.valuesMaxCount = kwargs.get("valuesMaxCount", 1) #number	
+        self.valuesMinCount = kwargs.get("valuesMinCount", 0)	#number
+
+    def to_json(self, omit_nulls = True):
+        output = self.__dict__
+        if omit_nulls:
+            output = {k:v for k,v in output.items() if v is not None and omit_nulls}
+        return output
+
 class BaseTypeDef():
     """
     An implementation of AtlasBaseTypeDef
