@@ -26,7 +26,13 @@ def to_entityDefs(json_rows):
 
         _ = row.pop("Entity TypeName")
         # Update all seen attribute metadata
-        attribute_metadata_seen = attribute_metadata_seen.union(set(row.keys()))
+        columns_in_row = list(row.keys())
+        attribute_metadata_seen = attribute_metadata_seen.union(set(columns_in_row))
+        # Remove any null cells, otherwise the AttributeDefs constructor
+        # doesn't use the defaults.
+        for column in columns_in_row:
+            if row[column] is None:
+                _ = row.pop(column)
 
         json_entity_def = AtlasAttributeDef(**row).to_json()
         
