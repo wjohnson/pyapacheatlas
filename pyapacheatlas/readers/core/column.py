@@ -31,15 +31,15 @@ def to_column_entities(json_rows, excel_config, guid_tracker, atlas_entities, at
     """
     # Required attributes
     # NOTE: Classification is not actually required but it's being included to avoid being roped in as an attribute
-    source_table_name_header = excel_config.entity_source_prefix + " table"
-    source_column_name_header = excel_config.entity_source_prefix + " column"
-    source_column_classifications_header = excel_config.entity_source_prefix + " classifications"
+    source_table_name_header = excel_config.entity_source_prefix + " Table"
+    source_column_name_header = excel_config.entity_source_prefix + " Column"
+    source_column_classifications_header = excel_config.entity_source_prefix + " Classifications"
     required_source_headers = [source_column_name_header,
                                source_table_name_header, source_column_classifications_header]
 
-    target_table_name_header = excel_config.entity_target_prefix + " table"
-    target_column_name_header = excel_config.entity_target_prefix + " column"
-    target_column_classifications_header = excel_config.entity_target_prefix + " classifications"
+    target_table_name_header = excel_config.entity_target_prefix + " Table"
+    target_column_name_header = excel_config.entity_target_prefix + " Column"
+    target_column_classifications_header = excel_config.entity_target_prefix + " Classifications"
     required_target_headers = [target_column_name_header,
                                target_table_name_header, target_column_classifications_header]
 

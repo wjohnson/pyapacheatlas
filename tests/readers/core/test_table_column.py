@@ -15,17 +15,17 @@ EXCEL_CONFIG = ExcelConfiguration()
 def setupto_column_entities():
     json_tables = [
         {
-            "target table":"table1", "target type": "demo_table",
-            "source table":"table0", "source type": "demo_table",
-            "process name":"proc01", "process type": "demo_process"
+            "Target Table":"table1", "Target Type": "demo_table",
+            "Source Table":"table0", "Source Type": "demo_table",
+            "Process Name":"proc01", "Process Type": "demo_process"
         }
     ]
     
     json_columns = [
         {
-            "target column":"col1","target table": "table1",
-            "source column":"col0","source table": "table0",
-            "transformation":None
+            "Target Column":"col1","Target Table": "table1",
+            "Source Column":"col0","Source Table": "table0",
+            "Transformation":None
         }
     ]
 
@@ -50,9 +50,9 @@ def test_to_table_entities():
     guid_tracker = GuidTracker(-1000)
     json_rows = [
         {
-            "target table":"table1", "target type": "demo_type",
-            "source table":"table0", "source type": "demo_type2",
-            "process name":"proc01", "process type": "proc_type"
+            "Target Table":"table1", "Target Type": "demo_type",
+            "Source Table":"table0", "Source Type": "demo_type2",
+            "Process Name":"proc01", "Process Type": "proc_type"
         }
     ]
 
@@ -67,9 +67,9 @@ def test_to_table_entities_with_attributes():
     guid_tracker = GuidTracker(-1000)
     json_rows = [
         {
-            "target table":"table1", "target type": "demo_type","target data_type":"str",
-            "source table":"table0", "source type": "demo_type2","source foo":"bar",
-            "process name":"proc01", "process type": "proc_type", "process fizz":"buzz"
+            "Target Table":"table1", "Target Type": "demo_type","Target data_type":"str",
+            "Source Table":"table0", "Source Type": "demo_type2","Source foo":"bar",
+            "Process Name":"proc01", "Process Type": "proc_type", "Process fizz":"buzz"
         }
     ]
 
@@ -84,14 +84,14 @@ def test_to_table_entities_multiple_inputs():
     guid_tracker = GuidTracker(-1000)
     json_tables = [
         {
-            "target table":"table1", "target type": "demo_type",
-            "source table":"table0", "source type": "demo_type",
-            "process name":"proc01", "process type": "proc_type"
+            "Target Table":"table1", "Target Type": "demo_type",
+            "Source Table":"table0", "Source Type": "demo_type",
+            "Process Name":"proc01", "Process Type": "proc_type"
         },
         {
-            "target table":"table1", "target type": "demo_type",
-            "source table":"tableB", "source type": "demo_type",
-            "process name":"proc01", "process type": "proc_type"
+            "Target Table":"table1", "Target Type": "demo_type",
+            "Source Table":"tableB", "Source Type": "demo_type",
+            "Process Name":"proc01", "Process Type": "proc_type"
         }
     ]
 
@@ -150,7 +150,7 @@ def test_to_column_entities_with_attributes():
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
     # Update target to include an attribute
-    json_columns[0].update({"target test_attrib1":"value", "target test_attrib2":"value2", "source foo":"bar"})
+    json_columns[0].update({"Target test_attrib1":"value", "Target test_attrib2":"value2", "Source foo":"bar"})
     
     # Outputs -1003 as the last guid
     tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
@@ -173,7 +173,7 @@ def test_to_column_entities_with_classifications():
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
     # Update target to include a classification
-    json_columns[0].update({"target classifications":"CustomerInfo; PII", "source classifications":""})
+    json_columns[0].update({"Target Classifications":"CustomerInfo; PII", "Source Classifications":""})
     
     # Outputs -1003 as the last guid
     tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
@@ -198,7 +198,7 @@ def test_to_column_entities_with_attributes():
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
     # Update target to include an attribute
-    json_columns[0].update({"target test_attrib1":"value", "target test_attrib2":"value2", "source foo":"bar"})
+    json_columns[0].update({"Target test_attrib1":"value", "Target test_attrib2":"value2", "Source foo":"bar"})
     
     # Outputs -1003 as the last guid
     tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
@@ -227,9 +227,9 @@ def test_to_column_entities_with_columnMapping():
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
     json_columns.append({
-            "target column":"col99","target table": "table1",
-            "source column":"col90","source table": "table0",
-            "transformation":"col90 + 1"
+            "Target Column":"col99","Target Table": "table1",
+            "Source Column":"col90","Source Table": "table0",
+            "Transformation":"col90 + 1"
         }
     )
     
@@ -249,18 +249,18 @@ def test_to_column_entities_when_multi_tabled_inputs():
     # Adding in an extra table
     json_tables.append(
         {
-            "target table":"table1", "target type": "demo_table",
-            "source table":"tableB", "source type": "demo_table",
-            "process name":"proc01", "process type": "demo_process"
+            "Target Table":"table1", "Target Type": "demo_table",
+            "Source Table":"tableB", "Source Type": "demo_table",
+            "Process Name":"proc01", "Process Type": "demo_process"
         }
     )
-    json_columns[0].update({"transformation":"colB + col0"})
+    json_columns[0].update({"Transformation":"colB + col0"})
     # Adding in an extra column
     json_columns.append(
         {
-            "target column":"col1","target table": "table1",
-            "source column":"colB","source table": "tableB",
-            "transformation":"colB + col0"
+            "Target Column":"col1","Target Table": "table1",
+            "Source Column":"colB","Source Table": "tableB",
+            "Transformation":"colB + col0"
         }
     )
     expected_col_map_obj = [
