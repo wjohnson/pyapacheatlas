@@ -49,13 +49,13 @@ class ExcelConfiguration():
         self.table_sheet = table_sheet
         self.entityDef_sheet = entityDef_sheet
         self.entity_source_prefix = kwargs.get(
-            "entity_source_prefix", "source").lower()
+            "entity_source_prefix", "Source")
         self.entity_target_prefix = kwargs.get(
-            "entity_target_prefix", "target").lower()
+            "entity_target_prefix", "Target")
         self.entity_process_prefix = kwargs.get(
-            "entity_process_prefix", "process").lower()
+            "entity_process_prefix", "Process")
         self.column_transformation_name = kwargs.get(
-            "column_transformation_name", "transformation").lower()
+            "column_transformation_name", "Transformation")
 
 
 def from_excel(filepath, excel_config, atlas_typedefs, use_column_mapping=False):
@@ -174,8 +174,7 @@ def excel_typeDefs(filepath, excel_config):
     # Getting entityDefinitions if the user provided a name of the sheet
     if excel_config.entityDef_sheet:
         entityDef_sheet = wb[excel_config.entityDef_sheet]
-        json_entitydefs = _parse_spreadsheet(
-            entityDef_sheet, lowercase_headers=False)
+        json_entitydefs = _parse_spreadsheet(entityDef_sheet)
         entityDefs_generated = to_entityDefs(json_entitydefs)
         output.update(entityDefs_generated)
 
@@ -183,17 +182,12 @@ def excel_typeDefs(filepath, excel_config):
     return output
 
 
-def _parse_spreadsheet(worksheet, lowercase_headers=True):
+def _parse_spreadsheet(worksheet):
     """
-    Standardizes the excel worksheet into a json format and lowercases
-    the column headers.
+    Standardizes the excel worksheet into a json format.
 
     :param openpyxl.workbook.Workbook worksheet:
         A worksheet class from openpyxl.
-    :param boolean lowercase_headers:
-        Whether headers in the excel spreadsheet should be lowercased.  This
-        is important for typeDefs pulling the exact attribute metadata from
-        the header.
     :return: The standardized version of the excel spreadsheet in json form.
     :rtype: list(dict(str,str))
     """
@@ -207,15 +201,9 @@ def _parse_spreadsheet(worksheet, lowercase_headers=True):
         )
     )
 
-    def _header_casing(s, lowercase=lowercase_headers):
-        if lowercase:
-            return s.lower()
-        else:
-            return s
-
     output = []
     for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
         output.append(
-            {_header_casing(k): row[idx].value for idx, k in column_headers})
+            {k: row[idx].value for idx, k in column_headers})
 
     return output
