@@ -1,4 +1,5 @@
 import json
+from json.decoder import JSONDecodeError
 import requests
 
 from .entity import AtlasEntity
@@ -46,12 +47,14 @@ class AtlasClient():
             "/entity/bulk?guid={}".format(guid_str)
         getEntity = requests.get(
             atlas_endpoint, headers=self.authentication.get_authentication_headers())
-        results = json.loads(getEntity.text)
+
         try:
             getEntity.raise_for_status()
+            results = json.loads(getEntity.text)
         except requests.RequestException as e:
-            print(results)
-            raise e
+            raise e(getEntity.text)
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(getEntity.text))
 
         return results
 
@@ -68,12 +71,14 @@ class AtlasClient():
 
         getTypeDefs = requests.get(
             atlas_endpoint, headers=self.authentication.get_authentication_headers())
-        results = json.loads(getTypeDefs.text)
+
         try:
             getTypeDefs.raise_for_status()
+            results = json.loads(getTypeDefs.text)
         except requests.RequestException as e:
-            print(results)
-            raise e
+            raise e(getTypeDefs.text)
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(getTypeDefs.text))
 
         return results
 
@@ -101,12 +106,14 @@ class AtlasClient():
 
         getTypeDef = requests.get(
             atlas_endpoint, headers=self.authentication.get_authentication_headers())
-        results = json.loads(getTypeDef.text)
+
         try:
             getTypeDef.raise_for_status()
+            results = json.loads(getTypeDef.text)
         except requests.RequestException as e:
-            print(results)
-            raise e
+            raise e(getTypeDef.text)
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(getTypeDef.text))
 
         return results
 
@@ -159,8 +166,10 @@ class AtlasClient():
             upload_typedefs_results.raise_for_status()
             results = json.loads(upload_typedefs_results.text)
         except requests.RequestException as e:
-            print(upload_typedefs_results)
-            raise e
+            raise e(upload_typedefs_results)
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(
+                upload_typedefs_results.text))
 
         return results
 
@@ -214,14 +223,19 @@ class AtlasClient():
 
         payload = AtlasClient._prepare_entity_upload(batch)
 
-        postBulkEntities = requests.post(atlas_endpoint, json=payload,
-                                         headers=self.authentication.get_authentication_headers()
-                                         )
-        results = json.loads(postBulkEntities.text)
+        postBulkEntities = requests.post(
+            atlas_endpoint,
+            json=payload,
+            headers=self.authentication.get_authentication_headers()
+        )
+
         try:
             postBulkEntities.raise_for_status()
+            results = json.loads(postBulkEntities.text)
         except requests.RequestException as e:
             print(results)
             raise e
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(postBulkEntities.text))
 
         return results
