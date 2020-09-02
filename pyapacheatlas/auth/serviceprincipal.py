@@ -21,10 +21,13 @@ class ServicePrincipalAuthentication(AtlasAuthBase):
         super().__init__()
 
         self.ouath_url = "https://login.microsoftonline.com/" + tenant_id + "/oauth2/token"
-        self.data = {"resource": "https://management.core.windows.net/",
-                     "client_id": client_id,
-                     "grant_type": "client_credentials",
-                     "client_secret": client_secret}
+        self.data = {
+            # This is the resource id for the data catalog
+            "resource": "73c2949e-da2d-457a-9607-fcc665198967",
+            "client_id": client_id,
+            "grant_type": "client_credentials",
+            "client_secret": client_secret
+        }
         self.access_token = None
         self.expiration = datetime.now()
 
