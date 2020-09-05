@@ -4,6 +4,7 @@ from ..core.util import GuidTracker
 from .core import to_column_entities
 from .core import to_table_entities
 from .core import to_entityDefs
+from .core import to_bulkEntities
 
 
 class ExcelConfiguration():
@@ -21,8 +22,10 @@ class ExcelConfiguration():
     which source becomes the target (e.g. a Stored Procedure or Query).
     """
 
-    def __init__(self, column_sheet="Columns", table_sheet="Tables",
-                 entityDef_sheet="EntityDefs", **kwargs):
+    def __init__(self, column_sheet="ColumnsLineage",
+                 table_sheet="TablesLineage",
+                 entityDef_sheet="EntityDefs", bulkEntity_sheet="BulkEntities",
+                 **kwargs):
         """
         The following parameters apply to the
         :param str column_sheet: Defaults to "Columns"
@@ -48,6 +51,7 @@ class ExcelConfiguration():
         self.column_sheet = column_sheet
         self.table_sheet = table_sheet
         self.entityDef_sheet = entityDef_sheet
+        self.bulkEntity_sheet = bulkEntity_sheet
         self.entity_source_prefix = kwargs.get(
             "entity_source_prefix", "Source")
         self.entity_target_prefix = kwargs.get(
@@ -179,6 +183,35 @@ def excel_typeDefs(filepath, excel_config):
         output.update(entityDefs_generated)
 
     # TODO: Add in classificationDefs and relationshipDefs
+    return output
+
+
+def excel_bulkEntities(filepath, excel_config):
+    """
+    Generate a set of entities from an excel template file.
+
+    :param str filepath: The xlsx file that contains your table and columns.
+    :param excel_config:
+        An excel configuration object that is customized to
+        your intended spreadsheet.
+        :type: :class:`~pyapacheatlas.readers.excel.ExcelConfiguration`
+    :return: An AtlasTypeDef with entityDefs for the provided rows.
+    :rtype: dict(str, list(dict))
+    """
+    wb = load_workbook(filepath)
+    # A user may omit the entityDef_sheet by providing the config with None
+    if excel_config.bulkEntity_sheet and excel_config.bulkEntity_sheet not in wb.sheetnames:
+        raise KeyError("The sheet {} was not found".format(
+            excel_config.entityDef_sheet))
+
+    output = dict()
+
+    if excel_config.bulkEntity_sheet:
+        bulkEntity_sheet = wb[excel_config.bulkEntity_sheet]
+        json_bulkEntities = _parse_spreadsheet(bulkEntity_sheet)
+        bulkEntities_generated = to_bulkEntities(json_bulkEntities)
+        output.update(bulkEntities_generated)
+
     return output
 
 
