@@ -19,6 +19,29 @@ ENTITYDEF_TEMPLATE = [
     "indexType", "isIndexable"
 ]
 
+BULKENTITY_TEMPLATE = [
+    "typeName", "name", "qualifiedName", "classifications"
+]
+
+def _update_sheet_headers(headers, worksheet):
+    """
+    For the given worksheet, make the first row equal to the list passed
+    in as the headers.
+
+    :param list headers: A list of column headers to use for this sheet.
+    :param worksheet:
+        The worksheet you are updating.
+    :type worksheet:
+        :class:`~openpyxl.worksheet.worksheet.Worksheet`
+    """
+    for idx, val in enumerate(headers):
+        # TODO: Not the best way once we get past 26 columns in the template
+        active_column = ascii_uppercase[idx]
+        active_value = headers[idx]
+        active_cell = "{}1".format(active_column)
+        worksheet[active_cell] = active_value
+        worksheet.column_dimensions[active_column].width = len(active_value)
+
 
 def excel_template(filepath):
     """
@@ -28,34 +51,16 @@ def excel_template(filepath):
         template Tables and Columns sheets.
     """
     wb = Workbook()
-    columns = wb.active
-    columns.title = "Columns"
-    tables = wb.create_sheet("Tables")
-    entityDefs = wb.create_sheet("EntityDefs")
+    columnsSheet = wb.active
+    columnsSheet.title = "ColumnsLineage"
+    tablesSheet = wb.create_sheet("TablesLineage")
+    entityDefsSheet = wb.create_sheet("EntityDefs")
+    bulkEntitiesSheet = wb.create_sheet("BulkEntities")
 
-    for idx, val in enumerate(COLUMN_TEMPLATE):
-        # TODO: Not the best way once we get past 26 columns in the template
-        active_column = ascii_uppercase[idx]
-        active_value = COLUMN_TEMPLATE[idx]
-        active_cell = "{}1".format(active_column)
-        columns[active_cell] = active_value
-        columns.column_dimensions[active_column].width = len(active_value)
-
-    for idx, val in enumerate(TABLE_TEMPLATE):
-        # TODO: Not the best way once we get past 26 columns in the template
-        active_column = ascii_uppercase[idx]
-        active_value = TABLE_TEMPLATE[idx]
-        active_cell = "{}1".format(active_column)
-        tables[active_cell] = active_value
-        tables.column_dimensions[active_column].width = len(active_value)
-
-    for idx, val in enumerate(ENTITYDEF_TEMPLATE):
-        # TODO: Not the best way once we get past 26 columns in the template
-        active_column = ascii_uppercase[idx]
-        active_value = ENTITYDEF_TEMPLATE[idx]
-        active_cell = "{}1".format(active_column)
-        entityDefs[active_cell] = active_value
-        entityDefs.column_dimensions[active_column].width = len(active_value)
+    _update_sheet_headers(COLUMN_TEMPLATE, columnsSheet)
+    _update_sheet_headers(TABLE_TEMPLATE, tablesSheet)
+    _update_sheet_headers(ENTITYDEF_TEMPLATE, entityDefsSheet)
+    _update_sheet_headers(BULKENTITY_TEMPLATE, bulkEntitiesSheet)
 
     wb.save(filepath)
     wb.close()
