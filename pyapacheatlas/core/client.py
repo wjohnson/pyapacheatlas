@@ -46,7 +46,9 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
         getEntity = requests.get(
-            atlas_endpoint, headers=self.authentication.get_authentication_headers())
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
 
         try:
             getEntity.raise_for_status()
@@ -70,7 +72,9 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
         getTypeDefs = requests.get(
-            atlas_endpoint, headers=self.authentication.get_authentication_headers())
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
 
         try:
             getTypeDefs.raise_for_status()
@@ -105,7 +109,9 @@ class AtlasClient():
             atlas_endpoint = atlas_endpoint + '/name/{}'.format(name)
 
         getTypeDef = requests.get(
-            atlas_endpoint, headers=self.authentication.get_authentication_headers())
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
 
         try:
             getTypeDef.raise_for_status()
@@ -138,8 +144,10 @@ class AtlasClient():
         :return: The results of your upload attempt from the Atlas server.
         :rtype: dict
         """
-        # Should this take a list of type defs and figure out the formatting by itself?
-        # Should you pass in a AtlasTypesDef object and be forced to build it yourself?
+        # Should this take a list of type defs and figure out the formatting
+        #  by itself?
+        # Should you pass in a AtlasTypesDef object and be forced to build
+        # it yourself?
         results = None
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
@@ -154,19 +162,21 @@ class AtlasClient():
             payload = {typedefs.category.lower() + "Defs": [typedefs]}
 
         if force_update:
-            upload_typedefs_results = requests.put(atlas_endpoint, json=payload,
-                                                   headers=self.authentication.get_authentication_headers()
-                                                   )
+            upload_typedefs_results = requests.put(
+                atlas_endpoint, json=payload,
+                headers=self.authentication.get_authentication_headers()
+            )
         else:
-            upload_typedefs_results = requests.post(atlas_endpoint, json=payload,
-                                                    headers=self.authentication.get_authentication_headers()
-                                                    )
+            upload_typedefs_results = requests.post(
+                atlas_endpoint, json=payload,
+                headers=self.authentication.get_authentication_headers()
+            )
 
         try:
             upload_typedefs_results.raise_for_status()
             results = json.loads(upload_typedefs_results.text)
         except requests.RequestException as e:
-            raise e(upload_typedefs_results)
+            raise e(str(upload_typedefs_results.content, encoding='utf-8'))
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(
                 upload_typedefs_results.text))
@@ -233,9 +243,46 @@ class AtlasClient():
             postBulkEntities.raise_for_status()
             results = json.loads(postBulkEntities.text)
         except requests.RequestException as e:
-            print(results)
+            print(str(postBulkEntities.content, encoding='utf-8'))
             raise e
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(postBulkEntities.text))
+
+        return results
+
+    def search_entities(self, query):
+        """
+        Search entities
+
+        :param str query: The query to be executed.
+        :return: The results of your search.
+        :rtype: dict
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + "/search/attribute"
+
+        print(atlas_endpoint)
+        search_params = {
+            'attrName': 'name',
+            'attrValuePrefix': '*',
+            'limit': '10',
+            'offset': '0',
+            'typeName': 'DataSet'
+        }
+
+        postSearchResults = requests.get(
+            atlas_endpoint,
+            params=search_params,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        try:
+            postSearchResults.raise_for_status()
+            results = json.loads(postSearchResults.text)
+        except requests.RequestException as e:
+            print(str(postSearchResults.content, encoding='utf-8'))
+            raise e
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(postSearchResults.text))
 
         return results
