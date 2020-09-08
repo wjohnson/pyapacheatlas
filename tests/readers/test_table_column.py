@@ -1,16 +1,12 @@
 import json
 
 from pyapacheatlas.core import AtlasProcess
-from pyapacheatlas.core.util import GuidTracker
 from pyapacheatlas.readers.util import *
-from pyapacheatlas.readers.core import (
-    to_column_entities, 
-    to_table_entities
-)
-from pyapacheatlas.readers.excel import ExcelConfiguration
+
+from pyapacheatlas.readers.reader import Reader, ReaderConfiguration
 
 # Set up some cross-test objects and functions
-EXCEL_CONFIG = ExcelConfiguration()
+READER_CONFIG = ReaderConfiguration()
 
 def setupto_column_entities():
     json_tables = [
@@ -47,7 +43,8 @@ def setupto_column_entities():
 
 # Begin actual tests
 def test_to_table_entities():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
+    reader = Reader(READER_CONFIG)
     json_rows = [
         {
             "Target Table":"table1", "Target Type": "demo_type",
@@ -56,7 +53,7 @@ def test_to_table_entities():
         }
     ]
 
-    results = to_table_entities(json_rows, EXCEL_CONFIG, guid_tracker)
+    results = reader.parse_table_lineage(json_rows)
 
     assert(results[0].to_json(minimum = True) == {"typeName":"demo_type", "guid":-1001, "qualifiedName": "table1"})
     assert(results[1].to_json(minimum = True) == {"typeName":"demo_type2", "guid":-1002, "qualifiedName": "table0"})
@@ -64,7 +61,8 @@ def test_to_table_entities():
 
 
 def test_to_table_entities_with_attributes():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
+    reader = Reader(READER_CONFIG)
     json_rows = [
         {
             "Target Table":"table1", "Target Type": "demo_type","Target data_type":"str",
@@ -73,7 +71,7 @@ def test_to_table_entities_with_attributes():
         }
     ]
 
-    results = to_table_entities(json_rows, EXCEL_CONFIG, guid_tracker)
+    results = reader.parse_table_lineage(json_rows)
 
     assert(results[0].attributes["data_type"] == "str")
     assert(results[1].attributes["foo"] == "bar")
@@ -81,7 +79,7 @@ def test_to_table_entities_with_attributes():
 
 
 def test_to_table_entities_multiple_inputs():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
     json_tables = [
         {
             "Target Table":"table1", "Target Type": "demo_type",
@@ -95,7 +93,7 @@ def test_to_table_entities_multiple_inputs():
         }
     ]
 
-    results = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+    results = reader.parse_table_lineage(json_rows=json_tables)
 
     assert(len(results) == 4)
     assert(results[3].to_json(minimum = True) == {"typeName":"proc_type", "guid":-1003, "qualifiedName": "proc01"})
@@ -111,14 +109,14 @@ def test_to_table_entities_multiple_inputs():
 
 
 def test_to_column_entities():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+    tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = reader.parse_column_lineage(json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -145,7 +143,7 @@ def test_to_column_entities():
     
     
 def test_to_column_entities_with_attributes():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
@@ -153,9 +151,9 @@ def test_to_column_entities_with_attributes():
     json_columns[0].update({"Target test_attrib1":"value", "Target test_attrib2":"value2", "Source foo":"bar"})
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+    tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = reader.parse_column_lineage(json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -168,7 +166,7 @@ def test_to_column_entities_with_attributes():
     assert(source_col_entity.attributes["foo"] == "bar")
 
 def test_to_column_entities_with_classifications():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
@@ -176,9 +174,9 @@ def test_to_column_entities_with_classifications():
     json_columns[0].update({"Target Classifications":"CustomerInfo; PII", "Source Classifications":""})
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+    tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = reader.parse_column_lineage(json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -193,7 +191,7 @@ def test_to_column_entities_with_classifications():
 
 
 def test_to_column_entities_with_attributes():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
 
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
 
@@ -201,9 +199,9 @@ def test_to_column_entities_with_attributes():
     json_columns[0].update({"Target test_attrib1":"value", "Target test_attrib2":"value2", "Source foo":"bar"})
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+    tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs)
+    results = reader.parse_column_lineage(json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
     # One process entity
@@ -216,7 +214,7 @@ def test_to_column_entities_with_attributes():
     assert(source_col_entity.attributes["foo"] == "bar")
 
 def test_to_column_entities_with_columnMapping():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
     expected_obj = [
         {"ColumnMapping":[{"Source":"col0","Sink":"col1"}, {"Source":"col90","Sink":"col99"}],
         "DatasetMapping":{"Source":"table0", "Sink":"table1"}
@@ -234,9 +232,9 @@ def test_to_column_entities_with_columnMapping():
     )
     
     # Outputs -1003 as the last guid
-    tables_and_processes = to_table_entities(json_tables, EXCEL_CONFIG, guid_tracker)
+    tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, tables_and_processes, atlas_typedefs, use_column_mapping=True)
+    results = reader.parse_column_lineage(json_columns, tables_and_processes, atlas_typedefs, use_column_mapping=True)
 
     # Demonstrating column lineage
     assert("columnMapping" in tables_and_processes[2].attributes)
@@ -244,7 +242,7 @@ def test_to_column_entities_with_columnMapping():
 
 
 def test_to_column_entities_when_multi_tabled_inputs():
-    guid_tracker = GuidTracker(-1000)
+    reader = Reader(READER_CONFIG)
     json_tables, json_columns, atlas_typedefs = setupto_column_entities()
     # Adding in an extra table
     json_tables.append(
@@ -272,9 +270,8 @@ def test_to_column_entities_when_multi_tabled_inputs():
         }
     ]
 
-    table_entities = to_table_entities(json_tables,EXCEL_CONFIG, guid_tracker)
-    column_entities = to_column_entities(json_columns, EXCEL_CONFIG, guid_tracker, 
-    table_entities, atlas_typedefs, use_column_mapping=True)
+    table_entities = reader.parse_table_lineage(json_tables)
+    column_entities = reader.parse_column_lineage(json_columns, table_entities, atlas_typedefs, use_column_mapping=True)
 
     # Three columns and one process entity
     assert(len(column_entities) == 4)
