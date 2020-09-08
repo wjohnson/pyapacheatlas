@@ -121,7 +121,7 @@ class ExcelReader(Reader):
         """
         wb = load_workbook(filepath)
         # A user may omit the entityDef_sheet by providing the config with None
-        if excel_config.entityDef_sheet and excel_config.entityDef_sheet not in wb.sheetnames:
+        if self.config.entityDef_sheet and self.config.entityDef_sheet not in wb.sheetnames:
             raise KeyError("The sheet {} was not found".format(
                 excel_config.entityDef_sheet))
 
