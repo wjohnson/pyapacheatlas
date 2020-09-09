@@ -1,3 +1,21 @@
+
+def string_to_classification(string, sep=";"):
+    """
+    Converts a string of text into classifications.
+
+    :param str string: The string that contains one or more classifications.
+    :param str sep: The separator to split the `string` parameter on.
+    :return: A list of AtlasClassification objects as dicts.
+    :rtype: list(dict)
+    """
+    if string is None:
+        return []
+    # TODO: How do we bring in attributes if they're required?
+    results = [{"typeName": s.strip(), "attributes": {}}
+                for s in string.split(sep) if s.strip() != ""]
+    return results
+
+
 def columns_matching_pattern(row, starts_with, does_not_match=[]):
     """
     Takes in a json "row" and filters the keys to match the `starts_with`
@@ -18,7 +36,7 @@ def columns_matching_pattern(row, starts_with, does_not_match=[]):
         if bad_key in candidates:
             candidates.pop(bad_key)
     candidates = {k[len(starts_with):].strip(): v for k,
-                  v in candidates.items()}
+                    v in candidates.items()}
 
     return candidates
 
@@ -120,13 +138,13 @@ def first_process_containing_io(input_name, output_name, atlas_entities):
                 ((input_name is None) and (num_inputs == 0)) or
                 ((input_name is not None) and (num_inputs > 0) and
                     (any([e["qualifiedName"] == input_name for e in entity.get_inputs()]))
-                 )
+                )
             )
             output_matches = (
                 ((output_name is None) and (num_outputs == 0)) or
                 ((output_name is not None) and (num_outputs > 0) and
                     (any([e["qualifiedName"] == output_name for e in entity.get_outputs()]))
-                 )
+                )
             )
         if input_matches and output_matches:
             output_entity = entity
@@ -174,20 +192,3 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
     column_lineage_type = lineage_relationship["endDef1"]["type"]
 
     return column_lineage_type
-
-
-def string_to_classification(string, sep=";"):
-    """
-    Converts a string of text into classifications.
-
-    :param str string: The string that contains one or more classifications.
-    :param str sep: The separator to split the `string` parameter on.
-    :return: A list of AtlasClassification objects as dicts.
-    :rtype: list(dict)
-    """
-    if string is None:
-        return []
-    # TODO: How do we bring in attributes if they're required?
-    results = [{"typeName": s.strip(), "attributes": {}}
-               for s in string.split(sep) if s.strip() != ""]
-    return results

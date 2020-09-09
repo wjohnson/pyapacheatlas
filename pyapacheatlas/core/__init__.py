@@ -1,8 +1,8 @@
 from .client import AtlasClient
-from .entity import AtlasEntity
-from .entity import AtlasProcess
+from .entity import AtlasEntity, AtlasProcess
 from .typedef import (
+    AtlasAttributeDef,
     EntityTypeDef,
+    RelationshipTypeDef,
     TypeCategory
 )
-from .util import GuidTracker

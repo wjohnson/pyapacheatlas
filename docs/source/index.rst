@@ -16,7 +16,6 @@ Welcome to PyApacheAtlas's documentation!
    pyapacheatlas.core.rst
    pyapacheatlas.readers.rst
    pyapacheatlas.scaffolding.rst
-   pyapacheatlas.scaffolding.templates.rst
 
 Indices and tables
 ==================

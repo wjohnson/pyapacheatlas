@@ -22,14 +22,18 @@ The package currently supports:
 
 ### Build and Install from Source
 
+Create a wheel distribution file and install it in your environment.
+
 ```
+python -m pip install wheel
 python setup.py bdist_wheel
-python -m pip install ./dist/pyapacheatlas-0.0.2-py3-none-any.whl
+python -m pip install ./dist/pyapacheatlas-0.0b10-py3-none-any.whl
 ```
 
 ### Create a Client Connection
 
-Provides connectivity to your Atlas / Data Catalog service. Supports getting and uploading entities and type defs.
+Provides connectivity to your Atlas / Data Catalog service. 
+Supports getting and uploading entities and type defs.
 
 ```
 from pyapacheatlas.auth import ServicePrincipalAuthentication
@@ -40,6 +44,9 @@ auth = ServicePrincipalAuthentication(
     client_id = "", 
     client_secret = ""
 )
+
+# Azure Data Catalog Endpoints are:
+# https://{your_catalog_name}.catalog.babylon.azure.com/api/atlas/v2
 
 client = AtlasClient(
     endpoint_url = "https://MYENDPOINT/api/atlas/v2",
@@ -77,15 +84,13 @@ upload_results = client.upload_entities([ae.to_json()])
 Read from a standardized excel template to create table, column, table process, and column lineage entities.  Follows / Requires the hive bridge style of column lineages.
 
 ```
-from pyapacheatlas.core import GuidTracker, TypeCategory
+from pyapacheatlas.core import TypeCategory
 from pyapacheatlas.scaffolding import column_lineage_scaffold
-from pyapacheatlas.scaffolding.templates import excel_template
-from pyapacheatlas import from_excel
-from pyapacheatlas.readers.excel import ExcelConfiguration
+from pyapacheatlas.readers import ExcelConfiguration, ExcelReader
 
 file_path = "./atlas_excel_template.xlsx"
 # Create the Excel Template
-excel_template(file_path)
+ExcelReader.make_template(file_path)
 
 # Populate the excel file manually!
 
@@ -93,15 +98,12 @@ excel_template(file_path)
 all_type_defs = client.get_typedefs(TypeCategory.ENTITY)
 
 # Create objects for 
-guid_tracker = GuidTracker()
-excel_config = ExcelConfiguration()
+ec = ExcelConfiguration()
+excel_reader = ExcelReader(ec)
 # Read from excel file and convert to 
-entities = from_excel(file_path, excel_config, guid_tracker)
+entities = excel_reader.parse_lineage(file_path, all_type_defs)
 
-# Prepare a batch by converting everything to json
-batch = {"entities":[e.to_json() for e in entities]}
-
-upload_results = client.upload_entities(batch)
+upload_results = client.upload_entities(entities)
 
 print(json.dumps(upload,results,indent=1))
 ```
