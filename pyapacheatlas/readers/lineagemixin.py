@@ -4,6 +4,10 @@ from ..core import AtlasEntity, AtlasProcess
 from .util import *
 
 class LineageMixIn():
+    """
+    A MixIn to support the :class:`~pyapacheatlas.readers.reader.Reader` with
+    the table and column level lineages.
+    """
     def _update_entity_and_array(self, entity, mutableOutput):
         """
         Take in an AtlasEntity and list of AtlasEntities.  If the entity

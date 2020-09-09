@@ -54,6 +54,11 @@ class ExcelConfiguration(ReaderConfiguration):
 
 
 class ExcelReader(Reader):
+    """
+    Read in Excel files that follow the excel template tab structure.
+    Expects an :class:`~pyapacheatlas.readers.excel.ExcelConfiguration` object
+    to determine the naming conventions of tabs and headers.
+    """
     @staticmethod
     def _parse_spreadsheet(worksheet):
         """

@@ -1,16 +1,24 @@
 pyapacheatlas.readers package
 =============================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   pyapacheatlas.readers.core
-
 Submodules
 ----------
+
+pyapacheatlas.readers.reader module
+-----------------------------------
+
+.. automodule:: pyapacheatlas.readers.reader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pyapacheatlas.readers.lineagemixin module
+-----------------------------------------
+
+.. automodule:: pyapacheatlas.readers.lineagemixin
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 pyapacheatlas.readers.excel module
 ----------------------------------

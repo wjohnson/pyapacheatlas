@@ -12,6 +12,11 @@ from .lineagemixin import LineageMixIn
 from .util import *
 
 class ReaderConfiguration():
+    """
+    A base configuration for the Reader class.  Allows you to customize
+    headers with a source_prefix, target_prefix, and process_prefix for
+    parsing table and column lineages.
+    """
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -27,6 +32,9 @@ class ReaderConfiguration():
 
 
 class Reader(LineageMixIn):
+    """
+    The base Reader with functionality that supports python dicts.
+    """
     TEMPLATE_HEADERS = {
         "ColumnsLineage": [
             "Target Table", "Target Column", "Target Classifications",
@@ -166,6 +174,9 @@ class Reader(LineageMixIn):
 
     @staticmethod
     def make_template():
+        """
+        Generate a template for the given reader.
+        """
         raise NotImplementedError
 
     

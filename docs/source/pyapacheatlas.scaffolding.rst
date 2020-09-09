@@ -1,14 +1,6 @@
 pyapacheatlas.scaffolding package
 =================================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   pyapacheatlas.scaffolding.templates
-
 Submodules
 ----------
 
