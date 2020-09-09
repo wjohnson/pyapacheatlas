@@ -10,12 +10,9 @@ from openpyxl import load_workbook
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import AtlasClient  # Communicate with your Atlas server
 from pyapacheatlas.scaffolding import column_lineage_scaffold  # Create dummy types
-# Create the excel template file to be populated
-from pyapacheatlas.scaffolding.templates import excel_template
 # Read in the populated excel file.
-from pyapacheatlas.readers import from_excel
 # Customize header prefixes (e.g. "Sink" rather than "Target") and sheet names
-from pyapacheatlas.readers.excel import ExcelConfiguration
+from pyapacheatlas.readers import ExcelConfiguration, ExcelReader
 from pyapacheatlas.core.whatif import WhatIfValidator  # To do what if analysis
 
 if __name__ == "__main__":
@@ -39,7 +36,9 @@ if __name__ == "__main__":
     # Create an empty excel template to be populated
     file_path = "./atlas_excel_template.xlsx"
     excel_config = ExcelConfiguration()
-    excel_template(file_path)
+    excel_reader = ExcelReader(excel_config)
+
+    excel_reader.make_template(file_path)
 
     wb = load_workbook(file_path)
     table_sheet = wb[excel_config.table_sheet]
@@ -125,15 +124,18 @@ if __name__ == "__main__":
 
     # Upload scaffolded type defs and view the results of upload
     _upload_typedef = client.upload_typedefs(
-        atlas_type_defs, 
+        atlas_type_defs,
         force_update=False
     )
-    print(json.dumps(_upload_typedef,indent=2))
+    print(json.dumps(_upload_typedef, indent=2))
 
     # Instantiate some required objects and generate the atlas entities!
 
-    excel_results = from_excel(
-        file_path, excel_config, atlas_type_defs, use_column_mapping=True)
+    excel_results = excel_reader.parse_lineages(
+        file_path,
+        atlas_type_defs,
+        use_column_mapping=True
+    )
 
     print("Results from excel transformation")
     print(json.dumps(excel_results, indent=2))

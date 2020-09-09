@@ -1,6 +1,6 @@
 import json
 
-from pyapacheatlas.core.typedef import EntityTypeDef, RelationshipTypeDef
+from pyapacheatlas.core import EntityTypeDef, RelationshipTypeDef
 
 
 if __name__ == "__main__":
@@ -55,4 +55,4 @@ if __name__ == "__main__":
                 table_column_relationship.to_json(),
             ]
         }
-    print(json.dumps(output))
+    print(json.dumps(output, indent=2))
