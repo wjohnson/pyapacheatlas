@@ -5,6 +5,22 @@ from .util import *
 
 class LineageMixIn():
     def _update_entity_and_array(self, entity, mutableOutput):
+        """
+        Take in an AtlasEntity and list of AtlasEntities.  If the entity
+        exists in the mutableOutput, remove the entity from the list and
+        merge the incoming entity with the popped entity.  Append that
+        merged entity onto the mutableOutput.
+
+        :param entity:
+            The entity to look up in the mutableOutput.
+        :param mutableOutput:
+            A list of Atlas Entities to search through and update if
+            `entity` is found.
+        :type entity:
+            :class:`~pyapacheatlas.core.entity.AtlasEntity`
+        :type mutableOutput:
+            list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+        """
         if entity in mutableOutput:
             # Assumes things like name, type name, are consistent
             poppable_index = mutableOutput.index(entity)
@@ -39,11 +55,13 @@ class LineageMixIn():
 
     def parse_table_lineage(self, json_rows):
         """
-        Converts the "tables" information into Atlas Entities for Target, Source,
-        and Process types.  Currently only support one target from one source.
+        Converts the "tables" information into Atlas Entities for Target,
+        Source, and Process types.  Currently only support one target from
+        one source.
 
         :param json_rows:
-            A list of dicts that contain the converted tables of your column spreadsheet.
+            A list of dicts that contain the converted tables of your column
+            spreadsheet.
         :type json_rows: list(dict(str,str))
         :return:
             A list of atlas entities that represent your source, target,
@@ -115,15 +133,18 @@ class LineageMixIn():
     def parse_column_lineage(self, json_rows, atlas_entities, atlas_typedefs, use_column_mapping=False):
         """
         :param json_rows:
-            A list of dicts that contain the converted rows of your column spreadsheet.
+            A list of dicts that contain the converted rows of your column
+            spreadsheet.
         :type json_rows: list(dict(str,str))
         :param atlas_entities:
-            A list of :class:`~pyapacheatlas.core.entity.AtlasEntity` containing the referred entities.
-        :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
+            A list of :class:`~pyapacheatlas.core.entity.AtlasEntity`
+            containing the referred entities.
+        :type atlas_entities: 
+            list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
         :param dict(str,list(dict)) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, including
-            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
-            values used.
+            The results of requesting all type defs from Apache Atlas, 
+            including entityDefs, relationshipDefs, etc.  relationshipDefs
+            are the only values used.
         :param bool use_column_mapping:
             Should the table processes include the columnMappings attribute
             that represents Column Lineage in Azure Data Catalog.
@@ -149,8 +170,11 @@ class LineageMixIn():
         # No required process headers
 
         output = []
-        tables = {}  # Stores all of the table entities by their name seen in the loop for faster lookup
-        # table_process_guid: {"input_table":"","output_table":"","columnMapping":[]}
+        # `tables` Stores all of the table entities by their name seen in the 
+        # loop for faster lookup
+        tables = {}  
+        # table_process_guid: 
+        # {"input_table":"","output_table":"","columnMapping":[]}
         dataset_mapping = {}
         # Caches all of the table processes seen in the loop for faster lookup
         table_and_proc_mappings = {}
@@ -159,7 +183,8 @@ class LineageMixIn():
             # Set up defaults
             target_entity, source_entity, process_entity = None, None, None
             target_entity_table_name, source_entity_table_name = None, None
-            # Given the existing table entity in atlas_entities, look up the appropriate column type
+            # Given the existing table entity in atlas_entities,
+            # look up the appropriate column type
             target_entity_table_name = row[target_header["Table"]]
             if target_entity_table_name not in tables:
                 target_table_entity = first_entity_matching_attribute(
@@ -178,13 +203,16 @@ class LineageMixIn():
             target_entity = AtlasEntity(
                 name=row[target_header["Column"]],
                 typeName=target_col_type,
-                # qualifiedName can be overwritten via the attributes functionality
+                # qualifiedName can be overwritten via the attributes 
+                # functionality
                 qualified_name=target_entity_table_name + \
                 "#" + row[target_header["Column"]],
                 guid=self.guidTracker.get_guid(),
                 attributes=columns_matching_pattern(
-                    row, self.config.target_prefix, does_not_match=list(target_header.values())),
-                # TODO: Make the relationship name more dynamic instead of hard coding table
+                    row, self.config.target_prefix, 
+                    does_not_match=list(target_header.values())
+                ),
+                # TODO: Make the relationship name dynamic instead of only table
                 relationshipAttributes={
                     "table": tables[target_entity_table_name].to_json(minimum=True)},
                 classifications=string_to_classification(
@@ -199,7 +227,8 @@ class LineageMixIn():
 
             # Source Column is optiona in the spreadsheet
             if row[source_header["Table"]] is not None:
-                # Given the existing source table entity in atlas_entities, look up the appropriate column type
+                # Given the existing source table entity in atlas_entities,
+                # look up the appropriate column type
                 source_entity_table_name = row[source_header["Table"]]
 
                 if source_entity_table_name not in tables:
@@ -237,16 +266,18 @@ class LineageMixIn():
                 # Add to outputs
                 output.append(source_entity)
 
-            # Given the existing process that with target table and source table types,
-            # look up the appropriate column_lineage type
-            # LIMITATION: Prevents you from specifying multiple processes for the same input and output tables
+            # Given the existing process that with target table and source
+            # table types, look up the appropriate column_lineage type
+            # LIMITATION: Prevents you from specifying multiple processes 
+            # for the same input and output tables
             try:
                 table_process = first_process_containing_io(
                     source_entity_table_name, target_entity_table_name, atlas_entities)
             except ValueError as e:
                 # ValueError means we didn't find anything that matched
                 # Try using a wildcard search if the source entity is none
-                # to match to any process that at least includes the target entity table
+                # to match to any process that at least includes the target
+                # entity table
                 if source_entity_table_name is None:
                     table_process = first_process_containing_io(
                         "*", target_entity_table_name, atlas_entities)
@@ -266,13 +297,16 @@ class LineageMixIn():
                     "column_lineage_type": process_type
                 }
 
-            # Assuming there is always a Process for adding at least the target table
+            # Assuming there is always a Process for adding at least the
+            # target table
             process_attributes = columns_matching_pattern(
                 row, self.config.process_prefix)
             process_attributes.update({"dependencyType": "SIMPLE"})
             if row[transformation_column_header] is not None:
                 process_attributes.update(
-                    {"dependencyType": "EXPRESSION", "expression": row[transformation_column_header]})
+                    {"dependencyType": "EXPRESSION", 
+                    "expression": row[transformation_column_header]
+                })
 
             process_entity = AtlasProcess(
                 name=table_process.get_name(),

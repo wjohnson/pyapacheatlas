@@ -52,7 +52,6 @@ def setup_column_lineage_entities():
 # Begin actual tests
 def test_table_lineage():
     reader = Reader(READER_CONFIG)
-    reader = Reader(READER_CONFIG)
     json_rows = [
         {
             "Target Table": "table1", "Target Type": "demo_type",
@@ -72,7 +71,6 @@ def test_table_lineage():
 
 
 def test_table_lineage_with_attributes():
-    reader = Reader(READER_CONFIG)
     reader = Reader(READER_CONFIG)
     json_rows = [
         {

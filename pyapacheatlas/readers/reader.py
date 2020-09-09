@@ -1,8 +1,13 @@
 from warnings import warn
 
-from ..core import GuidTracker
-from ..core import AtlasEntity, AtlasProcess
-from ..core.typedef import AtlasAttributeDef, EntityTypeDef
+from ..core.util import GuidTracker
+from ..core import (
+    AtlasAttributeDef,
+    AtlasEntity, 
+    AtlasProcess,
+    EntityTypeDef
+)
+
 from .lineagemixin import LineageMixIn
 from .util import *
 
@@ -46,6 +51,17 @@ class Reader(LineageMixIn):
     }
 
     def __init__(self, configuration, guid=-1000):
+        """
+        Creates the base Reader with functionality that supports python dicts.
+
+        :param configuration:
+            A list of dicts containing at least `Entity TypeName` and `name`
+        :type configuration: 
+            :class:`~pyapacheatlas.readers.reader.ReaderConfiguration`
+        :param int guid:
+            A negative integer to use as the starting counter for entities
+            created by this reader.
+        """
         super().__init__()
         self.config = configuration
         self.guidTracker = GuidTracker(guid)
