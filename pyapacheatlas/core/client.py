@@ -259,26 +259,34 @@ class AtlasClient():
         :rtype: dict
         """
         results = None
-        atlas_endpoint = self.endpoint_url + "/search/attribute"
+        atlas_endpoint = self.endpoint_url + "/search/advanced"
 
         print(atlas_endpoint)
         search_params = {
-            'attrName': 'name',
-            'attrValuePrefix': '*',
-            'limit': '10',
-            'offset': '0',
-            'typeName': 'DataSet'
+            "keyword": query,
+            "limit":2,
+            "offset":0
+            # "offset":100000,
+            # "filter": {
+            #     "add": [
+            #     {
+            #         "typeName": "misc_table",
+            #         "includeSubTypes": True
+            #     }
+            #     ]
+            # }
         }
 
-        postSearchResults = requests.get(
+        postSearchResults = requests.post(
             atlas_endpoint,
-            params=search_params,
+            json=search_params,
             headers=self.authentication.get_authentication_headers()
         )
 
         try:
             postSearchResults.raise_for_status()
             results = json.loads(postSearchResults.text)
+            print(postSearchResults.headers)
         except requests.RequestException as e:
             print(str(postSearchResults.content, encoding='utf-8'))
             raise e
