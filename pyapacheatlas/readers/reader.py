@@ -1,15 +1,17 @@
 from warnings import warn
+from collections import OrderedDict
 
 from ..core.util import GuidTracker
 from ..core import (
     AtlasAttributeDef,
-    AtlasEntity, 
+    AtlasEntity,
     AtlasProcess,
     EntityTypeDef
 )
 
 from .lineagemixin import LineageMixIn
 from .util import *
+
 
 class ReaderConfiguration():
     """
@@ -74,6 +76,53 @@ class Reader(LineageMixIn):
         self.config = configuration
         self.guidTracker = GuidTracker(guid)
 
+    def _organize_attributes(self, row, existing_entities, ignore=[]):
+        """
+        Organize the row entries into a distinct set of attributes and
+        relationshipAttributes.
+
+        :param dict(str,str) row:
+            A dict representing the input rows.
+        :param existing_entities: 
+            A list of existing atlas entities that will be used to infer
+            any relationship attributes.
+        :type existing_entities:
+            dict(str, `:class:~pyapacheatlas.core.entity.AtlasEntity`)
+        :param list(str) ignore:
+            A set of keys to ignore and omit from the returned dict.
+        :return: 
+            A dictionary containing 'ttributes' and 'relationshipAttributes'
+        :rtype: dict(str, dict(str,str))
+        """
+        output = {"attributes": {}, "relationshipAttributes": {}}
+        for k, v in row.items():
+            # Remove the required attributes so they're not double dipping.
+            if k in ignore:
+                continue
+            # Remove any cell with a None / Null attribute
+            elif v is None:
+                continue
+            # If the Attribute key starts with (Relationship)
+            # Move it to the relation
+            elif k.startswith("(Relationship)"):
+                cleaned_key = k.replace("(Relationship)", "").strip()
+                # Assuming that we can find this in an existing entity
+                try:
+                    min_reference = existing_entities[v].to_json(minimum=True)
+                # LIMITATION: We must have already seen the relationship
+                # attribute to be certain it can be looked up.
+                except KeyError as e:
+                    raise KeyError(
+                        f"The entity {v} should be listed before {row['qualifiedName']}."
+                    )
+                output["relationshipAttributes"].update(
+                    {cleaned_key: min_reference}
+                )
+            else:
+                output["attributes"].update({k: v})
+
+        return output
+
     def parse_bulk_entities(self, json_rows):
         """
         Create an AtlasTypeDef consisting of entities and their attributes for the given json_rows.
@@ -89,26 +138,32 @@ class Reader(LineageMixIn):
         # Extract the
         # Extract any additional attributes
         req_attribs = ["typeName", "name", "qualifiedName", "classifications"]
-        output = {"entities": []}
+        existing_entities = OrderedDict()
+
         for row in json_rows:
-            # Remove any cell with a None / Null attribute
-            # Remove the required attributes so they're not double dipping.
-            custom_attributes = {
-                k: v for k, v in row.items()
-                if k not in req_attribs and v is not None
-            }
+
+            _attributes = self._organize_attributes(
+                row,
+                existing_entities,
+                req_attribs
+            )
+
             entity = AtlasEntity(
                 name=row["name"],
                 typeName=row["typeName"],
                 qualified_name=row["qualifiedName"],
                 guid=self.guidTracker.get_guid(),
-                attributes=custom_attributes,
+                attributes=_attributes["attributes"],
                 classifications=string_to_classification(
                     row["classifications"],
                     sep=self.config.value_separator
-                )
-            ).to_json()
-            output["entities"].append(entity)
+                ),
+                relationshipAttributes=_attributes["relationshipAttributes"]
+            )
+            existing_entities.update({row["qualifiedName"]: entity})
+
+        output = {"entities": [e.to_json()
+                               for e in list(existing_entities.values())]}
         return output
 
     def parse_entity_defs(self, json_rows):
@@ -170,7 +225,6 @@ class Reader(LineageMixIn):
                 extra_metadata))
 
         return output
-    
 
     @staticmethod
     def make_template():
@@ -178,5 +232,3 @@ class Reader(LineageMixIn):
         Generate a template for the given reader.
         """
         raise NotImplementedError
-
-    

@@ -212,32 +212,6 @@ def test_column_lineage_entities_with_classifications():
     assert(len(source_col_entity.classifications) == 0)
 
 
-def test_column_lineage_entities_with_attributes():
-    reader = Reader(READER_CONFIG)
-
-    json_tables, json_columns, atlas_typedefs = setup_column_lineage_entities()
-
-    # Update target to include an attribute
-    json_columns[0].update({"Target test_attrib1": "value",
-                            "Target test_attrib2": "value2", "Source foo": "bar"})
-
-    # Outputs -1003 as the last guid
-    tables_and_processes = reader.parse_table_lineage(json_tables)
-
-    results = reader.parse_column_lineage(
-        json_columns, tables_and_processes, atlas_typedefs)
-
-    # Two column entities
-    # One process entity
-    target_col_entity = results[0]
-    source_col_entity = results[1]
-    col_lineage_entity = results[2]
-
-    assert(target_col_entity.attributes["test_attrib1"] == "value")
-    assert(target_col_entity.attributes["test_attrib2"] == "value2")
-    assert(source_col_entity.attributes["foo"] == "bar")
-
-
 def test_column_lineage_entities_with_columnMapping():
     reader = Reader(READER_CONFIG)
     expected_obj = [

@@ -3,6 +3,7 @@ from json.decoder import JSONDecodeError
 import requests
 
 from .entity import AtlasEntity
+from .typedef import BaseTypeDef
 
 
 class AtlasClient():
@@ -24,6 +25,50 @@ class AtlasClient():
         super().__init__()
         self.authentication = authentication
         self.endpoint_url = endpoint_url
+
+    def _handle_response(self, resp):
+        """
+        Safely handle an Atlas Response and return the results if valid.
+
+        :param Response resp: The response from the request method.
+        :return: A dict containing the results.
+        :rtype: dict
+        """
+
+        try:
+            resp.raise_for_status()
+            results = json.loads(resp.text)
+        except requests.RequestException as e:
+            raise Exception(resp.text)
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(resp.text))
+        return results
+    
+    def delete_entity(self, guid):
+        """
+        Delete one or many guids from your Apache Atlas server.
+
+        :param guid: The guid or guids you want to retrieve
+        :type guid: Union[str, list(str)]
+        :return: A list of entities wrapped in the {"entities"} dict.
+        :rtype: dict(str, dict)
+        """
+        results = None
+
+        if isinstance(guid, list):
+            guid_str = '&guid='.join(guid)
+        else:
+            guid_str = guid
+
+        atlas_endpoint = self.endpoint_url + \
+            "/entity/bulk?guid={}".format(guid_str)
+        deleteEntity = requests.delete(
+            atlas_endpoint, 
+            headers=self.authentication.get_authentication_headers())
+
+        results = self._handle_response(deleteEntity)
+
+        return results
 
     def get_entity(self, guid, use_cache=False):
         """
@@ -54,7 +99,7 @@ class AtlasClient():
             getEntity.raise_for_status()
             results = json.loads(getEntity.text)
         except requests.RequestException as e:
-            raise e(getEntity.text)
+            raise Exception(getEntity.text)
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(getEntity.text))
 
@@ -80,7 +125,7 @@ class AtlasClient():
             getTypeDefs.raise_for_status()
             results = json.loads(getTypeDefs.text)
         except requests.RequestException as e:
-            raise e(getTypeDefs.text)
+            raise Exception(getTypeDefs.text)
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(getTypeDefs.text))
 
@@ -117,11 +162,45 @@ class AtlasClient():
             getTypeDef.raise_for_status()
             results = json.loads(getTypeDef.text)
         except requests.RequestException as e:
-            raise e(getTypeDef.text)
+            raise Exception(getTypeDef.text)
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(getTypeDef.text))
 
         return results
+
+    def _get_typedefs_header(self):
+        """
+        Get the array of AtlasTypeDefHeader that contains category, guid,
+        name, and serviceType.  Massage it into a dict based on the available
+        categories.
+
+        :return: A dictionary of categories and the names of defined types.
+        :rtype: dict(str, list(str))
+        """
+        atlas_endpoint = self.endpoint_url + "/types/typedefs/headers"
+        get_headers = requests.get(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+        try:
+            get_headers.raise_for_status()
+            results = json.loads(get_headers.text)
+        except requests.RequestException as e:
+            raise Exception(get_headers.text)
+        except JSONDecodeError as e:
+            raise e("Error in parsing: {}".format(
+                get_headers.text)
+            )
+
+        output = dict()
+        for typedef in results:
+            active_category = typedef["category"].lower()+"Defs"
+            if active_category not in output:
+                output[active_category] = []
+
+            output[active_category].append(typedef["name"])
+
+        return output
 
     def upload_typedefs(self, typedefs, force_update=False):
         """
@@ -134,13 +213,17 @@ class AtlasClient():
         If the dict you pass in contains at least one of these Def fields
         it will be considered valid and an upload will be attempted as is.
 
+        When using force_update, it will look up all existing types and see
+        if any of your provided types exist.  If they do exist, they will be
+        updated. If they do not exist, they will be issued as new. New types
+        are uploaded first. Existing types are updated second. There are no
+        transactional updates.  New types can succeed and be inserted while
+        a batch of existing types can fail and not be updated.
+
         :param typedefs: The set of type definitions you want to upload.
         :type typedefs: dict
         :param bool force_update:
-            Whether changes should be forced (True) or whether changes
-            to existing types should be discarded (False).  When forcing
-            an update, the type definition must exist already or you
-            will receive a 404 error.
+            Set to True if your typedefs contains any existing entities.
         :return: The results of your upload attempt from the Atlas server.
         :rtype: dict
         """
@@ -159,6 +242,7 @@ class AtlasClient():
         # Does the typedefs conform to the required pattern?
         if not any([req in current_keys for req in required_keys]):
             # Assuming this is a single typedef
+<<<<<<< HEAD
             payload = {typedefs.category.lower() + "Defs": [typedefs]}
 
         if force_update:
@@ -180,6 +264,65 @@ class AtlasClient():
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(
                 upload_typedefs_results.text))
+=======
+            key = None
+            if isinstance(typedefs, BaseTypeDef):
+                key = typedefs.category.lower() + "Defs"
+                val = [typedefs.to_json()]
+            elif isinstance(typedefs, dict):
+                key = typedefs["category"].lower() + "Defs"
+                val = [typedefs]
+            else:
+                raise NotImplementedError(
+                    "Uploading an object of type '{}' is not supported."
+                    .format(type(typedefs))
+                )
+            payload = {key: val}
+
+        if not force_update:
+            # This is just a plain push of new entities
+            upload_typedefs_results = requests.post(
+                atlas_endpoint, json=payload,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(upload_typedefs_results)
+        else:
+            # Look up all entities by their header
+            types_from_client = self._get_typedefs_header()
+            existing_types = dict()
+            new_types = dict()
+
+            # Loop over the intended upload and see if they exist already
+            # If they do not exist, shuffle them to the new_types upload.
+            # if they do exist, shuffle to the existing types upload.
+            for cat, typelist in payload.items():
+                existing_types[cat] = []
+                new_types[cat] = []
+                for t in typelist:
+                    if t["name"] in types_from_client[cat]:
+                        existing_types[cat].append(t)
+                    else:
+                        new_types[cat].append(t)
+
+            upload_new = requests.post(
+                atlas_endpoint, json=new_types,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results_new = self._handle_response(upload_new)
+
+            upload_exist = requests.put(
+                atlas_endpoint, json=existing_types,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results_exist = self._handle_response(upload_exist)
+
+            # Merge the results
+            results = results_new
+            for cat, updatedtypelist in results_exist.items():
+                if cat not in results:
+                    results[cat] = []
+                results[cat].extend(updatedtypelist)
+>>>>>>> master
 
         return results
 
@@ -243,8 +386,12 @@ class AtlasClient():
             postBulkEntities.raise_for_status()
             results = json.loads(postBulkEntities.text)
         except requests.RequestException as e:
+<<<<<<< HEAD
             print(str(postBulkEntities.content, encoding='utf-8'))
             raise e
+=======
+            raise Exception(postBulkEntities.text)
+>>>>>>> master
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(postBulkEntities.text))
 
