@@ -35,13 +35,13 @@ class AtlasEntity():
         self.classifications = kwargs.get("classifications", [])
 
     def __eq__(self, other):
-        return self.get_qualified_name() == other.get_qualified_name()
+        return self.get_qualified_name() == other
 
     def __hash__(self):
         return hash(self.get_qualified_name())
 
     def __ne__(self, other):
-        return self.get_qualified_name() != other.get_qualified_name()
+        return self.get_qualified_name() != other
 
     def __repr__(self):
         return "AtlasEntity({type_name},{qual_name})".format(

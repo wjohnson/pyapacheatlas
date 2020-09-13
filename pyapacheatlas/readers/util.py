@@ -12,7 +12,7 @@ def string_to_classification(string, sep=";"):
         return []
     # TODO: How do we bring in attributes if they're required?
     results = [{"typeName": s.strip(), "attributes": {}}
-                for s in string.split(sep) if s.strip() != ""]
+               for s in string.split(sep) if s.strip() != ""]
     return results
 
 
@@ -36,7 +36,7 @@ def columns_matching_pattern(row, starts_with, does_not_match=[]):
         if bad_key in candidates:
             candidates.pop(bad_key)
     candidates = {k[len(starts_with):].strip(): v for k,
-                    v in candidates.items()}
+                  v in candidates.items()}
 
     return candidates
 
@@ -135,16 +135,17 @@ def first_process_containing_io(input_name, output_name, atlas_entities):
             num_inputs = len(entity.attributes["inputs"])
             num_outputs = len(entity.attributes["outputs"])
             input_matches = ((input_name == "*") or  # Wildcard
-                ((input_name is None) and (num_inputs == 0)) or
-                ((input_name is not None) and (num_inputs > 0) and
-                    (any([e["qualifiedName"] == input_name for e in entity.get_inputs()]))
-                )
-            )
+                             ((input_name is None) and (num_inputs == 0)) or
+                             ((input_name is not None) and (num_inputs > 0) and
+                              (any([e["qualifiedName"] ==
+                                    input_name for e in entity.get_inputs()]))
+                              )
+                             )
             output_matches = (
                 ((output_name is None) and (num_outputs == 0)) or
                 ((output_name is not None) and (num_outputs > 0) and
                     (any([e["qualifiedName"] == output_name for e in entity.get_outputs()]))
-                )
+                 )
             )
         if input_matches and output_matches:
             output_entity = entity
@@ -171,7 +172,8 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
     :param str process_name: The name of the process that you want to find.
     :param atlas_entities: The list of atlas entities to search over.
     :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :param list(dict) relationship_typedefs: The list of relationship type definitions to extract from.
+    :param list(dict) relationship_typedefs: 
+        The list of relationship type definitions to extract from.
     :raises ValueError:
         A matching entity or matching relationship type was not found in
         the provided entities or type def.
@@ -180,7 +182,8 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
     """
     target_entity = first_entity_matching_attribute(
         "name", process_name, atlas_entities)
-    # TODO: Make "columnLineages" dynamic so that you can control which attribute you're searching for
+    # TODO: Make "columnLineages" dynamic so that you can control which
+    # attribute you're searching for
 
     lineage_relationship = first_relationship_that_matches(
         end_def="endDef2",
@@ -192,3 +195,16 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
     column_lineage_type = lineage_relationship["endDef1"]["type"]
 
     return column_lineage_type
+
+
+def _make_col_qual_name(col_name, parent_table_name):
+    """
+    Generate a standardized qualified name for column entities.
+
+    :param str col_name: The column name.
+    :param str parent_table_name: The parent table name.
+
+    :return: The qualified name for the column.
+    :rtype: str
+    """
+    return f"{parent_table_name}#{col_name}"
