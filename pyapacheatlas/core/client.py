@@ -43,6 +43,32 @@ class AtlasClient():
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(resp.text))
         return results
+    
+    def delete_entity(self, guid):
+        """
+        Delete one or many guids from your Apache Atlas server.
+
+        :param guid: The guid or guids you want to retrieve
+        :type guid: Union[str, list(str)]
+        :return: A list of entities wrapped in the {"entities"} dict.
+        :rtype: dict(str, dict)
+        """
+        results = None
+
+        if isinstance(guid, list):
+            guid_str = '&guid='.join(guid)
+        else:
+            guid_str = guid
+
+        atlas_endpoint = self.endpoint_url + \
+            "/entity/bulk?guid={}".format(guid_str)
+        deleteEntity = requests.delete(
+            atlas_endpoint, 
+            headers=self.authentication.get_authentication_headers())
+
+        results = self._handle_response(deleteEntity)
+
+        return results
 
     def get_entity(self, guid, use_cache=False):
         """
