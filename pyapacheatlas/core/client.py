@@ -43,7 +43,7 @@ class AtlasClient():
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(resp.text))
         return results
-    
+
     def delete_entity(self, guid):
         """
         Delete one or many guids from your Apache Atlas server.
@@ -63,7 +63,7 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
         deleteEntity = requests.delete(
-            atlas_endpoint, 
+            atlas_endpoint,
             headers=self.authentication.get_authentication_headers())
 
         results = self._handle_response(deleteEntity)
@@ -242,29 +242,6 @@ class AtlasClient():
         # Does the typedefs conform to the required pattern?
         if not any([req in current_keys for req in required_keys]):
             # Assuming this is a single typedef
-<<<<<<< HEAD
-            payload = {typedefs.category.lower() + "Defs": [typedefs]}
-
-        if force_update:
-            upload_typedefs_results = requests.put(
-                atlas_endpoint, json=payload,
-                headers=self.authentication.get_authentication_headers()
-            )
-        else:
-            upload_typedefs_results = requests.post(
-                atlas_endpoint, json=payload,
-                headers=self.authentication.get_authentication_headers()
-            )
-
-        try:
-            upload_typedefs_results.raise_for_status()
-            results = json.loads(upload_typedefs_results.text)
-        except requests.RequestException as e:
-            raise e(str(upload_typedefs_results.content, encoding='utf-8'))
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(
-                upload_typedefs_results.text))
-=======
             key = None
             if isinstance(typedefs, BaseTypeDef):
                 key = typedefs.category.lower() + "Defs"
@@ -322,7 +299,6 @@ class AtlasClient():
                 if cat not in results:
                     results[cat] = []
                 results[cat].extend(updatedtypelist)
->>>>>>> master
 
         return results
 
@@ -386,58 +362,72 @@ class AtlasClient():
             postBulkEntities.raise_for_status()
             results = json.loads(postBulkEntities.text)
         except requests.RequestException as e:
-<<<<<<< HEAD
-            print(str(postBulkEntities.content, encoding='utf-8'))
-            raise e
-=======
             raise Exception(postBulkEntities.text)
->>>>>>> master
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(postBulkEntities.text))
 
         return results
 
-    def search_entities(self, query):
+    def _search_generator(self, search_params):
         """
-        Search entities
+        Generator to page through the search query results.
+        """
+        atlas_endpoint = self.endpoint_url + "/search/advanced"
+        offset = 0
 
-        :param str query: The query to be executed.
-        :return: The results of your search.
-        :rtype: dict
+        while True:
+            postSearchResults = requests.post(
+                atlas_endpoint,
+                json=search_params,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(postSearchResults)
+            return_values = results["value"]
+            return_count = len(return_values)
+            
+            if return_count == 0:
+                raise StopIteration
+
+            offset = offset + return_count
+            search_params["offset"] = offset
+            yield return_values
+
+    def search_entities(self, query, limit=50, search_filter = None ):
+        """
+        Search entities based on a query and automaticall handles limits and
+        offsets to page through results.
+
+        The limit provides how many records are returned in each batch with a
+        maximum of 1,000 entries per page.  
+
+        :param str query: The search query to be executed.
+        :param int limit: 
+            A non-zero integer representing how many entities to
+            return for each page of the search results.
+        :param dict search_filter: A search filter to reduce your results.
+        :return: The results of your search as a generator.
+        :rtype: Iterator[list(dict)]
         """
         results = None
-        atlas_endpoint = self.endpoint_url + "/search/advanced"
 
-        print(atlas_endpoint)
+        if limit > 1000 or limit < 1:
+            raise ValueError(
+                "The limit parameter must be non-zero and less than 1,000."
+            )
+
         search_params = {
-            "keyword": query,
-            "limit":2,
-            "offset":0
-            # "offset":100000,
-            # "filter": {
-            #     "add": [
-            #     {
-            #         "typeName": "misc_table",
-            #         "includeSubTypes": True
-            #     }
-            #     ]
-            # }
+            "keywords": query,
+            "limit": limit,
+            "offset": 0
         }
+        # TODO: Make this smarter, make it easier to create filters
+        # without having to know how to make a filter object.
+        if search_filter:
+            # "filter": {"add": [{"typeName": "misc_table",
+            # "includeSubTypes": True}]}
+            search_params.update({"filter":search_filter})
 
-        postSearchResults = requests.post(
-            atlas_endpoint,
-            json=search_params,
-            headers=self.authentication.get_authentication_headers()
-        )
+        results = []
+        search_generator = self._search_generator(search_params)
 
-        try:
-            postSearchResults.raise_for_status()
-            results = json.loads(postSearchResults.text)
-            print(postSearchResults.headers)
-        except requests.RequestException as e:
-            print(str(postSearchResults.content, encoding='utf-8'))
-            raise e
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(postSearchResults.text))
-
-        return results
+        return search_generator
