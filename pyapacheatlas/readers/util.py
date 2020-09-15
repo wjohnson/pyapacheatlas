@@ -30,8 +30,7 @@ def columns_matching_pattern(row, starts_with, does_not_match=[]):
     :return: A dictionary that contains only the filtered results.
     :rtype: dict
     """
-    candidates = {k: v for k, v in row.items() if str(
-        k).startswith(starts_with)}
+    candidates = {k: v for k, v in row.items() if str(k).startswith(starts_with)}
     for bad_key in does_not_match:
         if bad_key in candidates:
             candidates.pop(bad_key)

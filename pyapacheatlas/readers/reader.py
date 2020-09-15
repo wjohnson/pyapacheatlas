@@ -30,7 +30,7 @@ class ReaderConfiguration():
         self.process_prefix = kwargs.get(
             "process_prefix", "Process")
         self.column_transformation_name = kwargs.get(
-            "column_transformation_name", "Transformation")
+            "column_transformation_name", "transformation")
 
 
 class Reader(LineageMixIn):
@@ -39,14 +39,14 @@ class Reader(LineageMixIn):
     """
     TEMPLATE_HEADERS = {
         "ColumnsLineage": [
-            "Target Table", "Target Column", "Target Classifications",
-            "Source Table", "Source Column", "Source Classifications",
-            "Transformation"
+            "Target table", "Target column", "Target classifications",
+            "Source table", "Source column", "Source classifications",
+            "transformation"
         ],
         "TablesLineage": [
-            "Target Table", "Target Type", "Target Classifications",
-            "Source Table", "Source Type", "Source Classifications",
-            "Process Name", "Process Type"
+            "Target table", "Target type", "Target classifications",
+            "Source table", "Source type", "Source classifications",
+            "Process name", "Process type"
         ],
         "EntityDefs": [
             "Entity TypeName", "name", "description",

@@ -37,7 +37,7 @@ def test_column_lineage_scaffolding():
         {
           "name": "dependencyType",
           "typeName": "string",
-          "isOptional": false,
+          "isOptional": true,
           "cardinality": "SINGLE",
           "valuesMinCount": 1,
           "valuesMaxCount": 1,
