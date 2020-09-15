@@ -1,5 +1,9 @@
+import argparse
 import json
+import os
 
+from pyapacheatlas.auth import ServicePrincipalAuthentication
+from pyapacheatlas.core import AtlasClient  # Communicate with your Atlas server
 from pyapacheatlas.core import EntityTypeDef, RelationshipTypeDef
 
 
@@ -9,7 +13,22 @@ if __name__ == "__main__":
     minimum table and columns scaffolding with a relationship
     definition between the table and column types.
     """
-    datasource = "generic"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--prefix",
+                        help="The prefix for the table and columns lineage types.")
+    args = parser.parse_args()
+    datasource = args.prefix
+
+    # Authenticate against your Atlas server
+    oauth = ServicePrincipalAuthentication(
+        tenant_id=os.environ.get("TENANT_ID", ""),
+        client_id=os.environ.get("CLIENT_ID", ""),
+        client_secret=os.environ.get("CLIENT_SECRET", "")
+    )
+    client = AtlasClient(
+        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
+        authentication=oauth
+    )
 
     src_table_columns_typeName = "{}_table_columns".format(datasource)
 
@@ -92,3 +111,9 @@ if __name__ == "__main__":
         ]
     }
     print(json.dumps(output, indent=2))
+
+    input(">>>>Ready to upload?")
+
+    upload_results = client.upload_typedefs(output)
+
+    print(json.dumps(upload_results, indent=2))
