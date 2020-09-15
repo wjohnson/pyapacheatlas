@@ -12,17 +12,17 @@ READER_CONFIG = ReaderConfiguration()
 def setup_column_lineage_entities():
     json_tables = [
         {
-            "Target Table": "table1", "Target Type": "demo_table",
-            "Source Table": "table0", "Source Type": "demo_table",
-            "Process Name": "proc01", "Process Type": "demo_process"
+            "Target table": "table1", "Target type": "demo_table",
+            "Source table": "table0", "Source type": "demo_table",
+            "Process name": "proc01", "Process type": "demo_process"
         }
     ]
 
     json_columns = [
         {
-            "Target Column": "col1", "Target Table": "table1",
-            "Source Column": "col0", "Source Table": "table0",
-            "Transformation": None
+            "Target column": "col1", "Target table": "table1",
+            "Source column": "col0", "Source table": "table0",
+            "transformation": None
         }
     ]
 
@@ -54,9 +54,9 @@ def test_table_lineage():
     reader = Reader(READER_CONFIG)
     json_rows = [
         {
-            "Target Table": "table1", "Target Type": "demo_type",
-            "Source Table": "table0", "Source Type": "demo_type2",
-            "Process Name": "proc01", "Process Type": "proc_type"
+            "Target table": "table1", "Target type": "demo_type",
+            "Source table": "table0", "Source type": "demo_type2",
+            "Process name": "proc01", "Process type": "proc_type"
         }
     ]
 
@@ -74,10 +74,10 @@ def test_table_lineage_with_attributes():
     reader = Reader(READER_CONFIG)
     json_rows = [
         {
-            "Target Table": "table1", "Target Type": "demo_type",
-            "Target data_type": "str", "Source Table": "table0",
-            "Source Type": "demo_type2", "Source foo": "bar",
-            "Process Name": "proc01", "Process Type": "proc_type",
+            "Target table": "table1", "Target type": "demo_type",
+            "Target data_type": "str", "Source table": "table0",
+            "Source type": "demo_type2", "Source foo": "bar",
+            "Process name": "proc01", "Process type": "proc_type",
             "Process fizz": "buzz"
         }
     ]
@@ -93,14 +93,14 @@ def test_table_lineage_multiple_inputs():
     reader = Reader(READER_CONFIG)
     json_tables = [
         {
-            "Target Table": "table1", "Target Type": "demo_type",
-            "Source Table": "table0", "Source Type": "demo_type",
-            "Process Name": "proc01", "Process Type": "proc_type"
+            "Target table": "table1", "Target type": "demo_type",
+            "Source table": "table0", "Source type": "demo_type",
+            "Process name": "proc01", "Process type": "proc_type"
         },
         {
-            "Target Table": "table1", "Target Type": "demo_type",
-            "Source Table": "tableB", "Source Type": "demo_type",
-            "Process Name": "proc01", "Process Type": "proc_type"
+            "Target table": "table1", "Target type": "demo_type",
+            "Source table": "tableB", "Source type": "demo_type",
+            "Process name": "proc01", "Process type": "proc_type"
         }
     ]
 
@@ -190,7 +190,7 @@ def test_column_lineage_entities_with_classifications():
 
     # Update target to include a classification
     json_columns[0].update(
-        {"Target Classifications": "CustomerInfo; PII", "Source Classifications": ""})
+        {"Target classifications": "CustomerInfo; PII", "Source classifications": ""})
 
     # Outputs -1003 as the last guid
     tables_and_processes = reader.parse_table_lineage(json_tables)
@@ -225,9 +225,9 @@ def test_column_lineage_entities_with_columnMapping():
     json_tables, json_columns, atlas_typedefs = setup_column_lineage_entities()
 
     json_columns.append({
-        "Target Column": "col99", "Target Table": "table1",
-        "Source Column": "col90", "Source Table": "table0",
-        "Transformation": "col90 + 1"
+        "Target column": "col99", "Target table": "table1",
+        "Source column": "col90", "Source table": "table0",
+        "transformation": "col90 + 1"
     }
     )
 
@@ -248,18 +248,18 @@ def test_column_lineage_entities_when_multi_tabled_inputs():
     # Adding in an extra table
     json_tables.append(
         {
-            "Target Table": "table1", "Target Type": "demo_table",
-            "Source Table": "tableB", "Source Type": "demo_table",
-            "Process Name": "proc01", "Process Type": "demo_process"
+            "Target table": "table1", "Target type": "demo_table",
+            "Source table": "tableB", "Source type": "demo_table",
+            "Process name": "proc01", "Process type": "demo_process"
         }
     )
-    json_columns[0].update({"Transformation": "colB + col0"})
+    json_columns[0].update({"transformation": "colB + col0"})
     # Adding in an extra column
     json_columns.append(
         {
-            "Target Column": "col1", "Target Table": "table1",
-            "Source Column": "colB", "Source Table": "tableB",
-            "Transformation": "colB + col0"
+            "Target column": "col1", "Target table": "table1",
+            "Source column": "colB", "Source table": "tableB",
+            "transformation": "colB + col0"
         }
     )
     expected_col_map_obj = [

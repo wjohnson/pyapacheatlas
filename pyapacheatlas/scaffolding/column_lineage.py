@@ -81,7 +81,7 @@ def column_lineage_scaffold(datasource,
                        [
             AtlasAttributeDef(
                 name="dependencyType",
-                isOptional=False,
+                isOptional=True,
                 valuesMinCount=1,
                 valuesMaxCount=1
             ).to_json(),
