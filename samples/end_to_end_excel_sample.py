@@ -15,31 +15,10 @@ from pyapacheatlas.scaffolding import column_lineage_scaffold  # Create dummy ty
 from pyapacheatlas.readers import ExcelConfiguration, ExcelReader
 from pyapacheatlas.core.whatif import WhatIfValidator  # To do what if analysis
 
-if __name__ == "__main__":
-    """
-    This sample provides an end to end sample of reading an excel file,
-    generating a table and column lineage set of entities, and then
-    uploading the entities to your data catalog.
-    """
 
-    # Authenticate against your Atlas server
-    oauth = ServicePrincipalAuthentication(
-        tenant_id=os.environ.get("TENANT_ID", ""),
-        client_id=os.environ.get("CLIENT_ID", ""),
-        client_secret=os.environ.get("CLIENT_SECRET", "")
-    )
-    client = AtlasClient(
-        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
-        authentication=oauth
-    )
-
-    # Create an empty excel template to be populated
-    file_path = "./atlas_excel_template.xlsx"
-    excel_config = ExcelConfiguration()
-    excel_reader = ExcelReader(excel_config)
-
-    excel_reader.make_template(file_path)
-
+def fill_in_workbook(filepath, excel_config):
+    # You can safely ignore this function as it just
+    # populates the excel spreadsheet.
     wb = load_workbook(file_path)
     table_sheet = wb[excel_config.table_sheet]
     columns_sheet = wb[excel_config.column_sheet]
@@ -104,6 +83,34 @@ if __name__ == "__main__":
 
     wb.save(file_path)
 
+
+if __name__ == "__main__":
+    """
+    This sample provides an end to end sample of reading an excel file,
+    generating a table and column lineage set of entities, and then
+    uploading the entities to your data catalog.
+    """
+
+    # Authenticate against your Atlas server
+    oauth = ServicePrincipalAuthentication(
+        tenant_id=os.environ.get("TENANT_ID", ""),
+        client_id=os.environ.get("CLIENT_ID", ""),
+        client_secret=os.environ.get("CLIENT_SECRET", "")
+    )
+    client = AtlasClient(
+        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
+        authentication=oauth
+    )
+
+    # Create an empty excel template to be populated
+    file_path = "./atlas_excel_template.xlsx"
+    excel_config = ExcelConfiguration()
+    excel_reader = ExcelReader(excel_config)
+
+    excel_reader.make_template(file_path)
+
+    fill_in_workbook(file_path, excel_config)
+
     # Generate the base atlas type defs for the demo of table and column lineage
     atlas_type_defs = column_lineage_scaffold(
         "demo", use_column_mapping=True,
@@ -122,14 +129,17 @@ if __name__ == "__main__":
     # Alternatively, you can get all atlas types via...
     # atlas_type_defs = client.get_all_typedefs()
 
+    input(">>>>Ready to upload type definitions?")
     # Upload scaffolded type defs and view the results of upload
     _upload_typedef = client.upload_typedefs(
         atlas_type_defs,
-        force_update=False
+        force_update=True
     )
     print(json.dumps(_upload_typedef, indent=2))
 
-    # Instantiate some required objects and generate the atlas entities!
+    input(">>>>Review the above results to see what was uploaded.")
+
+    # Generate the atlas entities!
 
     excel_results = excel_reader.parse_lineages(
         file_path,
@@ -140,6 +150,8 @@ if __name__ == "__main__":
     print("Results from excel transformation")
     print(json.dumps(excel_results, indent=2))
 
+    input(">>>>Review the above results to see what your excel file contained")
+
     # Validate What IF
     whatif = WhatIfValidator(type_defs=atlas_type_defs)
 
@@ -147,13 +159,16 @@ if __name__ == "__main__":
 
     if report["total"] > 0:
         print("There were errors in the provided typedefs")
-        print(json.dumps(report))
+        print(report)
         exit(1)
     else:
         print("There were no errors in the excel file")
+
+    input(">>>>Review the what-if validation results above and get ready to upload your entities!")
 
     # Upload excel file's content to Atlas and view the guid assignments to confirm successful upload
     uploaded_entities = client.upload_entities(excel_results)
     print(json.dumps(uploaded_entities, indent=2))
 
+    print("Completed uploads of demo!")
     # Be sure to clean up the excel file stored in file_path
