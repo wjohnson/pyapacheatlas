@@ -168,6 +168,86 @@ class AtlasClient():
 
         return results
 
+    def get_glossary(self, name="Glossary", guid=None):
+        """
+        Retrieve all glossaries.
+
+        :return: The requested glossaries with the term headers.
+        :rtype: list(dict)
+        """
+        results = None
+        params = None
+
+        if guid:
+            atlas_endpoint = self.endpoint_url + "/glossary/{}".format(guid)
+            getResult = requests.get(
+                atlas_endpoint,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(getResult)
+        else:
+            all_glossaries = self.get_glossaries()
+            for glossary in all_glossaries:
+                if glossary["name"] == name:
+                    results = glossary
+            if results is None:
+                raise ValueError(
+                    f"Glossary with a name of {name} was not found.")
+
+        return results
+
+    def get_glossaries(self, limit=-1, offset=0, sort_order="ASC"):
+        """
+        Retrieve all glossaries.
+
+        :return: The requested glossaries with the term headers.
+        :rtype: list(dict)
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + "/glossary"
+
+        # TODO: Implement paging with offset and limit
+        getResult = requests.get(
+            atlas_endpoint,
+            params={"limit": limit, "offset": offset, "sort": sort_order},
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getResult)
+
+        return results
+
+    def get_glossary_term(self, guid=None, name=None, glossary_name="Glossary", glossary_guid=None):
+        """
+        Retrieve a single glossary term based on its guid.
+
+        :param str guid: A valid guid. Optional if name is specified.
+        :return: The requested glossary term as a dict.
+        :rtype: dict
+        """
+        results = None
+
+        if guid is None and name is None:
+            raise ValueError("Either guid or name and glossary must be set.")
+
+        if guid:
+            atlas_endpoint = self.endpoint_url + \
+                "/glossary/term/{}".format(guid)
+
+            getTerms = requests.get(
+                atlas_endpoint,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(getTerms)
+        else:
+            terms_in_glossary = self.get_glossary(name=glossary_name, guid=glossary_guid)
+            for term in terms_in_glossary["terms"]:
+                if term["displayText"] == name:
+                    _guid = term["termGuid"]
+                    results = self.get_glossary_term(guid=_guid)
+
+        return results
+
     def _get_typedefs_header(self):
         """
         Get the array of AtlasTypeDefHeader that contains category, guid,
@@ -368,6 +448,29 @@ class AtlasClient():
 
         return results
 
+    def upload_terms(self, batch, force_update=False):
+        """
+        Upload terms to your Apache Atlas server.
+
+        :param batch: The batch of terms you want to upload.
+        :type batch: Union(list(dict), dict))
+        :return: The results of your bulk term upload.
+        :rtype: dict
+        """
+        # TODO Include a Do Not Overwrite call
+        results = None
+        atlas_endpoint = self.endpoint_url + "/glossary/terms"
+
+        postResp = requests.post(
+            atlas_endpoint,
+            json=batch,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(postResp)
+
+        return results
+
     def _search_generator(self, search_params):
         """
         Generator to page through the search query results.
@@ -384,7 +487,7 @@ class AtlasClient():
             results = self._handle_response(postSearchResults)
             return_values = results["value"]
             return_count = len(return_values)
-            
+
             if return_count == 0:
                 raise StopIteration
 
@@ -392,7 +495,7 @@ class AtlasClient():
             search_params["offset"] = offset
             yield return_values
 
-    def search_entities(self, query, limit=50, search_filter = None ):
+    def search_entities(self, query, limit=50, search_filter=None):
         """
         Search entities based on a query and automaticall handles limits and
         offsets to page through results.
@@ -425,7 +528,7 @@ class AtlasClient():
         if search_filter:
             # "filter": {"add": [{"typeName": "misc_table",
             # "includeSubTypes": True}]}
-            search_params.update({"filter":search_filter})
+            search_params.update({"filter": search_filter})
 
         results = []
         search_generator = self._search_generator(search_params)
