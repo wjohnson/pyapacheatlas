@@ -145,3 +145,5 @@ hive-reference/
 tester.py
 *.xlsx
 *.bat
+.ignore/
+migration/

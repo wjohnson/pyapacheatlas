@@ -1,5 +1,6 @@
 import json
 from json.decoder import JSONDecodeError
+import logging
 import requests
 
 from .entity import AtlasEntity
@@ -43,7 +44,7 @@ class AtlasClient():
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(resp.text))
         return results
-    
+
     def delete_entity(self, guid):
         """
         Delete one or many guids from your Apache Atlas server.
@@ -63,7 +64,7 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
         deleteEntity = requests.delete(
-            atlas_endpoint, 
+            atlas_endpoint,
             headers=self.authentication.get_authentication_headers())
 
         results = self._handle_response(deleteEntity)
@@ -91,7 +92,9 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
         getEntity = requests.get(
-            atlas_endpoint, headers=self.authentication.get_authentication_headers())
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
 
         try:
             getEntity.raise_for_status()
@@ -100,6 +103,28 @@ class AtlasClient():
             raise Exception(getEntity.text)
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(getEntity.text))
+
+        return results
+
+    def get_relationship(self, guid):
+        """
+        Retrieve the relationship attribute for the given guid.
+
+        :param str guid: The unique guid for the relationship.
+        :return: A dict representing AtlasRelationshipWithExtInfo with the
+            relationship (what you probably care about) and referredEntities
+            attributes.
+        :rtype: dict(str, dict)
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + f"/relationship/guid/{guid}"
+
+        getResponse = requests.get(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getResponse)
 
         return results
 
@@ -115,7 +140,9 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
         getTypeDefs = requests.get(
-            atlas_endpoint, headers=self.authentication.get_authentication_headers())
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
 
         try:
             getTypeDefs.raise_for_status()
@@ -150,7 +177,9 @@ class AtlasClient():
             atlas_endpoint = atlas_endpoint + '/name/{}'.format(name)
 
         getTypeDef = requests.get(
-            atlas_endpoint, headers=self.authentication.get_authentication_headers())
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
 
         try:
             getTypeDef.raise_for_status()
@@ -159,6 +188,110 @@ class AtlasClient():
             raise Exception(getTypeDef.text)
         except JSONDecodeError as e:
             raise e("Error in parsing: {}".format(getTypeDef.text))
+
+        return results
+
+    def get_glossary(self, name="Glossary", guid=None, detailed=False):
+        """
+        Retrieve the specified glossary by name or guid.
+
+        :param str name: 
+            The name of the glossary to use, defaults to "Glossary".
+        :param str guid: The unique guid of your glossary (saves you a lookup).
+        :param bool detailed: 
+            Set to true if you want to pull back all terms and not just headers.
+        :return: The requested glossaries with the term headers.
+        :rtype: list(dict)
+        """
+        results = None
+        params = None
+
+        if guid:
+            logging.debug(f"Retreiving a Glossary based on guid: {guid}")
+            atlas_endpoint = self.endpoint_url + "/glossary/{}".format(guid)
+            if detailed:
+                atlas_endpoint = atlas_endpoint + "/detailed"
+            getResult = requests.get(
+                atlas_endpoint,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(getResult)
+        else:
+            logging.debug(f"Retreiving a Glossary based on name: {name}")
+            all_glossaries = self._get_glossaries()
+            logging.debug(f"Iterating over {len(all_glossaries)} glossaries")
+            for glossary in all_glossaries:
+                if glossary["name"] == name:
+                    logging.debug(f"Found a glossary named '{name}'")
+                    if detailed:
+                        logging.debug(
+                            f"Recursively calling get_glossary with guid: {glossary['guid']}")
+                        results = self.get_glossary(
+                            guid=glossary["guid"], detailed=detailed)
+                    else:
+                        results = glossary
+            if results is None:
+                raise ValueError(
+                    f"Glossary with a name of {name} was not found.")
+
+        return results
+
+    def _get_glossaries(self, limit=-1, offset=0, sort_order="ASC"):
+        """
+        Retrieve all glossaries and the term headers.
+
+        :param int limit:
+            The maximum number of glossaries to pull back.  Does not affect the
+            number of term headers included in the results.
+        :param int offset: The number of glossaries to skip.
+        :param str sort_order: ASC for DESC sort for glossary name.
+        :return: The requested glossaries with the term headers.
+        :rtype: list(dict)
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + "/glossary"
+        logging.debug("Retreiving all glossaries from catalog")
+
+        # TODO: Implement paging with offset and limit
+        getResult = requests.get(
+            atlas_endpoint,
+            params={"limit": limit, "offset": offset, "sort": sort_order},
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getResult)
+
+        return results
+
+    def get_glossary_term(self, guid=None, name=None, glossary_name="Glossary", glossary_guid=None):
+        """
+        Retrieve a single glossary term based on its guid.
+
+        :param str guid: A valid guid. Optional if name is specified.
+        :return: The requested glossary term as a dict.
+        :rtype: dict
+        """
+        results = None
+
+        if guid is None and name is None:
+            raise ValueError("Either guid or name and glossary must be set.")
+
+        if guid:
+            atlas_endpoint = self.endpoint_url + \
+                "/glossary/term/{}".format(guid)
+
+            getTerms = requests.get(
+                atlas_endpoint,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(getTerms)
+        else:
+            terms_in_glossary = self.get_glossary(
+                name=glossary_name, guid=glossary_guid)
+            for term in terms_in_glossary["terms"]:
+                if term["displayText"] == name:
+                    _guid = term["termGuid"]
+                    results = self.get_glossary_term(guid=_guid)
 
         return results
 
@@ -221,8 +354,10 @@ class AtlasClient():
         :return: The results of your upload attempt from the Atlas server.
         :rtype: dict
         """
-        # Should this take a list of type defs and figure out the formatting by itself?
-        # Should you pass in a AtlasTypesDef object and be forced to build it yourself?
+        # Should this take a list of type defs and figure out the formatting
+        #  by itself?
+        # Should you pass in a AtlasTypesDef object and be forced to build
+        # it yourself?
         results = None
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
@@ -359,3 +494,113 @@ class AtlasClient():
             raise e("Error in parsing: {}".format(postBulkEntities.text))
 
         return results
+
+    def upload_relationship(self, relationship):
+        """
+        Upload a relationship json.
+
+        :param dict relationship: The relationship you want to upload.
+        :return: The results of your relationship upload.
+        :rtype: dict
+        """
+        # TODO Include a Do Not Overwrite call
+        results = None
+        atlas_endpoint = self.endpoint_url + "/relationship"
+
+        # TODO: Handling Updates instead of just creates
+        relationshipResp = requests.post(
+            atlas_endpoint,
+            json=relationship,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(relationshipResp)
+
+        return results
+
+    def upload_terms(self, batch, force_update=False):
+        """
+        Upload terms to your Apache Atlas server.
+
+        :param batch: The batch of terms you want to upload.
+        :type batch: Union(list(dict), dict))
+        :return: The results of your bulk term upload.
+        :rtype: dict
+        """
+        # TODO Include a Do Not Overwrite call
+        results = None
+        atlas_endpoint = self.endpoint_url + "/glossary/terms"
+
+        postResp = requests.post(
+            atlas_endpoint,
+            json=batch,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(postResp)
+
+        return results
+
+    def _search_generator(self, search_params):
+        """
+        Generator to page through the search query results.
+        """
+        atlas_endpoint = self.endpoint_url + "/search/advanced"
+        offset = 0
+
+        while True:
+            postSearchResults = requests.post(
+                atlas_endpoint,
+                json=search_params,
+                headers=self.authentication.get_authentication_headers()
+            )
+            results = self._handle_response(postSearchResults)
+            return_values = results["value"]
+            return_count = len(return_values)
+
+            if return_count == 0:
+                raise StopIteration
+
+            offset = offset + return_count
+            search_params["offset"] = offset
+            yield return_values
+
+    def search_entities(self, query, limit=50, search_filter=None):
+        """
+        Search entities based on a query and automaticall handles limits and
+        offsets to page through results.
+
+        The limit provides how many records are returned in each batch with a
+        maximum of 1,000 entries per page.  
+
+        :param str query: The search query to be executed.
+        :param int limit: 
+            A non-zero integer representing how many entities to
+            return for each page of the search results.
+        :param dict search_filter: A search filter to reduce your results.
+        :return: The results of your search as a generator.
+        :rtype: Iterator[list(dict)]
+        """
+        results = None
+
+        if limit > 1000 or limit < 1:
+            raise ValueError(
+                "The limit parameter must be non-zero and less than 1,000."
+            )
+
+        search_params = {
+            "keywords": query,
+            "limit": limit,
+            "offset": 0
+        }
+        # TODO: Make this smarter, make it easier to create filters
+        # without having to know how to make a filter object.
+        if search_filter:
+            # "filter": {"add": [{"typeName": "misc_table",
+            # "includeSubTypes": True}]}
+            search_params.update({"filter": search_filter})
+
+        results = []
+        search_generator = self._search_generator(search_params)
+
+        return search_generator
