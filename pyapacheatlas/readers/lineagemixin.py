@@ -44,15 +44,15 @@ class LineageMixIn():
         desired attributes.
         """
         entity = AtlasEntity(
-            name=row[header["Table"]],
-            typeName=row[header["Type"]],
+            name=row[header["table"]],
+            typeName=row[header["type"]],
             # qualifiedName can be overwritten via the attributes
             # functionality
-            qualified_name=row[header["Table"]],
+            qualified_name=row[header["table"]],
             guid=self.guidTracker.get_guid(),
             attributes=attributes,
             classifications=string_to_classification(
-                row.get(header["Classifications"]),
+                row.get(header["classifications"]),
                 self.config.value_separator
             )
         )
@@ -80,13 +80,13 @@ class LineageMixIn():
         # Required attributes
         # NOTE: Classification is not actually required but it's being
         # included to avoid being roped in as an attribute
-        _required_headers = ["Table", "Type", "Classifications"]
+        _required_headers = ["table", "type", "classifications"]
         source_header = {k: "{} {}".format(
             self.config.source_prefix, k) for k in _required_headers}
         target_header = {k: "{} {}".format(
             self.config.target_prefix, k) for k in _required_headers}
         process_header = {k: "{} {}".format(
-            self.config.process_prefix, k) for k in ["Name", "Type"]}
+            self.config.process_prefix, k) for k in ["name", "type"]}
 
         # Read in all Source and Target entities
         output = list()  # TODO: Change to a dict to facilitate lookups
@@ -103,7 +103,7 @@ class LineageMixIn():
                 row, target_header, target_attributes, output
             )
 
-            if row[source_header["Table"]] is not None:
+            if row[source_header["table"]] is not None:
                 # There is a source table
                 source_attributes = columns_matching_pattern(
                     row, self.config.source_prefix,
@@ -114,7 +114,7 @@ class LineageMixIn():
                 )
 
             # Map the source and target tables to a process
-            if row[process_header["Name"]] is not None:
+            if row[process_header["name"]] is not None:
                 # There is a process
                 inputs_to_process = [] if source_entity is None else [
                     source_entity.to_json(minimum=True)]
@@ -124,9 +124,9 @@ class LineageMixIn():
                 )
 
                 process_entity = AtlasProcess(
-                    name=row[process_header["Name"]],
-                    typeName=row[process_header["Type"]],
-                    qualified_name=row[process_header["Name"]],
+                    name=row[process_header["name"]],
+                    typeName=row[process_header["type"]],
+                    qualified_name=row[process_header["name"]],
                     guid=self.guidTracker.get_guid(),
                     inputs=inputs_to_process,
                     outputs=[target_entity.to_json(minimum=True)],
@@ -180,7 +180,7 @@ class LineageMixIn():
         column_type = columns_relationship["endDef2"]["type"]
         return column_type
 
-    def _insert_column_entity(self, prefix, row, column_type, headers, required_headers, column_entities, parent_table_entity):
+    def _insert_column_entity(self, prefix, row, column_type, headers, column_entities, parent_table_entity):
         """
 
         :param str prefix: The prefix used to filter down the attributes.
@@ -190,8 +190,6 @@ class LineageMixIn():
         :param str column_type: The column type to be used for this entity.
         :param dict(str, str) headers:
             The headers to aide in looking up field values.
-        :param list(str) required_headers: The headers to ignore when looking at
-            attributes.
         :param column_entities: 
             The column entities dictionary that will be inserted into.
         :type column_entities: list(`:class:~pyapacheatlas.core.entity.AtlasEntity`)
@@ -199,11 +197,11 @@ class LineageMixIn():
         :type parent_table_entity: `:class:~pyapacheatlas.core.entity.AtlasEntity`
         """
         _qual_name = _make_col_qual_name(
-            row[headers["Column"]], parent_table_entity.get_name())
+            row[headers["column"]], parent_table_entity.get_name())
 
         _clean_attribs = columns_matching_pattern(
             row, prefix,
-            does_not_match=list(required_headers)
+            does_not_match=list(headers.values())
         )
         _attributes = self._organize_attributes(
             _clean_attribs,
@@ -217,12 +215,12 @@ class LineageMixIn():
             }
         )
         _classifications = string_to_classification(
-            row.get(headers["Classifications"])
+            row.get(headers["classifications"])
         )
 
         # There should always be a target
         new_entity = AtlasEntity(
-            name=row[headers["Column"]],
+            name=row[headers["column"]],
             typeName=column_type,
             # qualifiedName can be overwritten via the attributes
             # functionality
@@ -270,13 +268,13 @@ class LineageMixIn():
         # Required attributes
         # NOTE: Classification is not actually required but it's being
         # included to avoid being roped in as an attribute
-        _required_headers = ["Table", "Column", "Classifications"]
+        _required_headers = ["table", "column", "classifications"]
         source_header = {k: "{} {}".format(
             self.config.source_prefix, k) for k in _required_headers}
         target_header = {k: "{} {}".format(
             self.config.target_prefix, k) for k in _required_headers}
         process_header = {k: "{} {}".format(
-            self.config.target_prefix, k) for k in ["Name", "Type"]}
+            self.config.target_prefix, k) for k in ["name", "type"]}
 
         transformation_column_header = self.config.column_transformation_name
         # No required process headers
@@ -299,45 +297,45 @@ class LineageMixIn():
             # look up the appropriate column type
 
             self._update_parent_table_cache(
-                row[target_header["Table"]], tables, atlas_entities)
+                row[target_header["table"]], tables, atlas_entities)
 
-            target_parent = tables[row[target_header["Table"]]]
+            target_parent = tables[row[target_header["table"]]]
             target_column_type = self._find_column_type(
                 target_parent.typeName, atlas_typedefs)
 
             target_qual_name = self._insert_column_entity(
                 self.config.target_prefix, row, target_column_type,
-                target_header, _required_headers,
+                target_header,
                 columnEntitiesOutput, target_parent
             )
 
             # Source Column is optiona in the spreadsheet
-            if row[source_header["Table"]] is not None:
+            if row[source_header["table"]] is not None:
                 # Given the existing source table entity in atlas_entities,
                 # look up the appropriate column type
                 self._update_parent_table_cache(
-                    row[source_header["Table"]], tables, atlas_entities)
+                    row[source_header["table"]], tables, atlas_entities)
 
-                source_parent = tables[row[source_header["Table"]]]
+                source_parent = tables[row[source_header["table"]]]
                 source_column_type = self._find_column_type(
                     source_parent.typeName, atlas_typedefs)
 
                 source_qual_name = self._insert_column_entity(
                     self.config.source_prefix, row, source_column_type,
-                    source_header, _required_headers,
+                    source_header,
                     columnEntitiesOutput, source_parent
                 )
                 table_process = first_process_containing_io(
-                    row[source_header["Table"]], row[target_header["Table"]],
+                    row[source_header["table"]], row[target_header["table"]],
                     atlas_entities)
 
             # Given the existing process that with target table and source
             # table types, look up the appropriate column_lineage type
             # LIMITATION: Prevents you from specifying multiple processes
             # for the same input and output tables
-            if row[source_header["Table"]] is None:
+            if row[source_header["table"]] is None:
                 table_process = first_process_containing_io(
-                    "*", row[target_header["Table"]], atlas_entities)
+                    "*", row[target_header["table"]], atlas_entities)
 
             if table_process.get_name() in table_and_proc_mappings:
                 process_type = table_and_proc_mappings[table_process.get_name(
@@ -366,7 +364,7 @@ class LineageMixIn():
             process_qual_name = (
                 table_process.get_name() +
                 "@derived_column:{}".format(
-                    row[target_header["Column"]]
+                    row[target_header["column"]]
                 ))
 
             _proc_inputs = [] if source_qual_name not in columnEntitiesOutput else [
@@ -406,8 +404,8 @@ class LineageMixIn():
                 col_map_target_col = (
                     columnEntitiesOutput[target_qual_name].get_name()
                 )
-                col_map_source_table = row[source_header["Table"]] or "*"
-                col_map_target_table = row[target_header["Table"]]
+                col_map_source_table = row[source_header["table"]] or "*"
+                col_map_target_table = row[target_header["table"]]
                 hash_key = hash(col_map_source_table + col_map_target_table)
                 col_map_dict = {"Source": col_map_source_col,
                                 "Sink": col_map_target_col}
