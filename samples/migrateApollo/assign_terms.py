@@ -137,8 +137,6 @@ if __name__ == "__main__":
     # TODO: Create the relationship between term_guids and the entities
     for term_name, term_dict in term_guids.items():
         for entity_qualified_name in term_dict["qualifiedNames"]:
-            if entity_qualified_name != "nme_clmt_full":
-                continue
             print(f"{term_name}:{entity_qualified_name}")
             if entity_qualified_name not in qualified_entity_name_lookup:
                 print(
