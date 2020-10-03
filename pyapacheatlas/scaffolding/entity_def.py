@@ -1,10 +1,18 @@
-from ..core.typedef import *
+from ..core import typedef
 
 
 def to_entity_def(entity_name, attributes, super_types=["DataSet"]):
     """
-    :param list(str) attributes: The attributes that should be converted into an
+    :param str entity_name: The name of the entity definition to create.
+    :param list(str) attributes:
+        The attributes that should be converted into an
         entity def list of attributes.
+    :param list(str) super_types: The super types to inherit from.
+
+    :return: An entity definition with the provided attributes and the default
+        settings of attributes as defined in
+        :class:`~pyapacheatlas.core.typedef.AtlasAttributeDef`.
+    :rtype: dict
     """
     # Take in a list of attribute names
     # Special columns: name, superTypes
@@ -12,9 +20,10 @@ def to_entity_def(entity_name, attributes, super_types=["DataSet"]):
     # For each attribute, Create a default attribute def
     # Add it to the Entity Def
 
-    attributeDefs = [AtlasAttributeDef(name=i).to_json() for i in attributes]
+    attributeDefs = [
+        typedef.AtlasAttributeDef(name=i).to_json() for i in attributes]
 
-    entityDef = EntityTypeDef(
+    entityDef = typedef.EntityTypeDef(
         name=entity_name,
         superTypes=super_types,
         attributeDefs=attributeDefs

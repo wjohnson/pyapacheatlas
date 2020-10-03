@@ -1,4 +1,4 @@
-from ..core.typedef import *
+from ..core import typedef
 
 
 def column_lineage_scaffold(datasource,
@@ -32,20 +32,21 @@ def column_lineage_scaffold(datasource,
     :param list(dict), optional column_lineage_process_attributes:
         Attribute Defs to add to the column lineage process entity type.
     :param list(dict), optional table_process_column_lineage_relationship_attributes:
-        Attribute Defs to add to the table process column lineage relationship type.
+        Attribute Defs to add to the table process column lineage
+        relationship type.
     """
 
     src_table_columns_typeName = "{}_table_columns".format(datasource)
 
     # TODO: Create all combinations of datasource
     # Define {datasource}_column
-    column_entity = EntityTypeDef(
+    column_entity = typedef.EntityTypeDef(
         name="{}_column".format(datasource),
         superTypes=["DataSet"],
         attributeDefs=column_attributes
     )
     # Define {datasource}_table
-    table_entity = EntityTypeDef(
+    table_entity = typedef.EntityTypeDef(
         name="{}_table".format(datasource),
         superTypes=["DataSet"],
         attributeDefs=table_attributes,
@@ -53,7 +54,7 @@ def column_lineage_scaffold(datasource,
         options={"schemaElementsAttribute": "columns"}
     )
     # Define {datasource}_table_columns relationship ()
-    table_column_relationship = RelationshipTypeDef(
+    table_column_relationship = typedef.RelationshipTypeDef(
         name=src_table_columns_typeName,
         attributeDefs=table_column_relationship_attributes,
         relationshipCategory="COMPOSITION",
@@ -74,18 +75,18 @@ def column_lineage_scaffold(datasource,
     )
 
     # Define {datasource}_column_lineage
-    column_lineage_process_entity = EntityTypeDef(
+    column_lineage_process_entity = typedef.EntityTypeDef(
         name="{}_column_lineage".format(datasource),
         superTypes=["Process"],
         attributeDefs=((column_lineage_process_attributes or []) +
                        [
-            AtlasAttributeDef(
+            typedef.AtlasAttributeDef(
                 name="dependencyType",
                 isOptional=True,
                 valuesMinCount=1,
                 valuesMaxCount=1
             ).to_json(),
-            AtlasAttributeDef(
+            typedef.AtlasAttributeDef(
                 name="expression"
             ).to_json()
         ]
@@ -93,20 +94,20 @@ def column_lineage_scaffold(datasource,
     )
 
     # Define {datasource}_process
-    table_process_entity = EntityTypeDef(
+    table_process_entity = typedef.EntityTypeDef(
         name="{}_process".format(datasource),
         superTypes=["Process"],
         attributeDefs=table_process_attributes
     )
     if use_column_mapping:
         table_process_entity.attributeDefs.append(
-            AtlasAttributeDef(
+            typedef.AtlasAttributeDef(
                 name="columnMapping"
             ).to_json()
         )
 
     # Define {datasource}_process_column_lineage
-    table_process_column_lineage_relationship = RelationshipTypeDef(
+    table_process_column_lineage_relationship = typedef.RelationshipTypeDef(
         name="{}_process_column_lineage".format(datasource),
         relationshipCategory="COMPOSITION",
         attributeDefs=table_process_column_lineage_relationship_attributes,

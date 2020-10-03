@@ -14,11 +14,12 @@ class ExcelConfiguration(ReaderConfiguration):
     with the column_sheet and table_sheet properties.
 
     The Columns sheet must contain a "Source/Target" Column and Table header.
-    Optionally, a Classifications column can be provided for each Source/Target.
+    Optionally, a Classifications column can be provided for each
+    Source/Target.
 
-    The Tables sheet must contain a "Source/Target" Table and Type along with a
-    Process Name and Process Type.  The Process is related to the mechanism by
-    which source becomes the target (e.g. a Stored Procedure or Query).
+    The Tables sheet must contain a "Source/Target" Table and Type along with
+    a Process Name and Process Type.  The Process is related to the mechanism
+    by which source becomes the target (e.g. a Stored Procedure or Query).
     """
 
     def __init__(self, column_sheet="ColumnsLineage",
@@ -66,7 +67,8 @@ class ExcelReader(Reader):
 
         :param openpyxl.workbook.Workbook worksheet:
             A worksheet class from openpyxl.
-        :return: The standardized version of the excel spreadsheet in json form.
+        :return:
+            The standardized version of the excel spreadsheet in json form.
         :rtype: list(dict(str,str))
         """
         # Standardize the column header
@@ -79,8 +81,9 @@ class ExcelReader(Reader):
         )
 
         output = []
-        for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, 
-            min_col=1, max_col=worksheet.max_column):
+        for row in worksheet.iter_rows(
+                min_row=2, max_row=worksheet.max_row,
+                min_col=1, max_col=worksheet.max_column):
             output.append(
                 {k: row[idx].value for idx, k in column_headers})
 
@@ -90,13 +93,16 @@ class ExcelReader(Reader):
         """
         Generate a set of entities from an excel template file.
 
-        :param str filepath: The xlsx file that contains your table and columns.
+        :param str filepath:
+            The xlsx file that contains your table and columns.
         :return: An AtlasTypeDef with entityDefs for the provided rows.
         :rtype: dict(str, list(dict))
         """
         wb = load_workbook(filepath)
-        # A user may omit the entityDef_sheet by providing the config with None
-        if self.config.bulkEntity_sheet and self.config.bulkEntity_sheet not in wb.sheetnames:
+        # A user may omit the entityDef_sheet by providing the
+        # config with None
+        sheetIsNotPresent = self.config.bulkEntity_sheet not in wb.sheetnames
+        if self.config.bulkEntity_sheet and sheetIsNotPresent:
             raise KeyError("The sheet {} was not found".format(
                 self.config.entityDef_sheet))
 
@@ -106,7 +112,8 @@ class ExcelReader(Reader):
             bulkEntity_sheet = wb[self.config.bulkEntity_sheet]
             json_bulkEntities = ExcelReader._parse_spreadsheet(
                 bulkEntity_sheet)
-            bulkEntities_generated = super().parse_bulk_entities(json_bulkEntities)
+            bulkEntities_generated = super().parse_bulk_entities(
+                json_bulkEntities)
             output.update(bulkEntities_generated)
 
         wb.close()
@@ -116,17 +123,20 @@ class ExcelReader(Reader):
     def parse_entity_defs(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
-        parse the type def tab(s) into a set of entity defs that can be uploaded.
+        parse the type def tab(s) into a set of entity defs that can be
+        uploaded.
 
         Currently, only entityDefs are supported.
 
-        :param str filepath: The xlsx file that contains your table and columns.
+        :param str filepath:
+            The xlsx file that contains your table and columns.
         :return: An AtlasTypeDef with entityDefs for the provided rows.
         :rtype: dict(str, list(dict))
         """
         wb = load_workbook(filepath)
         # A user may omit the entityDef_sheet by providing the config with None
-        if self.config.entityDef_sheet and self.config.entityDef_sheet not in wb.sheetnames:
+        sheetIsNotPresent = self.config.entityDef_sheet not in wb.sheetnames
+        if self.config.entityDef_sheet and sheetIsNotPresent:
             raise KeyError("The sheet {} was not found".format(
                 self.config.entityDef_sheet))
 
@@ -157,18 +167,21 @@ class ExcelReader(Reader):
         (provided in the template's table excel sheet).  Looks for the first
         relationship type def with an endDef2 of `columnLineages`.
 
-        :param str filepath: The xlsx file that contains your table and columns.
+        :param str filepath:
+            The xlsx file that contains your table and columns.
         :param list() atlas_entities:
-            A list of AtlasEntity objects representing 
+            A list of AtlasEntity objects representing
         :param dict(str,list(dict)) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, including
-            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
-            values used.
+            The results of requesting all type defs from Apache Atlas,
+            including entityDefs, relationshipDefs, etc.  relationshipDefs
+            are the only values used.
         :param bool use_column_mapping:
             Should the table processes include the columnMappings attribute
             that represents Column Lineage in Azure Data Catalog.
             Defaults to False.
-        :return: A list of Atlas Entities representing the spreadsheet's inputs as their json dicts.
+        :return:
+            A list of Atlas Entities representing the spreadsheet's
+            inputs as their json dicts.
         :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
         """
 
@@ -200,9 +213,11 @@ class ExcelReader(Reader):
         Requires that the relationship attributes are already defined in the
         provided atlas type defs.
 
-        :param str filepath: The xlsx file that contains your table and columns.
-
-        :return: A list of Atlas Entities representing the spreadsheet's inputs as their json dicts.
+        :param str filepath:
+            The xlsx file that contains your table and columns.
+        :return:
+            A list of Atlas Entities representing the spreadsheet's inputs
+            as their json dicts.
         :rtype: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
         """
 
@@ -226,9 +241,9 @@ class ExcelReader(Reader):
     def parse_lineages(self, filepath, atlas_typedefs, use_column_mapping=False):
         """
         Read a given excel file that conforms to the excel atlas template and
-        parse the tables, processes, and columns into table and column lineages.
-        Requires that the relationship attributes are already defined in the
-        provided atlas type defs.
+        parse the tables, processes, and columns into table and column
+        lineages. Requires that the relationship attributes are already
+        defined in the provided atlas type defs.
 
         Infers column type from the target table type and an assumed "columns"
         relationship attribute on the table type.
@@ -237,16 +252,19 @@ class ExcelReader(Reader):
         (provided in the template's table excel sheet).  Looks for the first
         relationship type def with an endDef2 of `columnLineages`.
 
-        :param str filepath: The xlsx file that contains your table and columns.
+        :param str filepath:
+            The xlsx file that contains your table and columns.
         :param dict(str,list(dict)) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, including
-            entityDefs, relationshipDefs, etc.  relationshipDefs are the only
-            values used.
+            The results of requesting all type defs from Apache Atlas,
+            including entityDefs, relationshipDefs, etc.  relationshipDefs are
+            the only values used.
         :param bool use_column_mapping:
             Should the table processes include the columnMappings attribute
             that represents Column Lineage in Azure Data Catalog.
             Defaults to False.
-        :return: A list of Atlas Entities representing the spreadsheet's inputs as their json dicts.
+        :return:
+            A list of Atlas Entities representing the spreadsheet's inputs
+            as their json dicts.
         :rtype: list(dict)
         """
         entities = []
@@ -280,7 +298,8 @@ class ExcelReader(Reader):
             :class:`~openpyxl.worksheet.worksheet.Worksheet`
         """
         for idx, val in enumerate(headers):
-            # TODO: Not the best way once we get past 26 columns in the template
+            # TODO: Not the best way once we get past
+            # 26 columns in the template
             active_column = ascii_uppercase[idx]
             active_value = headers[idx]
             active_cell = "{}1".format(active_column)

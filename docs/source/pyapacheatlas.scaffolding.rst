@@ -1,9 +1,6 @@
 pyapacheatlas.scaffolding package
 =================================
 
-Submodules
-----------
-
 pyapacheatlas.scaffolding.column\_lineage module
 ------------------------------------------------
 

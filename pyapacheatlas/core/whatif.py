@@ -17,7 +17,8 @@ class WhatIfValidator():
     ATLAS_MODEL = {
         "ASSET": ["name", "description", "owner"],
         "REFERENCABLE": ["qualifiedName"],
-        "PROCESS": ["inputs", "outputs"] + ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
+        "PROCESS": (["inputs", "outputs"] +
+                    ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES),
         "DATASET": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES,
         "INFRASTRUCTURE": ASSET_ATTRIBUTES + REFERENCABLE_ATTRIBUTES
     }
@@ -36,7 +37,8 @@ class WhatIfValidator():
 
         self.classification_defs = type_defs.get("classificationDefs", [])
         self.entity_defs = type_defs.get("entityDefs", [])
-        # Create a dict of all entities by name, then find the name of all attributes and whether they are optional
+        # Create a dict of all entities by name, then find the name of all
+        # attributes and whether they are optional
         entity_fields = {}
         for e in self.entity_defs:
             entity_fields[e["name"]] = []
@@ -44,15 +46,21 @@ class WhatIfValidator():
                 ef = EntityField(attr.get("name"), attr.get("isOptional"))
                 entity_fields[e["name"]].append(ef)
 
-        # Adding Qualified Name to the set of valid fields as it doesn't show up in the entity type def
+        # Adding Qualified Name to the set of valid fields as it doesn't
+        # show up in the entity type def
         self.entity_valid_fields = {k: set(
-            [field.name for field in v] + ["qualifiedName"]) for k, v in entity_fields.items()}
-        # Adding Qualified Name to the set of required entity fields as it doesn't show up in the entity type def
-        self.entity_required_fields = {k: set([field.name for field in v if not field.isOptional] + [
-                                              "qualifiedName"]) for k, v in entity_fields.items()}
+            [field.name for field in v] + ["qualifiedName"])
+            for k, v in entity_fields.items()}
+        # Adding Qualified Name to the set of required entity
+        # fields as it doesn't show up in the entity type def
+        self.entity_required_fields = {
+            k: set([field.name for field in v if not field.isOptional] + [
+                "qualifiedName"]) for k, v in entity_fields.items()
+        }
 
         self.existing_entities = set(
-            [e.get("attributes", {}).get("qualifiedName") for e in existing_entities])
+            [e.get("attributes", {}).get("qualifiedName") for
+             e in existing_entities])
 
         self.enum_defs = type_defs.get("enumDefs", [])
         self.relationship_defs = type_defs.get("relationshipDefs", [])
@@ -93,7 +101,8 @@ class WhatIfValidator():
 
     def entity_has_invalid_attributes(self, entity):
         """
-        Check if the entity is using attributes that are not defined on the type.
+        Check if the entity is using attributes that are not defined
+        on the type.
 
         :param dict entity:
         :return: Whether the entity matches the list of known entity types.
@@ -105,7 +114,8 @@ class WhatIfValidator():
         _entity_type = entity["typeName"]
         # Assuming only one entity matches and only one super type
         super_type = [e["superTypes"]
-                      for e in self.entity_defs if e["name"] == _entity_type][0][0].upper()
+                      for e in self.entity_defs
+                      if e["name"] == _entity_type][0][0].upper()
         if super_type in self.ATLAS_MODEL:
             valid_attributes = valid_attributes.union(
                 self.ATLAS_MODEL[super_type])
@@ -118,8 +128,8 @@ class WhatIfValidator():
 
     def entity_would_overwrite(self, entity):
         """
-        Based on the qualified name attributes, does the provided entity exist in the
-        entities provided to the What If Validator?
+        Based on the qualified name attributes, does the provided
+        entity exist in the entities provided to the What If Validator?
 
         :param dict entity:
         :return: Whether the entity matches an existing entity.
@@ -151,17 +161,18 @@ class WhatIfValidator():
         for entity in entities:
             if not self.entity_type_exists(entity):
                 report["TypeDoesNotExist"].append(entity["guid"])
-                # If it's an invalid type, we have to skip over the rest of this
+                # If it's an invalid type, we have to skip over the rest
+                # of this
                 continue
 
             using_invalid = self.entity_has_invalid_attributes(entity)
             is_missing = self.entity_missing_attributes(entity)
-
+            cur_guid = entity["guid"]
             if using_invalid:
-                report["UsingInvalidAttributes"][entity["guid"]] = using_invalid
+                report["UsingInvalidAttributes"][cur_guid] = using_invalid
 
             if is_missing:
-                report["MissingRequiredAttributes"][entity["guid"]] = is_missing
+                report["MissingRequiredAttributes"][cur_guid] = is_missing
 
         output = {
             "counts": {k: len(v) for k, v in report.items()},
