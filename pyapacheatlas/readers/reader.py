@@ -102,10 +102,10 @@ class Reader(LineageMixIn):
             # Remove any cell with a None / Null attribute
             elif v is None:
                 continue
-            # If the Attribute key starts with (Relationship)
+            # If the Attribute key starts with [Relationship]
             # Move it to the relation
-            elif k.startswith("(Relationship)"):
-                cleaned_key = k.replace("(Relationship)", "").strip()
+            elif k.startswith("[Relationship]"):
+                cleaned_key = k.replace("[Relationship]", "").strip()
                 # Assuming that we can find this in an existing entity
                 try:
                     min_reference = existing_entities[v].to_json(minimum=True)
