@@ -5,12 +5,11 @@ from ..core.util import GuidTracker
 from ..core import (
     AtlasAttributeDef,
     AtlasEntity,
-    AtlasProcess,
     EntityTypeDef
 )
 
 from .lineagemixin import LineageMixIn
-from .util import *
+from . import util as reader_util
 
 
 class ReaderConfiguration():
@@ -66,7 +65,7 @@ class Reader(LineageMixIn):
 
         :param configuration:
             A list of dicts containing at least `Entity TypeName` and `name`
-        :type configuration: 
+        :type configuration:
             :class:`~pyapacheatlas.readers.reader.ReaderConfiguration`
         :param int guid:
             A negative integer to use as the starting counter for entities
@@ -83,14 +82,14 @@ class Reader(LineageMixIn):
 
         :param dict(str,str) row:
             A dict representing the input rows.
-        :param existing_entities: 
+        :param existing_entities:
             A list of existing atlas entities that will be used to infer
             any relationship attributes.
         :type existing_entities:
             dict(str, `:class:~pyapacheatlas.core.entity.AtlasEntity`)
         :param list(str) ignore:
             A set of keys to ignore and omit from the returned dict.
-        :return: 
+        :return:
             A dictionary containing 'ttributes' and 'relationshipAttributes'
         :rtype: dict(str, dict(str,str))
         """
@@ -111,7 +110,7 @@ class Reader(LineageMixIn):
                     min_reference = existing_entities[v].to_json(minimum=True)
                 # LIMITATION: We must have already seen the relationship
                 # attribute to be certain it can be looked up.
-                except KeyError as e:
+                except KeyError:
                     raise KeyError(
                         f"The entity {v} should be listed before {row['qualifiedName']}."
                     )
@@ -125,7 +124,8 @@ class Reader(LineageMixIn):
 
     def parse_bulk_entities(self, json_rows):
         """
-        Create an AtlasTypeDef consisting of entities and their attributes for the given json_rows.
+        Create an AtlasTypeDef consisting of entities and their attributes
+        for the given json_rows.
 
         :param list(dict(str,str)) json_rows:
             A list of dicts containing at least `Entity TypeName` and `name`
@@ -154,7 +154,7 @@ class Reader(LineageMixIn):
                 qualified_name=row["qualifiedName"],
                 guid=self.guidTracker.get_guid(),
                 attributes=_attributes["attributes"],
-                classifications=string_to_classification(
+                classifications=reader_util.string_to_classification(
                     row["classifications"],
                     sep=self.config.value_separator
                 ),
@@ -168,12 +168,13 @@ class Reader(LineageMixIn):
 
     def parse_entity_defs(self, json_rows):
         """
-        Create an AtlasTypeDef consisting of entityDefs for the given json_rows.
+        Create an AtlasTypeDef consisting of entityDefs for the
+        given json_rows.
 
         :param list(dict(str,str)) json_rows:
             A list of dicts containing at least `Entity TypeName` and `name`
-            that represents the metadata for a given entity type's attributeDefs.
-            Extra metadata will be ignored.
+            that represents the metadata for a given entity type's
+            attributeDefs. Extra metadata will be ignored.
         :return: An AtlasTypeDef with entityDefs for the provided rows.
         :rtype: dict(str, list(dict))
         """
@@ -215,8 +216,8 @@ class Reader(LineageMixIn):
             ).to_json()
             output["entityDefs"].append(local_entity_def)
 
-        # Extra attribute metadata (e.g. extra columns / json entries) are ignored.
-        # Warn the user that this metadata will be ignored.
+        # Extra attribute metadata (e.g. extra columns / json entries)
+        # are ignored. Warn the user that this metadata will be ignored.
         extra_metadata_warnings = [
             i for i in attribute_metadata_seen if i not in AtlasAttributeDef.propertiesEnum]
         for extra_metadata in extra_metadata_warnings:

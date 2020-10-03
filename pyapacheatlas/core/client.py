@@ -39,20 +39,22 @@ class AtlasClient():
         try:
             resp.raise_for_status()
             results = json.loads(resp.text)
-        except requests.RequestException as e:
+        except requests.RequestException:
             raise Exception(resp.text)
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(resp.text))
+        except JSONDecodeError:
+            raise Exception("Error in parsing: {}".format(resp.text))
         return results
 
     def delete_entity(self, guid):
         """
         Delete one or many guids from your Apache Atlas server.
 
-        :param guid: The guid or guids you want to retrieve
+        :param guid: The guid or guids you want to remove.
         :type guid: Union[str, list(str)]
-        :return: A list of entities wrapped in the {"entities"} dict.
-        :rtype: dict(str, dict)
+        :return:
+            An EntityMutationResponse containing guidAssignments,
+            mutatedEntities, and partialUpdatedEntities (list).
+        :rtype: dict(str, Union[dict,list])
         """
         results = None
 
@@ -71,16 +73,16 @@ class AtlasClient():
 
         return results
 
-    def get_entity(self, guid, use_cache=False):
+    def get_entity(self, guid):
         """
-        Retrieve one or many guids from your Apache Atlas server.
-        The use_cache parameter is currently not used but reserved for
-        later use.
+        Retrieve one or many guids from your Atlas backed Data Catalog.
 
         :param guid: The guid or guids you want to retrieve
         :type guid: Union[str, list(str)]
-        :return: A list of entities wrapped in the {"entities"} dict.
-        :rtype: dict(str, list(dict))
+        :return:
+            An AtlasEntitiesWithExtInfo object which includes a list of
+            entities and accessible with the "entities" key.
+        :rtype: dict(str, Union[list(dict),dict])
         """
         results = None
 
@@ -96,13 +98,7 @@ class AtlasClient():
             headers=self.authentication.get_authentication_headers()
         )
 
-        try:
-            getEntity.raise_for_status()
-            results = json.loads(getEntity.text)
-        except requests.RequestException as e:
-            raise Exception(getEntity.text)
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(getEntity.text))
+        results = self._handle_response(getEntity)
 
         return results
 
@@ -132,8 +128,9 @@ class AtlasClient():
         """
         Retrieve all of the type defs available on the Apache Atlas server.
 
-        :return: A dict containing lists of type defs wrapped in their
-         corresponding definition types {"entityDefs", "relationshipDefs"}.
+        :return: A dict representing an AtlasTypesDef, containing lists of
+        type defs wrapped in their corresponding definition types
+        {"entityDefs", "relationshipDefs"}.
         :rtype: dict(str, list(dict))
         """
         results = None
@@ -144,27 +141,23 @@ class AtlasClient():
             headers=self.authentication.get_authentication_headers()
         )
 
-        try:
-            getTypeDefs.raise_for_status()
-            results = json.loads(getTypeDefs.text)
-        except requests.RequestException as e:
-            raise Exception(getTypeDefs.text)
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(getTypeDefs.text))
+        results = self._handle_response(getTypeDefs)
 
         return results
 
-    def get_typedef(self, type_category, guid=None, name=None, use_cache=False):
+    def get_typedef(self, type_category, guid=None, name=None):
         """
         Retrieve a single type def based on its type category and
         (guid or name).
 
-        :param type_category: The type category your type def belongs to.
+        :param type_category:
+            The type category your type def belongs to. You most likely want
+            TypeCategory.ENTITY.
         :type type_category:
             :class:`~pyapacheatlas.core.typedef.TypeCategory`
         :param str,optional guid: A valid guid. Optional if name is specified.
         :param str,optional name: A valid name. Optional if guid is specified.
-        :return: The requested typedef as a dict.
+        :return: A dictionary representing an Atlas{TypeCategory}Def.
         :rtype: dict
         """
         results = None
@@ -181,30 +174,36 @@ class AtlasClient():
             headers=self.authentication.get_authentication_headers()
         )
 
-        try:
-            getTypeDef.raise_for_status()
-            results = json.loads(getTypeDef.text)
-        except requests.RequestException as e:
-            raise Exception(getTypeDef.text)
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(getTypeDef.text))
+        results = self._handle_response(getTypeDef)
 
         return results
 
     def get_glossary(self, name="Glossary", guid=None, detailed=False):
         """
-        Retrieve the specified glossary by name or guid.
+        Retrieve the specified glossary by name or guid along with the term
+        headers (AtlasRelatedTermHeader: including displayText and termGuid).
+        Providing the glossary name only will result in a lookup of all
+        glossaries and returns the term headers (accessible via "terms" key)
+        for all glossaries.
+        Use detailed = True to return the full detail of terms
+        (AtlasGlossaryTerm) accessible via "termInfo" key.
+        
+        :param str name:
+            The name of the glossary to use, defaults to "Glossary". Not
+            required if using the guid parameter.
+        :param str guid:
+            The unique guid of your glossary. Not required if using the
+            name parameter.
+        :param bool detailed:
+            Set to true if you want to pull back all terms and
+            not just headers.
+        :return:
+            The requested glossary with the term headers (AtlasGlossary) or
+            with detailed terms (AtlasGlossaryExtInfo).
 
-        :param str name: 
-            The name of the glossary to use, defaults to "Glossary".
-        :param str guid: The unique guid of your glossary (saves you a lookup).
-        :param bool detailed: 
-            Set to true if you want to pull back all terms and not just headers.
-        :return: The requested glossaries with the term headers.
         :rtype: list(dict)
         """
         results = None
-        params = None
 
         if guid:
             logging.debug(f"Retreiving a Glossary based on guid: {guid}")
@@ -265,9 +264,23 @@ class AtlasClient():
 
     def get_glossary_term(self, guid=None, name=None, glossary_name="Glossary", glossary_guid=None):
         """
-        Retrieve a single glossary term based on its guid.
+        Retrieve a single glossary term based on its guid. Providing only the
+        glossary_name will result in a lookup for the glossary guid. If you
+        plan on looking up many terms, consider using the get_glossary method
+        with the detailed argument set to True. That method will provide all
+        glossary terms in a dictionary for faster lookup.
 
-        :param str guid: A valid guid. Optional if name is specified.
+        :param str guid:
+            The guid of your term. Not required if name is specified.
+        :param str name:
+            The name of your term's display text. Overruled if guid is
+            provided.
+        :param str glossary_name:
+            The name of the glossary to use, defaults to "Glossary". Not
+            required if using the glossary_guid parameter.
+        :param str glossary_guid:
+            The unique guid of your glossary. Not required if using the
+            glossary_name parameter.
         :return: The requested glossary term as a dict.
         :rtype: dict
         """
@@ -305,19 +318,11 @@ class AtlasClient():
         :rtype: dict(str, list(str))
         """
         atlas_endpoint = self.endpoint_url + "/types/typedefs/headers"
-        get_headers = requests.get(
+        getHeaders = requests.get(
             atlas_endpoint,
             headers=self.authentication.get_authentication_headers()
         )
-        try:
-            get_headers.raise_for_status()
-            results = json.loads(get_headers.text)
-        except requests.RequestException as e:
-            raise Exception(get_headers.text)
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(
-                get_headers.text)
-            )
+        results = self._handle_response(getHeaders)
 
         output = dict()
         for typedef in results:
@@ -355,7 +360,7 @@ class AtlasClient():
         :rtype: dict
         """
         # Should this take a list of type defs and figure out the formatting
-        #  by itself?
+        # by itself?
         # Should you pass in a AtlasTypesDef object and be forced to build
         # it yourself?
         results = None
@@ -460,13 +465,9 @@ class AtlasClient():
 
         return payload
 
-    @staticmethod
-    def validate_entities(batch):
-        raise NotImplementedError
-
     def upload_entities(self, batch):
         """
-        Upload entities to your Apache Atlas server.
+        Upload entities to your Atlas backed Data Catalog.
 
         :param batch: The batch of entities you want to upload.
         :type batch: Union(list(dict), dict))
@@ -485,13 +486,7 @@ class AtlasClient():
             headers=self.authentication.get_authentication_headers()
         )
 
-        try:
-            postBulkEntities.raise_for_status()
-            results = json.loads(postBulkEntities.text)
-        except requests.RequestException as e:
-            raise Exception(postBulkEntities.text)
-        except JSONDecodeError as e:
-            raise e("Error in parsing: {}".format(postBulkEntities.text))
+        results = self._handle_response(postBulkEntities)
 
         return results
 
@@ -520,12 +515,14 @@ class AtlasClient():
 
     def upload_terms(self, batch, force_update=False):
         """
-        Upload terms to your Apache Atlas server.
+        Upload terms to your Atlas backed Data Catalog.
 
-        :param batch: The batch of terms you want to upload.
-        :type batch: Union(list(dict), dict))
-        :return: The results of your bulk term upload.
-        :rtype: dict
+        :param batch: A list of AtlasGlossaryTerm objects to be uploaded.
+        :type batch: list(dict)
+        :return:
+            A list of AtlasGlossaryTerm objects that are the results from
+            your upload.
+        :rtype: list(dict)
         """
         # TODO Include a Do Not Overwrite call
         results = None
@@ -571,17 +568,16 @@ class AtlasClient():
         offsets to page through results.
 
         The limit provides how many records are returned in each batch with a
-        maximum of 1,000 entries per page.  
+        maximum of 1,000 entries per page.
 
         :param str query: The search query to be executed.
-        :param int limit: 
+        :param int limit:
             A non-zero integer representing how many entities to
             return for each page of the search results.
         :param dict search_filter: A search filter to reduce your results.
         :return: The results of your search as a generator.
         :rtype: Iterator[list(dict)]
         """
-        results = None
 
         if limit > 1000 or limit < 1:
             raise ValueError(
@@ -600,7 +596,6 @@ class AtlasClient():
             # "includeSubTypes": True}]}
             search_params.update({"filter": search_filter})
 
-        results = []
         search_generator = self._search_generator(search_params)
 
         return search_generator

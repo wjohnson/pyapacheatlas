@@ -30,7 +30,8 @@ def columns_matching_pattern(row, starts_with, does_not_match=[]):
     :return: A dictionary that contains only the filtered results.
     :rtype: dict
     """
-    candidates = {k: v for k, v in row.items() if str(k).startswith(starts_with)}
+    candidates = {k: v for k, v in row.items() if str(
+        k).startswith(starts_with)}
     for bad_key in does_not_match:
         if bad_key in candidates:
             candidates.pop(bad_key)
@@ -52,7 +53,8 @@ def first_relationship_that_matches(end_def, end_def_type, end_def_name, relatio
         (e.g. columns, table, columnLineages, query)
     :param list(dict) relationship_typedefs:
         A list of dictionaries that follow the relationship type defs.
-    :raises ValueError: An relationship dict was not found in the provided typedefs.
+    :raises ValueError:
+        An relationship dict was not found in the provided typedefs.
     :return: The matching relationship type definition.
     :rtype: dict
     """
@@ -88,7 +90,8 @@ def first_entity_matching_attribute(attribute, value, atlas_entities):
         atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
     :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :raises ValueError: A matching entity was not found in the provided entities.
+    :raises ValueError:
+        A matching entity was not found in the provided entities.
     :return: The atlas entity that maches the attribute and value.
     :rtype: :class:`~pyapacheatlas.core.entity.AtlasEntity`
     """
@@ -122,7 +125,8 @@ def first_process_containing_io(input_name, output_name, atlas_entities):
     :param str outputs: The qualified name of an atlas entity.
     :param atlas_entities: The list of atlas entities to search over.
     :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :raises ValueError: A matching entity was not found in the provided entities.
+    :raises ValueError:
+        A matching entity was not found in the provided entities.
     :return: The atlas entity that maches.
     :rtype: :class:`~pyapacheatlas.core.entity.AtlasEntity`
     """
@@ -150,12 +154,15 @@ def first_process_containing_io(input_name, output_name, atlas_entities):
             output_entity = entity
 
     if output_entity is None:
+        num_entities = len(atlas_entities)
         raise ValueError(
-            "Unable to find a process that includes input qualified names: {input_name} "
-            "and output qualified names: {output_name} from the {num_entities} provided."
+            "Unable to find a process that includes input "
+            f"qualified names: {input_name} and output "
+            f"qualified names: {output_name} from the "
+            f"{num_entities} provided."
             .format(
                 input_name=input_name, output_name=output_name,
-                num_entities=len(atlas_entities)
+                num_entities=num_entities
             )
         )
 
@@ -171,7 +178,7 @@ def from_process_lookup_col_lineage(process_name, atlas_entities, relationship_t
     :param str process_name: The name of the process that you want to find.
     :param atlas_entities: The list of atlas entities to search over.
     :type atlas_entities: list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
-    :param list(dict) relationship_typedefs: 
+    :param list(dict) relationship_typedefs:
         The list of relationship type definitions to extract from.
     :raises ValueError:
         A matching entity or matching relationship type was not found in

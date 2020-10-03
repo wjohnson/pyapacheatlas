@@ -2,8 +2,7 @@ from collections import OrderedDict
 import json
 
 from ..core import AtlasEntity, AtlasProcess
-from .util import *
-from .util import _make_col_qual_name
+from . import util as reader_util
 
 
 class LineageMixIn():
@@ -51,7 +50,7 @@ class LineageMixIn():
             qualified_name=row[header["table"]],
             guid=self.guidTracker.get_guid(),
             attributes=attributes,
-            classifications=string_to_classification(
+            classifications=reader_util.string_to_classification(
                 row.get(header["classifications"]),
                 self.config.value_separator
             )
@@ -95,7 +94,7 @@ class LineageMixIn():
             target_entity, source_entity, process_entity = None, None, None
 
             # Always expecting a TARGET in the sheet
-            target_attributes = columns_matching_pattern(
+            target_attributes = reader_util.columns_matching_pattern(
                 row, self.config.target_prefix,
                 does_not_match=list(target_header.values())
             )
@@ -105,7 +104,7 @@ class LineageMixIn():
 
             if row[source_header["table"]] is not None:
                 # There is a source table
-                source_attributes = columns_matching_pattern(
+                source_attributes = reader_util.columns_matching_pattern(
                     row, self.config.source_prefix,
                     does_not_match=list(source_header.values())
                 )
@@ -118,7 +117,7 @@ class LineageMixIn():
                 # There is a process
                 inputs_to_process = [] if source_entity is None else [
                     source_entity.to_json(minimum=True)]
-                process_attributes = columns_matching_pattern(
+                process_attributes = reader_util.columns_matching_pattern(
                     row, self.config.process_prefix,
                     does_not_match=list(process_header.values())
                 )
@@ -141,20 +140,21 @@ class LineageMixIn():
     def _update_parent_table_cache(self, parent_table_name, known_tables, atlas_entities):
         """
         Updates the known_tables variable to include the parent table entity if
-        it does not exist already in known_tables.  Looks up the table in the 
+        it does not exist already in known_tables.  Looks up the table in the
         atlas_entities if it does not exist.
-        :param str parent_table_name: The parent table name (not qualified name)
+        :param str parent_table_name:
+            The parent table name (not qualified name)
         :param dict(str, dict): All tables we've seen so far.
         :param atlas_entities:
             A list of :class:`~pyapacheatlas.core.entity.AtlasEntity`
             containing the referred entities.
-        :type atlas_entities: 
+        :type atlas_entities:
             list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
         :return: None
         :rtype: NoneType
         """
         if parent_table_name not in known_tables:
-            parent_entity = first_entity_matching_attribute(
+            parent_entity = reader_util.first_entity_matching_attribute(
                 "name", parent_table_name, atlas_entities)
             known_tables[parent_table_name] = parent_entity
 
@@ -167,11 +167,11 @@ class LineageMixIn():
 
         :param str parentTypeName: The name of the table type.
         :param dict(str, dict) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, 
+            The results of requesting all type defs from Apache Atlas,
             including entityDefs, relationshipDefs, etc.  relationshipDefs
             are the only values used.
         """
-        columns_relationship = first_relationship_that_matches(
+        columns_relationship = reader_util.first_relationship_that_matches(
             end_def="endDef1",
             end_def_type=parentTypeName,
             end_def_name="columns",
@@ -190,16 +190,18 @@ class LineageMixIn():
         :param str column_type: The column type to be used for this entity.
         :param dict(str, str) headers:
             The headers to aide in looking up field values.
-        :param column_entities: 
+        :param column_entities:
             The column entities dictionary that will be inserted into.
-        :type column_entities: list(`:class:~pyapacheatlas.core.entity.AtlasEntity`)
+        :type column_entities:
+            list(`:class:~pyapacheatlas.core.entity.AtlasEntity`)
         :param parent_table_entity: The parent table entity for this column.
-        :type parent_table_entity: `:class:~pyapacheatlas.core.entity.AtlasEntity`
+        :type parent_table_entity:
+            `:class:~pyapacheatlas.core.entity.AtlasEntity`
         """
-        _qual_name = _make_col_qual_name(
+        _qual_name = reader_util._make_col_qual_name(
             row[headers["column"]], parent_table_entity.get_name())
 
-        _clean_attribs = columns_matching_pattern(
+        _clean_attribs = reader_util.columns_matching_pattern(
             row, prefix,
             does_not_match=list(headers.values())
         )
@@ -214,7 +216,7 @@ class LineageMixIn():
                     minimum=True)
             }
         )
-        _classifications = string_to_classification(
+        _classifications = reader_util.string_to_classification(
             row.get(headers["classifications"])
         )
 
@@ -249,10 +251,10 @@ class LineageMixIn():
         :param atlas_entities:
             A list of :class:`~pyapacheatlas.core.entity.AtlasEntity`
             containing the referred entities.
-        :type atlas_entities: 
+        :type atlas_entities:
             list(:class:`~pyapacheatlas.core.entity.AtlasEntity`)
         :param dict(str,list(dict)) atlas_typedefs:
-            The results of requesting all type defs from Apache Atlas, 
+            The results of requesting all type defs from Apache Atlas,
             including entityDefs, relationshipDefs, etc.  relationshipDefs
             are the only values used.
         :param bool use_column_mapping:
@@ -273,8 +275,6 @@ class LineageMixIn():
             self.config.source_prefix, k) for k in _required_headers}
         target_header = {k: "{} {}".format(
             self.config.target_prefix, k) for k in _required_headers}
-        process_header = {k: "{} {}".format(
-            self.config.target_prefix, k) for k in ["name", "type"]}
 
         transformation_column_header = self.config.column_transformation_name
         # No required process headers
@@ -325,7 +325,7 @@ class LineageMixIn():
                     source_header,
                     columnEntitiesOutput, source_parent
                 )
-                table_process = first_process_containing_io(
+                table_process = reader_util.first_process_containing_io(
                     row[source_header["table"]], row[target_header["table"]],
                     atlas_entities)
 
@@ -334,14 +334,14 @@ class LineageMixIn():
             # LIMITATION: Prevents you from specifying multiple processes
             # for the same input and output tables
             if row[source_header["table"]] is None:
-                table_process = first_process_containing_io(
+                table_process = reader_util.first_process_containing_io(
                     "*", row[target_header["table"]], atlas_entities)
 
             if table_process.get_name() in table_and_proc_mappings:
                 process_type = table_and_proc_mappings[table_process.get_name(
                 )]["column_lineage_type"]
             else:
-                process_type = from_process_lookup_col_lineage(
+                process_type = reader_util.from_process_lookup_col_lineage(
                     table_process.get_name(),
                     atlas_entities,
                     atlas_typedefs["relationshipDefs"]
@@ -352,7 +352,7 @@ class LineageMixIn():
 
             # Assuming there is always a Process for adding at least the
             # target table
-            process_attributes = columns_matching_pattern(
+            process_attributes = reader_util.columns_matching_pattern(
                 row, self.config.process_prefix)
             process_attributes.update({"dependencyType": "SIMPLE"})
             if row[transformation_column_header] is not None:

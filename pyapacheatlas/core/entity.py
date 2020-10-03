@@ -9,7 +9,8 @@ class AtlasEntity():
         :param str typeName: The type this entity should be.
         :param str qualified_name: The unique "qualified name" of this
             instance of an atlas entity.
-        :param Union(str,int), optional guid: The guid to reference this entity by.
+        :param Union(str,int), optional guid:
+            The guid to reference this entity by.
         :param dict relationshipAttributes: The relationship attributes
             representing how this entity is connected to others.  Commonly
             used for "columns" to indicate entity is a column of a table or
@@ -112,12 +113,14 @@ class AtlasEntity():
         self.guid = other.guid
         # Add attributes that are not present in the later row's attributes
         # Meaning, later attributes SUPERCEDE attributes
-        # This helps with updating input and output attributes later in process entities.
+        # This helps with updating input and output attributes
+        # later in process entities.
         _other_attr_keys = set(other.attributes.keys())
         _self_attr_keys = set(self.attributes.keys())
         _new_keys_in_other = _other_attr_keys.difference(_self_attr_keys)
         self.attributes.update(
-            {k: v for k, v in other.attributes.items() if k in _new_keys_in_other})
+            {k: v for k, v in other.attributes.items()
+                if k in _new_keys_in_other})
         # TODO: Handle duplicate classifications
         self.classifications.extend(other.classifications)
 
@@ -153,7 +156,8 @@ class AtlasProcess(AtlasEntity):
 
     def merge(self, other):
         super().merge(other)
-        # Requires that the input and output attributes have not been altered on self.
+        # Requires that the input and output attributes have
+        # not been altered on self.
         _combined_inputs = self.get_inputs() + other.get_inputs()
         _combined_outputs = self.get_outputs() + other.get_outputs()
 

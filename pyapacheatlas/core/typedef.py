@@ -26,11 +26,12 @@ class AtlasAttributeDef():
     An implementation of AtlasAttributeDef.
     """
 
-    propertiesEnum = ["cardinality", "constraints", "defaultValue", "description",
-                      "displayName", "includeInNotification", "indexType", "isIndexable",
-                      "isOptional", "isUnique", "name", "options", "searchWeight", "typeName",
-                      "valuesMaxCount", "valuesMinCount"
-                      ]
+    propertiesEnum = [
+        "cardinality", "constraints", "defaultValue", "description",
+        "displayName", "includeInNotification", "indexType", "isIndexable",
+        "isOptional", "isUnique", "name", "options", "searchWeight",
+        "typeName", "valuesMaxCount", "valuesMinCount"
+    ]
 
     def __init__(self, name, **kwargs):
         """
@@ -53,7 +54,8 @@ class AtlasAttributeDef():
         self.name = name  # string
         self.options = kwargs.get("options")  # map of string
         self.searchWeight = kwargs.get("searchWeight")  # number
-        # TODO: Figure out if there is a need for supporting another type that may add extra attributes?
+        # TODO: Figure out if there is a need for supporting another
+        # type that may add extra attributes?
         self.typeName = kwargs.get("typeName", "string")  # string
         self.valuesMaxCount = kwargs.get("valuesMaxCount", 1)  # number
         self.valuesMinCount = kwargs.get("valuesMinCount", 0)  # number
