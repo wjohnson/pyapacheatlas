@@ -56,19 +56,19 @@ def test_parse_bulk_entities_with_relationships():
     reader = Reader(rc)
     # "typeName", "name",
     # "qualifiedName", "classifications",
-    # "(Relationship) table"
+    # "[Relationship] table"
     json_rows = [
         {"typeName": "demo_table", "name": "entityNameABC",
          "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
-         "(Relationship) table": None
+         "[Relationship] table": None
          },
         {"typeName": "demo_column", "name": "col1",
          "qualifiedName": "col1qn", "classifications": None,
-         "(Relationship) table": "qualifiedNameofEntityNameABC"
+         "[Relationship] table": "qualifiedNameofEntityNameABC"
          },
          {"typeName": "demo_column", "name": "col2",
          "qualifiedName": "col2qn", "classifications": None,
-         "(Relationship) table": None
+         "[Relationship] table": None
          }
     ]
     results = reader.parse_bulk_entities(json_rows)
