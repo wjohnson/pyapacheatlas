@@ -25,6 +25,7 @@ class ExcelConfiguration(ReaderConfiguration):
     def __init__(self, column_sheet="ColumnsLineage",
                  table_sheet="TablesLineage",
                  entityDef_sheet="EntityDefs", bulkEntity_sheet="BulkEntities",
+                 updateLineage_sheet="UpdateLineage",
                  **kwargs):
         """
         The following parameters apply to the
@@ -52,6 +53,7 @@ class ExcelConfiguration(ReaderConfiguration):
         self.table_sheet = table_sheet
         self.entityDef_sheet = entityDef_sheet
         self.bulkEntity_sheet = bulkEntity_sheet
+        self.updateLineage_sheet = updateLineage_sheet
 
 
 class ExcelReader(Reader):
@@ -285,6 +287,43 @@ class ExcelReader(Reader):
 
         return output
 
+    def parse_update_lineage(self, filepath):
+        """
+        Read a given excel file that conforms to the excel atlas template and
+        parse the (default) UpdateLineage tabe into existing process entities. 
+        
+        Assumes these process entities and any referenced entity exists.
+
+        Leave the qualifiedName cell blank on source or target to leave the
+        existing input or output (respectively) unchanged.
+
+        Use 'N/A' in the qualifiedName on source or target to 'destroy' the
+        existing input or output and overwrite with an empty list.
+
+        :param str filepath:
+            The xlsx file that contains your table and columns.
+        :return:
+            A list of Atlas Process entities representing the spreadsheet's
+            contents.
+        :rtype: list(dict)
+        """
+        wb = load_workbook(filepath)
+
+        entities = []
+
+        if self.config.updateLineage_sheet not in wb.sheetnames:
+            raise KeyError("The sheet {} was not found".format(
+                self.config.updateLineage_sheet))
+
+        # Getting table entities
+        updateLineage_sheet = wb[self.config.updateLineage_sheet]
+        json_sheet = ExcelReader._parse_spreadsheet(updateLineage_sheet)
+        entities = super().parse_update_lineage(json_sheet)
+
+        wb.close()
+
+        return entities
+
     @staticmethod
     def _update_sheet_headers(headers, worksheet):
         """
@@ -321,6 +360,7 @@ class ExcelReader(Reader):
         tablesSheet = wb.create_sheet("TablesLineage")
         entityDefsSheet = wb.create_sheet("EntityDefs")
         bulkEntitiesSheet = wb.create_sheet("BulkEntities")
+        updateLineageSheet = wb.create_sheet("UpdateLineage")
 
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["ColumnsLineage"], columnsSheet
@@ -333,6 +373,9 @@ class ExcelReader(Reader):
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["BulkEntities"], bulkEntitiesSheet
+        )
+        ExcelReader._update_sheet_headers(
+            Reader.TEMPLATE_HEADERS["UpdateLineage"], updateLineageSheet
         )
 
         wb.save(filepath)

@@ -17,7 +17,8 @@ def test_verify_template_sheets():
 
     # Expected
     expected_sheets = set(["ColumnsLineage", "TablesLineage",
-                           "EntityDefs", "BulkEntities"
+                           "EntityDefs", "BulkEntities",
+                           "UpdateLineage"
                            ])
 
     wb = load_workbook(temp_path)
@@ -317,5 +318,30 @@ def test_excel_column_lineage():
         assert(resulting_col_map["ColumnMapping"][0] in expected_col_map["ColumnMapping"])
         assert(resulting_col_map["ColumnMapping"][1] in expected_col_map["ColumnMapping"])
         assert(resulting_col_map["ColumnMapping"][2] in expected_col_map["ColumnMapping"])
+    finally:
+        remove_workbook(temp_filepath)
+
+def test_excel_update_lineage():
+    temp_filepath = "./temp_test_excel_updateLineage.xlsx"
+    ec = ExcelConfiguration()
+    reader = ExcelReader(ec)
+
+    headers = ExcelReader.TEMPLATE_HEADERS["UpdateLineage"]
+
+    # Same as main test
+    json_rows = [
+        [
+        "demo_table", "demotarget", "demo_table2", "demosource",
+         "proc01", "procqual01", "Process2"
+        ]
+    ]
+
+    setup_workbook_custom_sheet(
+        temp_filepath, "UpdateLineage", headers, json_rows)
+
+    results = reader.parse_update_lineage(temp_filepath)
+
+    try:
+        assert(len(results) == 1)
     finally:
         remove_workbook(temp_filepath)
