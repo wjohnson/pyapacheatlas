@@ -56,6 +56,11 @@ class Reader(LineageMixIn):
         ],
         "BulkEntities": [
             "typeName", "name", "qualifiedName", "classifications"
+        ],
+        "UpdateLineage": [
+            "Target typeName", "Target qualifiedName", "Source typeName",
+            "Source qualifiedName", "Process name", "Process qualifiedName",
+            "Process typeName"
         ]
     }
 
