@@ -121,7 +121,8 @@ if __name__ == "__main__":
     print("Looking up the known entities")
     qualified_entity_name_lookup = dict()
     for qualifiedName in known_entities:
-        search_results = atlas_client.search_entities(query=qualifiedName)
+        search_query = f"qualifiedName:\"{qualifiedName}\""
+        search_results = atlas_client.search_entities(query=search_query)
         for batch in search_results:
             for entity in batch:
                 if entity["qualifiedName"] == qualifiedName:
