@@ -73,28 +73,57 @@ class AtlasClient():
 
         return results
 
-    def get_entity(self, guid):
+    def get_entity(self, guid = None, qualifiedName = None, typeName = None):
         """
         Retrieve one or many guids from your Atlas backed Data Catalog.
 
-        :param guid: The guid or guids you want to retrieve
+        :param guid:
+            The guid or guids you want to retrieve. Not used if using typeName
+            and qualifiedName.
         :type guid: Union[str, list(str)]
+        :param qualifiedName:
+            The qualified name of the entity you want to find. Must provide
+            typeName if using qualifiedName. You may search for multiple
+            qualified names under the same type. Ignored if using guid
+            parameter.
+        :type qualifiedName: Union[str, list(str)]
+        :param str typeName:
+            The type name of the entity you want to find. Must provide
+            qualifiedName if using typeName. Ignored if using guid parameter.
         :return:
             An AtlasEntitiesWithExtInfo object which includes a list of
             entities and accessible with the "entities" key.
         :rtype: dict(str, Union[list(dict),dict])
         """
         results = None
+        parameters = {}
 
         if isinstance(guid, list):
             guid_str = '&guid='.join(guid)
         else:
             guid_str = guid
-
-        atlas_endpoint = self.endpoint_url + \
-            "/entity/bulk?guid={}".format(guid_str)
+        
+        qualifiedName_params = dict()
+        if isinstance(qualifiedName, list):
+            qualifiedName_params = {
+                f"attr_{idx}:qualifiedName":qname 
+                for idx, qname in enumerate(qualifiedName)
+            }
+        else:
+            qualifiedName_params = {"attr_0:qualifiedName": qualifiedName}
+        
+        if qualifiedName and typeName:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/bulk/uniqueAttribute/type/{typeName}"
+            parameters.update(qualifiedName_params)
+            
+        else:
+            atlas_endpoint = self.endpoint_url + \
+                "/entity/bulk?guid={}".format(guid_str)
+        
         getEntity = requests.get(
             atlas_endpoint,
+            params= parameters,
             headers=self.authentication.get_authentication_headers()
         )
 
