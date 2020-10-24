@@ -114,9 +114,11 @@ if __name__ == "__main__":
         
         # Create a relationship between each entity and glossary term
         for term_pair in row_pairs:
+            print(term_pair)
             if term_pair in known_pairs:
-                pass
+                continue
             else:
+                known_pairs.add(term_pair)
                 pair_entity = term_pair[0]
                 pair_term = term_pair[1]
                 relationship = {
