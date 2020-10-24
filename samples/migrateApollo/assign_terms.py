@@ -112,6 +112,7 @@ if __name__ == "__main__":
         
         row_pairs = [ (table, table_term), (column, column_term) ]
         
+        # Create a relationship between each entity and glossary term
         for term_pair in row_pairs:
             if term_pair in known_pairs:
                 pass
@@ -141,6 +142,7 @@ if __name__ == "__main__":
     print(f"Found {len(known_entities)} entities.")
     print(f"Found {len(relationships)} unique relationships.")
 
+    # Upload relationship one by one
     for relationship in relationships:
         term = relationship["end1"]["uniqueAttributes"]["qualifiedName"]
         entity = relationship["end2"]["uniqueAttributes"]["qualifiedName"]
