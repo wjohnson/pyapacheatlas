@@ -147,6 +147,11 @@ class Reader(LineageMixIn):
 
         for row in json_rows:
 
+            if ((row["name"] is None) or (row["typeName"] is None) or
+                (row["qualifiedName"] is None)):
+                # An empty row snuck in somehow, skip it.
+                continue
+
             _attributes = self._organize_attributes(
                 row,
                 existing_entities,
