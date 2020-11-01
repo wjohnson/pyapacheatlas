@@ -6,6 +6,7 @@ import sys
 import openpyxl
 
 from pyapacheatlas.core import AtlasClient, AtlasEntity
+from pyapacheatlas.core.util import GuidTracker
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 
 
@@ -74,44 +75,61 @@ if __name__ == "__main__":
     # key_headers = [
     #     "fld_it_name", "fld_business_name", "fld_it_type",
     #     "tbl_it_name", "tbl_business_name", "tbl_it_type",
+    #     "fld_description", "tbl_description", "fld_type"
     # ]
 
     print("Finding the terms associated with each entity")
     relationships = []
     known_pairs = set()
-    # Used only in counting
     known_entities = set()
+    gt = GuidTracker()
+    # Used only in counting
     known_terms = set()
-    
+    entities_to_update = []
+
     # Iterate over the sheet's data and build our relationships
     for row in sheet_data:
-        table_term = row["tbl_business_name"] + '@' + args.glossary
-        column_term = row["fld_business_name"] + '@' + args.glossary
+        table_term_root = row["tbl_business_name"] 
+        table_term = table_term_root + '@' + args.glossary
+        column_term_root = row["fld_business_name"]
+        column_term = column_term_root + '@' + args.glossary
         table_name = row["tbl_it_name"]
         table_type = row["tbl_it_type"]
         column_name = row["fld_it_name"]
         column_type = row["fld_it_type"]
-
-        known_entities.add(table_name)
-        known_entities.add(column_name)
+        table_desc = row["tbl_description"]
+        column_desc = row["fld_description"]
+        column_data_type = row["fld_type"]
 
         known_terms.add(table_term)
         known_terms.add(column_term)
 
         table = AtlasEntity(
-            name=table_name,
+            name=table_term_root,
             qualified_name=table_name,
-            typeName=table_type
+            typeName=table_type,
+            guid=gt.get_guid(),
+            attributes={
+                "description": table_desc
+            }
         )
 
         column = AtlasEntity(
-            name=column_name,
+            name=column_term_root,
             qualified_name=column_name,
-            typeName=column_type
+            typeName=column_type,
+            guid=gt.get_guid(),
+            attributes={
+                "description": column_desc,
+                "data_type": column_data_type
+            }
         )
-        
-        row_pairs = [ (table, table_term), (column, column_term) ]
-        
+
+        known_entities.add(table)
+        known_entities.add(column)
+
+        row_pairs = [(table, table_term), (column, column_term)]
+
         # Create a relationship between each entity and glossary term
         for term_pair in row_pairs:
             print(term_pair)
@@ -155,3 +173,18 @@ if __name__ == "__main__":
         except Exception as e:
             print(
                 f"Exception for {term}:{entity} and was not uploaded: {e}")
+
+    print("Completed relationship mapping")
+
+    print("Beginning partial updates of entities for description")
+    batch = []
+    for e in known_entities:
+        temp_entity = e.to_json().copy()
+        temp_entity.pop("relationshipAttributes")
+        batch.append(temp_entity)
+
+    update_desc_results = atlas_client.upload_entities(batch)
+
+    print(json.dumps(update_desc_results, indent=2))
+
+    print("Sample script has completed successfully!")
