@@ -26,6 +26,8 @@ class AtlasEntity():
         self.guid = guid
         self.attributes = kwargs.get("attributes", {})
         self.attributes.update({"name": name, "qualifiedName": qualified_name})
+        if "description" in kwargs:
+            self.attributes.update({"description": kwargs["description"]})
         # Example Relationship Attribute
         # {"relationshipName": {
         #   "qualifiedName": "",
