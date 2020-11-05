@@ -27,7 +27,7 @@ Create a wheel distribution file and install it in your environment.
 ```
 python -m pip install wheel
 python setup.py bdist_wheel
-python -m pip install ./dist/pyapacheatlas-0.0b16-py3-none-any.whl
+python -m pip install ./dist/pyapacheatlas-0.0b17-py3-none-any.whl
 ```
 
 ### Create a Client Connection
