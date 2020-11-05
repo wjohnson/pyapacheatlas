@@ -222,7 +222,10 @@ class Reader(LineageMixIn):
         for entityType in entities:
             local_entity_def = EntityTypeDef(
                 name=entityType,
-                attributeDefs=entities[entityType]
+                attributeDefs=entities[entityType],
+                # Adding this as a default until I figur
+                # do this from the excel / json readers.
+                superTypes = ["DataSet"]
             ).to_json()
             output["entityDefs"].append(local_entity_def)
 
