@@ -93,7 +93,7 @@ class AtlasClient():
         try:
             deleteType.raise_for_status()
         except requests.RequestException:
-            raise Exception(resp.text)
+            raise Exception(deleteType.text)
         
         results = {"message":f"successfully delete {name}"}
         return results
