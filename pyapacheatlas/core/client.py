@@ -90,8 +90,12 @@ class AtlasClient():
             atlas_endpoint,
             headers=self.authentication.get_authentication_headers())
 
-        results = self._handle_response(deleteType)
-
+        try:
+            deleteType.raise_for_status()
+        except requests.RequestException:
+            raise Exception(deleteType.text)
+        
+        results = {"message":f"successfully delete {name}"}
         return results
 
     def get_entity(self, guid=None, qualifiedName=None, typeName=None):
