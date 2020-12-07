@@ -1,6 +1,6 @@
-# PyApacheAtlas
+# PyApacheAtlas: API Support for Apache Atlas and Azure Purview
 
-A python package to work with the Apache Atlas API and support bulk loading from different file types.
+A python package to work with the Apache Atlas API and support bulk loading, custom lineage, and more from a Pythonic set of classes and Excel templates. 
 
 The package currently supports:
 * Creating a column lineage scaffolding as in the [Hive Bridge style](https://atlas.apache.org/0.8.3/Bridge-Hive.html).
@@ -10,12 +10,13 @@ The package currently supports:
    * Column entities
    * Table lineage processes
    * Column lineage processes
-* Supports Azure Data Catalog ColumnMapping Attributes.
+* From excel, bulk uploading entities, creating / updating lineage, and creating custom types.
+* Supports Azure Purview ColumnMapping attributes.
 * Performing "What-If" analysis to check if...
    * Your entities are valid types.
    * Your entities are missing required attributes.
    * Your entities are using undefined attributes.
-* Authentication to Azure Data Catalog via Service Principal.
+* Authentication to Azure Purview via Service Principal.
 * Authentication using basic authentication of username and password.
 
 ## Quickstart
@@ -25,14 +26,12 @@ The package currently supports:
 Create a wheel distribution file and install it in your environment.
 
 ```
-python -m pip install wheel
-python setup.py bdist_wheel
-python -m pip install ./dist/pyapacheatlas-0.0b15-py3-none-any.whl
+python -m pip install pyapacheatlas
 ```
 
 ### Create a Client Connection
 
-Provides connectivity to your Atlas / Data Catalog service. 
+Provides connectivity to your Atlas / Azure Purview service. 
 Supports getting and uploading entities and type defs.
 
 ```
@@ -45,8 +44,8 @@ auth = ServicePrincipalAuthentication(
     client_secret = ""
 )
 
-# Azure Data Catalog Endpoints are:
-# https://{your_catalog_name}.catalog.babylon.azure.com/api/atlas/v2
+# Azure Purview Endpoints are:
+# https://{your_catalog_name}.catalog.purview.azure.com/api/atlas/v2
 
 client = AtlasClient(
     endpoint_url = "https://MYENDPOINT/api/atlas/v2",
