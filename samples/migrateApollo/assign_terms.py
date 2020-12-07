@@ -5,7 +5,8 @@ import sys
 
 import openpyxl
 
-from pyapacheatlas.core import AtlasClient
+from pyapacheatlas.core import AtlasClient, AtlasEntity
+from pyapacheatlas.core.util import GuidTracker
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 
 
@@ -16,6 +17,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sheetname",
         help="The name of the sheet to pull data out of for the given file-path.")
+    parser.add_argument(
+        "--glossary",
+        help="The name of the glossary. Defaults to 'Glossary'",
+        default='Glossary'
+    )
     args = parser.parse_args()
 
     # Authenticate against your Atlas server
@@ -30,6 +36,7 @@ if __name__ == "__main__":
     )
 
     # Read in the args.file_path
+    # BEGIN EXCEL PROCESSING
     wb = openpyxl.load_workbook(args.file_path)
     required_sheet = wb.sheetnames[0]
     # Read the header of the args.sheetname
@@ -40,9 +47,6 @@ if __name__ == "__main__":
     print(f"Reading {args.file_path} and sheet {args.sheetname}")
 
     data_sheet = wb.get_sheet_by_name(required_sheet)
-
-    # Iterate over each row, could do this in pandas but want to avoid
-    # the dependency
 
     # Getting the headers
     print("Beginning reading sheet")
@@ -65,105 +69,122 @@ if __name__ == "__main__":
         if float(nulls) / float(len(row_data)) < null_threshold:
             sheet_data.append(row_data)
 
+    # END EXCEL PROCESSING
+
     # Extract the following fields:
     # key_headers = [
-    #     "fld_it_name", "fld_business_name",
-    #     "tbl_it_name", "tbl_business_name"
+    #     "fld_it_name", "fld_business_name", "fld_it_type",
+    #     "tbl_it_name", "tbl_business_name", "tbl_it_type",
+    #     "fld_description", "tbl_description", "fld_type"
     # ]
 
-    # Find the unique terms (*_business_name)
     print("Finding the terms associated with each entity")
-    term_guids = dict()
+    relationships = []
+    known_pairs = set()
     known_entities = set()
-    # TODO: Find the qualifiedName for the table and column
+    gt = GuidTracker()
+    # Used only in counting
+    known_terms = set()
+    entities_to_update = []
+
+    # Iterate over the sheet's data and build our relationships
     for row in sheet_data:
-        table_term = row["tbl_business_name"]
-        column_term = row["fld_business_name"]
+        table_term_root = row["tbl_business_name"] 
+        table_term = table_term_root + '@' + args.glossary
+        column_term_root = row["fld_business_name"]
+        column_term = column_term_root + '@' + args.glossary
         table_name = row["tbl_it_name"]
+        table_type = row["tbl_it_type"]
         column_name = row["fld_it_name"]
+        column_type = row["fld_it_type"]
+        table_desc = row["tbl_description"]
+        column_desc = row["fld_description"]
+        column_data_type = row["fld_type"]
 
-        known_entities.add(table_name)
-        known_entities.add(column_name)
+        known_terms.add(table_term)
+        known_terms.add(column_term)
 
-        if table_term not in term_guids:
-            term_guids[table_term] = {"guid": None, "qualifiedNames": set()}
-        if column_term not in term_guids:
-            term_guids[column_term] = {"guid": None, "qualifiedNames": set()}
-
-        term_guids[table_term]["qualifiedNames"].add(table_name)
-        term_guids[column_term]["qualifiedNames"].add(column_name)
-
-    print(f"Found {len(term_guids)} term(s) and {len(known_entities)} entities.")
-
-    # Look up the terms necessary
-    print("Downloading the default glossary")
-    glossary = atlas_client.get_glossary()
-
-    # Convert into a dictionary rather than a list
-    glossary_lookup = {
-        term["displayText"]: term["termGuid"]
-        for term in glossary["terms"]
-    }
-
-    # Try to find the guid for each term
-    for term in term_guids:
-        if term not in glossary_lookup:
-            print(f"Warning: {term} not found in glossary")
-            continue
-        term_guids[term]["guid"] = glossary_lookup[term]
-        term_guids[term]["qualifiedNames"] = list(
-            term_guids[term]["qualifiedNames"])
-
-    print(
-        f"There were {sum([('guid' in term) for term in term_guids.values()])} guids found for {len(term_guids)} terms.")
-
-    # For each column and table, find their entity id
-    print("Looking up the known entities")
-    qualified_entity_name_lookup = dict()
-    for qualifiedName in known_entities:
-        search_results = atlas_client.search_entities(query=qualifiedName)
-        for batch in search_results:
-            for entity in batch:
-                if entity["qualifiedName"] == qualifiedName:
-                    # Search results looks at "id" and not "guid"
-                    qualified_entity_name_lookup[qualifiedName] = entity["id"]
-                    break
-            if qualifiedName in qualified_entity_name_lookup:
-                break
-
-    print(
-        f"There were {len(qualified_entity_name_lookup)} entities found out of {len(known_entities)} known entities.")
-
-    # TODO: Create the relationship between term_guids and the entities
-    for term_name, term_dict in term_guids.items():
-        for entity_qualified_name in term_dict["qualifiedNames"]:
-            print(f"{term_name}:{entity_qualified_name}")
-            if entity_qualified_name not in qualified_entity_name_lookup:
-                print(
-                    f"Warning: {entity_qualified_name} was not found in any entities in the catalog.")
-                break
-            term_guid = term_dict["guid"]
-            term_qualified_name = f"{term_name}@Glossary"
-            entity_guid = qualified_entity_name_lookup[entity_qualified_name]
-            
-            relationship = {
-                "typeName": "AtlasGlossarySemanticAssignment",
-                "attributes": {},
-                "guid": -100,
-                "end1": {
-                    "guid": term_guid,
-                    "typeName": "AtlasGlossaryTerm",
-                    "uniqueAttributes": {
-                            "qualifiedName": term_qualified_name
-                    }
-                },
-                "end2": {
-                    "guid": entity_guid
-                }
+        table = AtlasEntity(
+            name=table_term_root,
+            qualified_name=table_name,
+            typeName=table_type,
+            guid=gt.get_guid(),
+            attributes={
+                "description": table_desc
             }
-            try:
-                results = atlas_client.upload_relationship(relationship)
-                print("\tSuccess")
-            except Exception as e:
-                print(
-                    f"Exception for {term}:{entity_qualified_name} and was not uploaded: {e}")
+        )
+
+        column = AtlasEntity(
+            name=column_term_root,
+            qualified_name=column_name,
+            typeName=column_type,
+            guid=gt.get_guid(),
+            attributes={
+                "description": column_desc,
+                "data_type": column_data_type
+            }
+        )
+
+        known_entities.add(table)
+        known_entities.add(column)
+
+        row_pairs = [(table, table_term), (column, column_term)]
+
+        # Create a relationship between each entity and glossary term
+        for term_pair in row_pairs:
+            print(term_pair)
+            if term_pair in known_pairs:
+                continue
+            else:
+                known_pairs.add(term_pair)
+                pair_entity = term_pair[0]
+                pair_term = term_pair[1]
+                relationship = {
+                    "typeName": "AtlasGlossarySemanticAssignment",
+                    "attributes": {},
+                    "guid": -100,
+                    "end1": {
+                        "typeName": "AtlasGlossaryTerm",
+                        "uniqueAttributes": {
+                            "qualifiedName": pair_term
+                        }
+                    },
+                    "end2": {
+                        "typeName": pair_entity.typeName,
+                        "uniqueAttributes": {
+                            "qualifiedName": pair_entity.get_qualified_name()
+                        }
+                    }
+                }
+                relationships.append(relationship)
+
+    print(f"Found {len(known_terms)} terms.")
+    print(f"Found {len(known_entities)} entities.")
+    print(f"Found {len(relationships)} unique relationships.")
+
+    # Upload relationship one by one
+    for relationship in relationships:
+        term = relationship["end1"]["uniqueAttributes"]["qualifiedName"]
+        entity = relationship["end2"]["uniqueAttributes"]["qualifiedName"]
+        print(f"Working on {entity}:{term}")
+        try:
+            results = atlas_client.upload_relationship(relationship)
+            print("\tSuccess")
+        except Exception as e:
+            print(
+                f"Exception for {term}:{entity} and was not uploaded: {e}")
+
+    print("Completed relationship mapping")
+
+    print("Beginning partial updates of entities for description")
+    batch = []
+    for e in known_entities:
+        temp_entity = e.to_json().copy()
+        temp_entity.pop("relationshipAttributes")
+        batch.append(temp_entity)
+
+    update_desc_results = atlas_client.upload_entities(batch)
+
+    print(json.dumps(update_desc_results, indent=2))
+
+    print("Sample script has completed successfully!")

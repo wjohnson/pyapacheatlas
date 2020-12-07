@@ -302,3 +302,63 @@ def test_column_lineage_entities_when_multi_tabled_inputs():
         table_process_entity.attributes["columnMapping"])
     assert(len(expected_col_map_obj) == len(resulting_colmap))
     assert(all([res in expected_col_map_obj for res in resulting_colmap]))
+
+
+def test_parse_update_lineage():
+    reader = Reader(READER_CONFIG)
+    json_rows = [
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget02",
+         "Source typeName": None, "Source qualifiedName": None,
+         "Process name": "proc02", "Process qualifiedName": "procqual02",
+         "Process typeName": "Process3"
+         },
+        {"Target typeName": None, "Target qualifiedName": None,
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource03",
+         "Process name": "proc03", "Process qualifiedName": "procqual03",
+         "Process typeName": "Process4"
+         },
+        {"Target typeName": "N/A", "Target qualifiedName": "N/A",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource03",
+         "Process name": "proc03", "Process qualifiedName": "procqual03",
+         "Process typeName": "Process5"
+         }
+    ]
+
+
+    results = reader.parse_update_lineage(json_rows)
+
+    assert(len(results) == 4)
+    full_update = results[0]
+    target_update = results[1]
+    source_update = results[2]
+    target_destroy = results[3]
+
+    assert(full_update["typeName"] == "Process2")
+    assert(full_update["attributes"]["name"] == "proc01")
+    assert(len(full_update["attributes"]["inputs"]) == 1)
+    assert(len(full_update["attributes"]["outputs"]) == 1)
+    
+    fullupd_input = full_update["attributes"]["inputs"][0]
+    fullupd_output = full_update["attributes"]["outputs"][0]
+
+    assert(fullupd_input == {"typeName": "demo_table2",
+                             "uniqueAttributes": {"qualifiedName": "demosource"}})
+    assert(fullupd_output == {"typeName": "demo_table",
+                              "uniqueAttributes": {"qualifiedName": "demotarget"}})
+
+    # For a partial update, inputs will be set to None
+    assert(target_update["attributes"]["inputs"] == None)
+
+    # For a partial update, outputs will be set to None
+    assert(source_update["attributes"]["outputs"] == None)
+
+    # If they use the "N/A" keyword in qualifiedName, destroy that type
+    assert(target_destroy["attributes"]["outputs"] == [])
+    assert(target_destroy["attributes"]["inputs"] == [
+        {"typeName": "demo_table2",
+         "uniqueAttributes": {"qualifiedName": "demosource03"}}])

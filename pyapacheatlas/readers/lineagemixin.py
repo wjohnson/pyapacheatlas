@@ -445,3 +445,73 @@ class LineageMixIn():
                     )
         output = [e for e in list(columnEntitiesOutput.values())]
         return output
+
+    def _determine_dataset_to_use(self, qual_name, typeName):
+        results = []
+        if qual_name is None:
+            # This will allow us to do a partial update.
+            results = None
+        elif qual_name == "N/A":
+            # N/A is a special keyword that forces us to override
+            # and delete the existing input/output
+            results = []
+        else:
+            # This is an AtlasObjectId, necessary if we don't have the
+            # guid of the existing object or have it as a referenced object
+            results = [{"typeName": typeName,
+                        "uniqueAttributes": {"qualifiedName": qual_name}}]
+        return results
+
+    def parse_update_lineage(self, json_rows):
+        """
+        Take in UpdateLineage dictionaries and create the mutated Process
+        entities to be uploaded. All referenced entities must already exist
+        and be identified by their type and qualifiedName.
+
+        Assumes a None entry for target or source qualifiedNames means 
+        "no change" to the existing entity. Using 'N/A' for the target or
+        source qualifiedNames will reset the existing input or output to an
+        empty list.
+
+        :param json_rows:
+            A list of dicts that contain the converted rows of your update
+            lineage spreadsheet.
+        :type json_rows: list(dict(str,str))
+        :return:
+            A list of Atlas Processes as dictionaries representing the updated
+            process entity.
+        :rtype: list(dict)
+        """
+        results = []
+        sp = self.config.source_prefix
+        tp = self.config.target_prefix
+        pp = self.config.process_prefix
+        for row in json_rows:
+            try:
+                target_type = row[f"{tp} typeName"]
+                target_qual_name = row[f"{tp} qualifiedName"]
+                source_type = row[f"{sp} typeName"]
+                source_qual_name = row[f"{sp} qualifiedName"]
+                process_type = row[f"{pp} typeName"]
+                process_qual_name = row[f"{pp} qualifiedName"]
+                process_name = row[f"{pp} name"]
+            except KeyError:
+                raise Exception(json.dumps(row))
+
+            # Determine whether this should destroy one side, partial update
+            # (one side), or full update (both sides).
+            inputs = self._determine_dataset_to_use(
+                source_qual_name, source_type)
+            outputs = self._determine_dataset_to_use(
+                target_qual_name, target_type)
+            # Convert the target / source into
+            proc = AtlasProcess(
+                name=process_name,
+                typeName=process_type,
+                qualified_name=process_qual_name,
+                guid=self.guidTracker.get_guid(),
+                inputs=inputs,
+                outputs=outputs
+            )
+            results.append(proc.to_json())
+        return results
