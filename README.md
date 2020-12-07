@@ -27,18 +27,10 @@ The package currently supports:
 
 ## Quickstart
 
-### Build and Install from Source
-
-Create a wheel distribution file and install it in your environment.
+### Install from PyPi
 
 ```
-<<<<<<< HEAD
 python -m pip install pyapacheatlas
-=======
-python -m pip install wheel
-python setup.py bdist_wheel
-python -m pip install ./dist/pyapacheatlas-0.0b19-py3-none-any.whl
->>>>>>> 0f17280c7c75190a3b6b03ac42b8055b5ccc8e60
 ```
 
 ### Create a Client Connection
