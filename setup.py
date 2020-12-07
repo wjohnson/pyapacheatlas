@@ -7,21 +7,27 @@ LONG_DESCRIPTION = """
 A python package to work with the Apache Atlas API and support bulk loading, custom lineage, and more from a Pythonic set of classes and Excel templates. 
 
 The package currently supports:
-* Creating a column lineage scaffolding as in the [Hive Bridge style](https://atlas.apache.org/0.8.3/Bridge-Hive.html).
-* Creating and reading from an excel template file
-* From Excel, constructing the defined entities and column lineages.
-   * Table entities
-   * Column entities
-   * Table lineage processes
-   * Column lineage processes
-* From excel, bulk uploading entities, creating / updating lineage, and creating custom types.
-* Supports Azure Purview ColumnMapping attributes.
+* Bulk upload of entities.
+* Bulk upload of type definitions.
+* Creating custom lineage between two existing entities.
+* Creating custom table and complex column level lineage in the [Hive Bridge style](https://atlas.apache.org/0.8.3/Bridge-Hive.html).
+  * Supports Azure Purview ColumnMapping Attributes.
+* Creating a column lineage scaffolding as in the Hive Bridge Style .
 * Performing "What-If" analysis to check if...
    * Your entities are valid types.
    * Your entities are missing required attributes.
    * Your entities are using undefined attributes.
+* Working with the glossary.
+  * Uploading terms.
+  * Downloading individual or all terms.
+* Working with relationships.
+  * Able to create arbitrary relationships between entities.
+  * e.g. associating a given column with a table.
+  * Able to upload relationship definitions.
+* Deleting types (by name) or entities (by guid).
+* Search (only for Azure Purview advanced search).
 * Authentication to Azure Purview via Service Principal.
-* Authentication using basic authentication of username and password.
+* Authentication using basic authentication of username and password for open source Atlas.
 """
 
 def setup_package():
