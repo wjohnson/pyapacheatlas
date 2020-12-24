@@ -155,6 +155,36 @@ class AtlasClient():
         results = self._handle_response(getEntity)
 
         return results
+    
+    def get_entity_header(self, guid=None):
+        """
+        Retrieve one or many entity headers from your Atlas backed Data Catalog.
+
+        :param guid:
+            The guid or guids you want to retrieve. Not used if using typeName
+            and qualifiedName.
+        :type guid: Union[str, list(str)]
+        :return:
+            An AtlasEntityHeader dict which includes the keys: guid, attributes
+            (which is a dict that contains qualifiedName and name keys), an
+            array of classifications, and an array of glossary term headers.
+        :rtype: dict
+        """
+        results = None
+        parameters = {}
+
+        atlas_endpoint = self.endpoint_url + \
+                "/entity/guid/{}/header".format(guid)
+
+        getEntity = requests.get(
+            atlas_endpoint,
+            params=parameters,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getEntity)
+
+        return results
 
     def get_relationship(self, guid):
         """
