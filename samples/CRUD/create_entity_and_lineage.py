@@ -31,6 +31,10 @@ if __name__ == "__main__":
         authentication=oauth
     )
 
+    # Create two entities with AtlasEntity
+    # You must provide a name, typeName, qualified_name, and guid
+    # the guid must be a negative number and unique in your batch
+    # being uploaded.
     input01 = AtlasEntity(
         name="input01",
         typeName="DataSet",
@@ -44,6 +48,10 @@ if __name__ == "__main__":
         guid=-101
     )
 
+    # The Atlas Process is the lineage component that links the two
+    # entities together. The inputs and outputs need to be the "header"
+    # version of the atlas entities, so specify minimum = True to
+    # return just guid, qualifiedName, and typeName.
     process = AtlasProcess(
         name="sample process",
         typeName="Process",
@@ -53,6 +61,7 @@ if __name__ == "__main__":
         guid=-102
     )
 
+    # Convert the individual entities into json before uploading.
     results = client.upload_entities(
         batch = [output01.to_json(), input01.to_json(), process.to_json()]
     )
