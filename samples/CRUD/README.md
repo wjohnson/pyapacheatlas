@@ -10,7 +10,7 @@ If you are interested in using the built-in Excel functionality, see the [excel 
   * Create [entities and lineage between multiple entities](./create_entity_and_lineage.py).
 * **Read**
   * Get an entity by [by Guid or by qualified name and type](./read_entity_guid_or_name.py).
-  * Search for an entity by name.
+  * [Search for an entity by name](./read_search_by_name.py).
 * **Update**
   * Update an [existing entity and lineage](./update_entity_and_lineage.py).
 * **Delete**
