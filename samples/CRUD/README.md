@@ -13,5 +13,6 @@ If you are interested in using the built-in Excel functionality, see the [excel 
   * [Search for an entity by name](./read_search_by_name.py).
 * **Update**
   * Update an [existing entity and lineage](./update_entity_and_lineage.py).
+  * Update an [entity with a term by discovering related terms](./update_entities_with_term.py) through search.
 * **Delete**
   * Delete an entity [by Guid or by qualified name and type](./delete_entity.py).

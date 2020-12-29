@@ -4,13 +4,21 @@ import json
 import os
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
-from pyapacheatlas.core import AtlasClient  # Communicate with your Atlas server
-from pyapacheatlas.readers import ExcelConfiguration, ExcelReader
+from pyapacheatlas.core import AtlasClient
 
 SearchOutput = namedtuple(
-    "SearchOutput", "SearchScore,AssetId,AssetType,TermId,TermDisplay,Reason")
+    typename="SearchOutput", 
+    field_names="SearchScore,AssetId,AssetType,TermId,TermDisplay,Reason"
+)
 
 if __name__ == "__main__":
+    """
+     This sample provides an example of discovering and updating entities that
+     are related to terms in your glossary.
+
+     The samples looks at all glossary terms and then searches for each term
+     with a wildcard.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--threshold", "--t",
@@ -35,22 +43,28 @@ if __name__ == "__main__":
     term_variants = {
         t["displayText"]: {'guid': t["termGuid"], "variants": []} for t in terms
     }
-    # TODO: Apply business logic to massage the terms
 
+    # TODO: You apply business logic to massage the terms in different ways
+    # based on how you might say "Master Data" in the glossary but have it
+    # on a table as "m-data" (as an example).
+
+    # For every term, search across all dataset entities (so no process entities).
     for term in terms:
         primary_display_text = term["displayText"]
         term_guid = term["termGuid"]
 
         search_query = client.search_entities(
             query=f"{primary_display_text}*",
-            # This is not working :-(
-            # search_filter={"add": [{"typeName": "demo_column_lineage","includeSubTypes": False}]}
+            search_filter = {"typeName": "DataSet", "includeSubTypes": True}
         )
         lowest_seen_score = 99
-        threshold = 1.0
+        threshold = args.threshold
 
         search_intermediate_results = []
 
+        # Iterate over the search results for each term
+        # Discover all of the entities that are relevant by cutting the search
+        # off at a specific relevance threshold (default is 3.0).
         for batch in search_query:
             for entity in batch:
                 if entity["typeName"] == "AtlasGlossaryTerm":
@@ -73,9 +87,13 @@ if __name__ == "__main__":
             if lowest_seen_score < threshold:
                 break
 
+    # Print out the search results so you can decide whether you want to move
+    # forward or not with adding the terms.
     for so in search_intermediate_results:
         print(so)
     input(">>>>Review the printout above to see what will be associated. Press enter to continue or Ctrl+C to back out now...")
+    # For every entity and term that met the threshold, add an
+    # AtlasGlossarySemanticAssignment relationship (one at a time).
     for so in search_intermediate_results:
         print(
             f"Attempting to add '{so.TermDisplay}' to {so.AssetId} ({so.SearchScore}) because {so.Reason} ")
@@ -92,6 +110,8 @@ if __name__ == "__main__":
             }
         }
         try:
+            # Attempt the upload, but the relationship may already exist
+            # So simply skip log it and skip past it.
             results = client.upload_relationship(relationship)
             print("\tSuccess")
         except Exception as e:
