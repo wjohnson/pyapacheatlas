@@ -38,4 +38,3 @@ if __name__ == "__main__":
         guid = response["guid"]
         delete_response = client.delete_entity(guid=guid)
         print(json.dumps(delete_response, indent=2))
-

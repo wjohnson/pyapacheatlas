@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Assuming you want to update all of the inputs, all of the outputs, or
     # all of both, we can create an AtlasProcess object with the minimum
     # requirements of name, typeName, and qualifedName.
-    
+
     # Start with null/None inputs and outputs and we will fill them in.
     # existing_process = AtlasProcess(
     #     name="sample_process_xyz",
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     #     outputs=None, # We will update this with set_outputs below
     #     guid=-101
     # )
-    
+
     # new_output = AtlasEntity(
     #     name="output03",
     #     typeName="DataSet",
@@ -59,9 +59,8 @@ if __name__ == "__main__":
     # results = client.upload_entities(
     #     batch = [new_output.to_json(), existing_process.to_json()]
     # )
-    
-    # print(json.dumps(results, indent=2))
 
+    # print(json.dumps(results, indent=2))
 
     print("Starting Append Scenario...")
     # A second scenario would have us appending to an existing process
@@ -70,8 +69,8 @@ if __name__ == "__main__":
         name="sample_process_xyz",
         typeName="Process",
         qualified_name="pyapacheatlas://democustomprocess",
-        inputs=None, # Set to None so no update will occur
-        outputs=None, # We will update this with set_outputs below
+        inputs=None,  # Set to None so no update will occur
+        outputs=None,  # We will update this with set_outputs below
         guid=-104
     )
 
@@ -79,11 +78,12 @@ if __name__ == "__main__":
         typeName="Process",
         qualifiedName="pyapacheatlas://democustomprocess"
     )["entities"][0]
-    print("Working with process guid: {}".format(real_existing_process["guid"]))
-    
+    print("Working with process guid: {}".format(
+        real_existing_process["guid"]))
+
     # Get the list of existing outputs from the attributes.
     existing_outputs = real_existing_process["attributes"]["outputs"]
-    
+
     # Create one more output to be added.
     one_more_output = AtlasEntity(
         name="output_added_later",
@@ -94,11 +94,11 @@ if __name__ == "__main__":
 
     # Add the existing and new output to the dummy process
     dummy_existing_process.set_outputs(
-        existing_outputs + [ one_more_output.to_json(minimum=True)]
+        existing_outputs + [one_more_output.to_json(minimum=True)]
     )
 
     complex_results = client.upload_entities(
-        batch = [dummy_existing_process.to_json(), one_more_output.to_json()]
+        batch=[dummy_existing_process.to_json(), one_more_output.to_json()]
     )
 
     print(json.dumps(complex_results, indent=2))

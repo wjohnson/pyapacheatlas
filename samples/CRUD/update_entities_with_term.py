@@ -7,7 +7,7 @@ from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import AtlasClient
 
 SearchOutput = namedtuple(
-    typename="SearchOutput", 
+    typename="SearchOutput",
     field_names="SearchScore,AssetId,AssetType,TermId,TermDisplay,Reason"
 )
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
         search_query = client.search_entities(
             query=f"{primary_display_text}*",
-            search_filter = {"typeName": "DataSet", "includeSubTypes": True}
+            search_filter={"typeName": "DataSet", "includeSubTypes": True}
         )
         lowest_seen_score = 99
         threshold = args.threshold

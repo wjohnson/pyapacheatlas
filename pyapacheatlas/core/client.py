@@ -94,8 +94,8 @@ class AtlasClient():
             deleteType.raise_for_status()
         except requests.RequestException:
             raise Exception(deleteType.text)
-        
-        results = {"message":f"successfully delete {name}"}
+
+        results = {"message": f"successfully delete {name}"}
         return results
 
     def get_entity(self, guid=None, qualifiedName=None, typeName=None):
@@ -155,7 +155,7 @@ class AtlasClient():
         results = self._handle_response(getEntity)
 
         return results
-    
+
     def get_entity_header(self, guid=None):
         """
         Retrieve one or many entity headers from your Atlas backed Data Catalog.
@@ -174,7 +174,7 @@ class AtlasClient():
         parameters = {}
 
         atlas_endpoint = self.endpoint_url + \
-                "/entity/guid/{}/header".format(guid)
+            "/entity/guid/{}/header".format(guid)
 
         getEntity = requests.get(
             atlas_endpoint,
@@ -676,8 +676,8 @@ class AtlasClient():
         # TODO: Make this smarter, make it easier to create filters
         # without having to know how to make a filter object.
         if search_filter:
-            # "filter": {"add": [{"typeName": "misc_table",
-            # "includeSubTypes": True}]}
+            # Example search filter might look like:
+            # {"filter": {"typeName": "DataSet", "includeSubTypes": True} }
             search_params.update({"filter": search_filter})
 
         search_generator = self._search_generator(search_params)

@@ -290,8 +290,8 @@ class ExcelReader(Reader):
     def parse_update_lineage(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
-        parse the (default) UpdateLineage tabe into existing process entities. 
-        
+        parse the (default) UpdateLineage table into existing process entities. 
+
         Assumes these process entities and any referenced entity exists.
 
         Leave the qualifiedName cell blank on source or target to leave the

@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # Convert the individual entities into json before uploading.
     results = client.upload_entities(
-        batch = [output01.to_json(), input01.to_json(), process.to_json()]
+        batch=[output01.to_json(), input01.to_json(), process.to_json()]
     )
-    
+
     print(json.dumps(results, indent=2))
