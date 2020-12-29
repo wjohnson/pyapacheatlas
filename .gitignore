@@ -147,3 +147,5 @@ tester.py
 *.bat
 .ignore/
 migration/
+
+.pypirc

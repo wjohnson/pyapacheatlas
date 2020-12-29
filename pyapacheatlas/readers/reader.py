@@ -147,6 +147,11 @@ class Reader(LineageMixIn):
 
         for row in json_rows:
 
+            if ((row["name"] is None) or (row["typeName"] is None) or
+                (row["qualifiedName"] is None)):
+                # An empty row snuck in somehow, skip it.
+                continue
+
             _attributes = self._organize_attributes(
                 row,
                 existing_entities,
@@ -217,7 +222,10 @@ class Reader(LineageMixIn):
         for entityType in entities:
             local_entity_def = EntityTypeDef(
                 name=entityType,
-                attributeDefs=entities[entityType]
+                attributeDefs=entities[entityType],
+                # Adding this as a default until I figur
+                # do this from the excel / json readers.
+                superTypes = ["DataSet"]
             ).to_json()
             output["entityDefs"].append(local_entity_def)
 
