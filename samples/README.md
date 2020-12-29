@@ -28,6 +28,7 @@ with the core methods and classes of PyApachAtlas. The sample demonstrate:
   * [Search for an entity by name](./CRUD/read_search_by_name.py).
 * **Update**
   * Update an [existing entity and lineage](./CRUD/update_entity_and_lineage.py).
+  * Update an [entity with a term by discovering related terms](./CRUD/update_entities_with_term.py) through search.
 * **Delete**
   * Delete an entity [by Guid or by qualified name and type](./CRUD/delete_entity.py).
 
