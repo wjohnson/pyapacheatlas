@@ -3,6 +3,16 @@
 There are four key features of the PyApacheAtlas package with respect to the Excel frontend.
 
 ## Features and Samples
+* **Generate the Excel Template**
+  * After installing the PyApacheAtlas package, you can run the following code to generate an xlsx file with the latest template tabs.
+  
+  ```python
+  from pyapacheatlas.readers import ExcelReader
+
+  ExcelReader.make_template("./my_file_path.xlsx")
+  ```
+  * The below samples all create their own template file and fill it with demo data.
+
 * **Bulk upload entities**
   * [Bulk Entities Excel Sample](./excel_bulk_entities_upload.py)
   * You want to dump entity information into excel and upload.

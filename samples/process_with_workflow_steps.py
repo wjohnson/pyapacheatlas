@@ -44,19 +44,19 @@ if __name__ == "__main__":
         name="process_with_steps_steps",
         relationshipCategory="COMPOSITION",
         endDef1={
-                "type": "process_with_steps",
-                "name": "steps",
-                "isContainer": True,
-                "cardinality": "SET",
-                "isLegacyAttribute": False
-            },
+            "type": "process_with_steps",
+            "name": "steps",
+            "isContainer": True,
+            "cardinality": "SET",
+            "isLegacyAttribute": False
+        },
         endDef2={
-                "type": "step_in_process",
-                "name": "parent_process",
-                "isContainer": False,
-                "cardinality": "SINGLE",
-                "isLegacyAttribute": False
-            }
+            "type": "step_in_process",
+            "name": "parent_process",
+            "isContainer": False,
+            "cardinality": "SINGLE",
+            "isLegacyAttribute": False
+        }
     )
 
     # Create the process, steps in the process, and dummy inputs and outputs
@@ -102,14 +102,14 @@ if __name__ == "__main__":
         typeName="process_with_steps",
         guid=-1003,
         relationshipAttributes={
-            "steps":[
-            step01.to_json(minimum=True),
-            step02.to_json(minimum=True),
-            step03.to_json(minimum=True),
-        ]},
-        attributes = {
-            "inputs":[input01.to_json(minimum=True)],
-            "outputs":[output01.to_json(minimum=True)]
+            "steps": [
+                step01.to_json(minimum=True),
+                step02.to_json(minimum=True),
+                step03.to_json(minimum=True),
+            ]},
+        attributes={
+            "inputs": [input01.to_json(minimum=True)],
+            "outputs": [output01.to_json(minimum=True)]
         }
     )
 
@@ -118,8 +118,7 @@ if __name__ == "__main__":
         step01.to_json(), step02.to_json(),
         step03.to_json(), parent.to_json(),
         input01.to_json(), output01.to_json()
-        ]
-
+    ]
 
     # Upload the types
     typeResults = client.upload_typedefs(

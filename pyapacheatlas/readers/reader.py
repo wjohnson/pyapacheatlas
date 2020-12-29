@@ -95,7 +95,7 @@ class Reader(LineageMixIn):
         :param list(str) ignore:
             A set of keys to ignore and omit from the returned dict.
         :return:
-            A dictionary containing 'ttributes' and 'relationshipAttributes'
+            A dictionary containing 'attributes' and 'relationshipAttributes'
         :rtype: dict(str, dict(str,str))
         """
         output = {"attributes": {}, "relationshipAttributes": {}}
@@ -148,7 +148,7 @@ class Reader(LineageMixIn):
         for row in json_rows:
 
             if ((row["name"] is None) or (row["typeName"] is None) or
-                (row["qualifiedName"] is None)):
+                    (row["qualifiedName"] is None)):
                 # An empty row snuck in somehow, skip it.
                 continue
 
@@ -198,7 +198,7 @@ class Reader(LineageMixIn):
             try:
                 entityTypeName = row["Entity TypeName"]
             except KeyError:
-                raise KeyError("Entity TypeName not foud in {}".format(row))
+                raise KeyError("Entity TypeName not found in {}".format(row))
 
             _ = row.pop("Entity TypeName")
             # Update all seen attribute metadata
@@ -223,9 +223,9 @@ class Reader(LineageMixIn):
             local_entity_def = EntityTypeDef(
                 name=entityType,
                 attributeDefs=entities[entityType],
-                # Adding this as a default until I figur
+                # Adding this as a default until I figure
                 # do this from the excel / json readers.
-                superTypes = ["DataSet"]
+                superTypes=["DataSet"]
             ).to_json()
             output["entityDefs"].append(local_entity_def)
 

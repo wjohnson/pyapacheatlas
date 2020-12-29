@@ -31,19 +31,19 @@ if __name__ == "__main__":
 
     # Assuming you have an entity with the word demo in the name or description
     search = client.search_entities("demo")
-    
+
     # Alternative search methods include...
-    ## Searching across a given attribute: 
-    ### Search only the name (or qualifiedName) field and it begins with demo
-    ### Must include a wildcard character (*) at the end, does not support
-    ### wildcard at the beginning or middle.
+    # Searching across a given attribute:
+    # Search only the name (or qualifiedName) field and it begins with demo
+    # Must include a wildcard character (*) at the end, does not support
+    # wildcard at the beginning or middle.
 
     # search = client.search_entities("name:demo*")
     # search = client.search_entities("qualifiedName:demo*")
 
-    ## Searching within a given type and include subtypes...
-    ### Provide a search filter that specifies the typeName and whether
-    ### you want to include sub types of that type or not.
+    # Searching within a given type and include subtypes...
+    # Provide a search filter that specifies the typeName and whether
+    # you want to include sub types of that type or not.
 
     # filter_setup = {"typeName": "DataSet", "includeSubTypes": True}
     # search = client.search_entities("*", search_filter=filter_setup)
@@ -54,6 +54,6 @@ if __name__ == "__main__":
     for page in search:
         for entity in page:
             # Important properties returned include...
-            ## id (the guid of the entity), name, qualifedName, @search.score,
-            ## and @search.highlights
+            # id (the guid of the entity), name, qualifedName, @search.score,
+            # and @search.highlights
             print(json.dumps(entity, indent=2))

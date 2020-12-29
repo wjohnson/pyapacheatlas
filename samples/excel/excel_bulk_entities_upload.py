@@ -11,6 +11,7 @@ from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import AtlasClient  # Communicate with your Atlas server
 from pyapacheatlas.readers import ExcelConfiguration, ExcelReader
 
+
 def fill_in_workbook(filepath, excel_config):
     # You can safely ignore this function as it just
     # populates the excel spreadsheet.
@@ -28,12 +29,12 @@ def fill_in_workbook(filepath, excel_config):
             None, None],
         ["hive_column", "columnA", "pyapacheatlas://hivetable01#colA", None,
             'pyapacheatlas://hivetable01', 'string'],
-       ["hive_column", "columnB", "pyapacheatlas://hivetable01#colB", None,
+        ["hive_column", "columnB", "pyapacheatlas://hivetable01#colB", None,
             'pyapacheatlas://hivetable01', 'long'],
         ["hive_column", "columnC", "pyapacheatlas://hivetable01#colC", None,
             'pyapacheatlas://hivetable01', 'int']
     ]
-    
+
     # Need to adjust the default header to include our extra attributes
     bulkEntity_sheet['E1'] = '[Relationship] table'
     bulkEntity_sheet['F1'] = 'type'
@@ -41,7 +42,7 @@ def fill_in_workbook(filepath, excel_config):
     # Populate the excel template with samples above
     table_row_counter = 0
     for row in bulkEntity_sheet.iter_rows(min_row=2, max_col=6,
-                                     max_row=len(entities_to_load) + 1):
+                                          max_row=len(entities_to_load) + 1):
         for idx, cell in enumerate(row):
             cell.value = entities_to_load[table_row_counter][idx]
         table_row_counter += 1
@@ -71,7 +72,7 @@ if __name__ == "__main__":
     file_path = "./demo_bulk_entities_upload.xlsx"
     excel_config = ExcelConfiguration()
     excel_reader = ExcelReader(excel_config)
-    
+
     # Create an empty excel template to be populated
     excel_reader.make_template(file_path)
     # This is just a helper to fill in some demo data
@@ -85,6 +86,6 @@ if __name__ == "__main__":
 
     results = client.upload_entities(entities)
 
-    print(json.dumps(results,indent=2))
+    print(json.dumps(results, indent=2))
 
     print("Completed bulk upload successfully!\nSearch for hivetable01 to see your results.")
