@@ -205,3 +205,69 @@ class AtlasProcess(AtlasEntity):
         :rtype: list(dict)
         """
         return self.attributes["outputs"]
+
+class AtlasClassification():
+    """
+    A python implementation of the AtlasClassification from Apache Atlas.
+    """
+
+    def __init__(self, typeName, entityStatus = "ACTIVE", propagate=False,
+        removePropagationsOnEntityDelete = False, **kwargs):
+        """
+        :param str typeName: The name of this classification.
+        :param str entityStatus: One of ACTIVE, DELETED, PURGED.
+        :param str qualified_name: The unique "qualified name" of this
+            instance of an atlas entity.
+        :param Union(str,int), optional guid:
+            The guid to reference this entity by.
+        :param dict relationshipAttributes: The relationship attributes
+            representing how this entity is connected to others.  Commonly
+            used for "columns" to indicate entity is a column of a table or
+            "query" to indicate a process entity is tied another process in
+            a column lineage scenario.
+        :param dict, optional attributes: Additional attributes that your
+            atlas entity may require.
+        :param dict, optional classifications: Classifications that may
+            be applied to this atlas entity.
+        """
+        super().__init__()
+        if entityStatus not in ["ACTIVE", "PURGED", "DELETED"]:
+            raise ValueError(f"entityStatus must be one of ACTIVE, PURGED, or DELETED.")
+        self.typeName = typeName
+        self.entityStatus = entityStatus
+        self.propagate = propagate
+        self.removePropagationsOnEntityDelete = removePropagationsOnEntityDelete
+        self.attributes = kwargs.get("attributes", {})
+        self.validityPeriods = kwargs.get("validityPeriods", [])
+
+    def __repr__(self):
+        return "AtlasClassification({type_name})".format(
+            type_name=self.typeName
+        )
+
+    def __str__(self):
+        return "AtlasClassification({type_name})".format(
+            type_name=self.typeName
+        )
+
+    def to_json(self):
+        """
+        Convert this atlas entity to a dict / json.
+
+        :param bool minimum: If True, returns only the
+            type name, qualified name, and guid of the entity.  Useful
+            for being referenced in other entities like process inputs
+            and outputs.
+        :return: The json representation of this atlas entity.
+        :rtype: dict
+        """
+
+        output = {
+            "typeName":self.typeName,
+            "entityStatus":self.entityStatus,
+            "propagate":self.propagate,
+            "removePropagationsOnEntityDelete": self.removePropagationsOnEntityDelete,
+            "validityPeriods":self.validityPeriods,
+            "attributes":self.attributes
+        }
+        return output
