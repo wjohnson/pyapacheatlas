@@ -324,7 +324,7 @@ def test_parse_update_lineage():
          },
         {"Target typeName": "N/A", "Target qualifiedName": "N/A",
          "Source typeName": "demo_table2", "Source qualifiedName": "demosource03",
-         "Process name": "proc03", "Process qualifiedName": "procqual03",
+         "Process name": "proc04", "Process qualifiedName": "procqual04",
          "Process typeName": "Process5"
          }
     ]
@@ -362,3 +362,107 @@ def test_parse_update_lineage():
     assert(target_destroy["attributes"]["inputs"] == [
         {"typeName": "demo_table2",
          "uniqueAttributes": {"qualifiedName": "demosource03"}}])
+
+
+def test_parse_update_lineage_multi_in():
+    reader = Reader(READER_CONFIG)
+    json_rows = [
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+         {"Target typeName": None, "Target qualifiedName": None,
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource2",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         }
+    ]
+
+    results = reader.parse_update_lineage(json_rows)
+
+    assert(len(results) == 1)
+    inputs = results[0]["attributes"]["inputs"]
+    outputs = results[0]["attributes"]["outputs"]
+    assert(len(inputs) == 2)
+    input_names = set([x["uniqueAttributes"]["qualifiedName"] for x in inputs ])
+    assert(input_names == set(["demosource", "demosource2"]))
+    assert(len(outputs) == 1)
+
+def test_parse_update_lineage_multi_out():
+
+    reader = Reader(READER_CONFIG)
+
+    json_rows = [
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+         {"Target typeName": "demo_table", "Target qualifiedName": "demotarget2",
+         "Source typeName": None, "Source qualifiedName": None,
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         }
+    ]
+        
+    results = reader.parse_update_lineage(json_rows)
+
+    assert(len(results) == 1)
+    inputs = results[0]["attributes"]["inputs"]
+    outputs = results[0]["attributes"]["outputs"]
+    assert(len(outputs) == 2)
+    output_names = set([x["uniqueAttributes"]["qualifiedName"] for x in outputs ])
+    assert(output_names == set(["demotarget", "demotarget2"]))
+    assert(len(inputs) == 1)
+
+def test_parse_update_lineage_multi_dedupe():
+
+    reader = Reader(READER_CONFIG)
+
+    json_rows = [
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+         {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+    ]
+        
+    results = reader.parse_update_lineage(json_rows)
+
+    assert(len(results) == 1)
+    inputs = results[0]["attributes"]["inputs"]
+    outputs = results[0]["attributes"]["outputs"]
+    assert(len(outputs) == 1)
+    assert(len(inputs) == 1)
+
+def test_parse_update_lineage_multi_row_with_na_last():
+
+    reader = Reader(READER_CONFIG)
+
+    json_rows = [
+        
+         {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+         {"Target typeName": "N/A", "Target qualifiedName": "N/A",
+         "Source typeName": "demo_table2", "Source qualifiedName": "demosource2",
+         "Process name": "proc01", "Process qualifiedName": "procqual01",
+         "Process typeName": "Process2"
+         },
+    ]
+        
+    results = reader.parse_update_lineage(json_rows)
+
+    assert(len(results) == 1)
+    inputs = results[0]["attributes"]["inputs"]
+    outputs = results[0]["attributes"]["outputs"]
+    assert(len(outputs) == 0)
+    assert(len(inputs) == 2)
