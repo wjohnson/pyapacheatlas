@@ -1,5 +1,40 @@
+import warnings
+
+
 class AtlasException(BaseException):
     pass
+
+
+def PurviewOnly(func):
+    """
+    Raise a runtime warning if you are using an AtlasClient (or non Purview)
+    client. Intended to wrap specific client methods that are only available
+    in Purview.
+    """
+    def wrapper(*args, **kwargs):
+        if not args[0].is_purview:
+            warnings.warn(
+                "You're using a Purview only feature on a non-purview endpoint.",
+                RuntimeWarning
+            )
+        func(*args, **kwargs)
+    return wrapper
+
+
+def PurviewLimitation(func):
+    """
+    Raise a runtime warning if you are using a PurviewClient. Intended to wrap
+    specific client methods that have limitations due to Purview.
+    """
+    def wrapper(*args, **kwargs):
+        if args[0].is_purview:
+            warnings.warn(
+                "You're using a feature that Purview does not implement fully.",
+                RuntimeWarning
+            )
+        func(*args, **kwargs)
+    return wrapper
+
 
 class GuidTracker():
     """
