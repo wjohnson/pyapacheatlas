@@ -1,11 +1,12 @@
 import json
 from json.decoder import JSONDecodeError
 import logging
+import re
 import requests
 
 from .entity import AtlasEntity
 from .typedef import BaseTypeDef
-from .util import AtlasException
+from .util import AtlasException, PurviewLimitation, PurviewOnly
 
 
 class AtlasClient():
@@ -27,6 +28,10 @@ class AtlasClient():
         super().__init__()
         self.authentication = authentication
         self.endpoint_url = endpoint_url
+        self.is_purview = False
+        self._purview_url_pattern = r"https:\/\/[a-z0-9]*?\.(catalog\.purview.azure.com)"
+        if re.match(self._purview_url_pattern, self.endpoint_url):
+            self.is_purview = True
 
     def _handle_response(self, resp):
         """
@@ -47,7 +52,7 @@ class AtlasClient():
                 raise AtlasException(resp.text)
             else:
                 raise e(resp.text)
-        
+
         return results
 
     def delete_entity(self, guid):
@@ -479,6 +484,7 @@ class AtlasClient():
 
         return output
 
+    @PurviewLimitation
     def classify_bulk_entities(self, entityGuids, classification):
         """
         Given a single classification, you want to apply it to many entities
@@ -586,6 +592,7 @@ class AtlasClient():
         results = [c["typeName"] for c in classifications]
         return results
 
+    @PurviewLimitation
     def classify_entity(self, guid, classifications, force_update=False):
         """
         Given a single entity, you want to apply many classifications.
@@ -919,6 +926,7 @@ class AtlasClient():
             search_params["offset"] = offset
             yield return_values
 
+    @PurviewOnly
     def search_entities(self, query, limit=50, search_filter=None):
         """
         Search entities based on a query and automaticall handles limits and
@@ -956,3 +964,22 @@ class AtlasClient():
         search_generator = self._search_generator(search_params)
 
         return search_generator
+
+
+class PurviewClient(AtlasClient):
+    """
+    Provides communication between your application and the Apache Atlas
+    server with your entities and type definitions.
+    """
+
+    def __init__(self, account_name, authentication=None):
+        """
+        :param str account_name:
+            Your Purview account name.
+        :param authentication:
+            The method of authentication.
+        :type authentication:
+            :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
+        """
+        endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
+        super().__init__(endpoint_url, authentication)
