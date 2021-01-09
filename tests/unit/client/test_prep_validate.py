@@ -70,3 +70,36 @@ def test_prepare_bulk_entity_from_atlas_entity():
     expected = {"entities": [sample_entity]}
 
     assert(results == expected)
+
+def test_prepare_bulk_entity_from_mixed_atlas_entity_dict():
+
+    class_entity = AtlasEntity(
+        name=sample_entity["attributes"]["name"],
+        typeName=sample_entity["typeName"],
+        qualified_name=sample_entity["attributes"]["qualifiedName"],
+        attributes=sample_entity["attributes"],
+        guid=sample_entity["guid"],
+        relationshipAttributes= sample_entity["relationshipAttributes"]
+    )
+    class_entity2 = AtlasEntity(
+        name=sample_entity["attributes"]["name"]+"abc",
+        typeName=sample_entity["typeName"],
+        qualified_name=sample_entity["attributes"]["qualifiedName"]+"abc",
+        attributes=sample_entity["attributes"],
+        guid=sample_entity["guid"],
+        relationshipAttributes= sample_entity["relationshipAttributes"]
+    )
+
+    results = AtlasClient._prepare_entity_upload(
+        [class_entity, class_entity2.to_json()]
+    )
+
+    sample2 = sample_entity.copy()
+    sample2["attributes"]["name"] = sample2["attributes"]["name"]+"abc"
+    sample2["attributes"]["qualifiedName"] = sample2["attributes"]["qualifiedName"]+"abc"
+
+    expected = {"entities": [
+        sample_entity, sample2
+    ]}
+
+    assert(results == expected)
