@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from pyapacheatlas.core import AtlasProcess
 from pyapacheatlas.readers.util import *
 
@@ -329,7 +331,6 @@ def test_parse_update_lineage():
          }
     ]
 
-
     results = reader.parse_update_lineage(json_rows)
 
     assert(len(results) == 4)
@@ -342,7 +343,7 @@ def test_parse_update_lineage():
     assert(full_update["attributes"]["name"] == "proc01")
     assert(len(full_update["attributes"]["inputs"]) == 1)
     assert(len(full_update["attributes"]["outputs"]) == 1)
-    
+
     fullupd_input = full_update["attributes"]["inputs"][0]
     fullupd_output = full_update["attributes"]["outputs"][0]
 
@@ -372,7 +373,7 @@ def test_parse_update_lineage_multi_in():
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          },
-         {"Target typeName": None, "Target qualifiedName": None,
+        {"Target typeName": None, "Target qualifiedName": None,
          "Source typeName": "demo_table2", "Source qualifiedName": "demosource2",
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
@@ -385,9 +386,10 @@ def test_parse_update_lineage_multi_in():
     inputs = results[0]["attributes"]["inputs"]
     outputs = results[0]["attributes"]["outputs"]
     assert(len(inputs) == 2)
-    input_names = set([x["uniqueAttributes"]["qualifiedName"] for x in inputs ])
+    input_names = set([x["uniqueAttributes"]["qualifiedName"] for x in inputs])
     assert(input_names == set(["demosource", "demosource2"]))
     assert(len(outputs) == 1)
+
 
 def test_parse_update_lineage_multi_out():
 
@@ -399,22 +401,24 @@ def test_parse_update_lineage_multi_out():
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          },
-         {"Target typeName": "demo_table", "Target qualifiedName": "demotarget2",
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget2",
          "Source typeName": None, "Source qualifiedName": None,
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          }
     ]
-        
+
     results = reader.parse_update_lineage(json_rows)
 
     assert(len(results) == 1)
     inputs = results[0]["attributes"]["inputs"]
     outputs = results[0]["attributes"]["outputs"]
     assert(len(outputs) == 2)
-    output_names = set([x["uniqueAttributes"]["qualifiedName"] for x in outputs ])
+    output_names = set([x["uniqueAttributes"]["qualifiedName"]
+                        for x in outputs])
     assert(output_names == set(["demotarget", "demotarget2"]))
     assert(len(inputs) == 1)
+
 
 def test_parse_update_lineage_multi_dedupe():
 
@@ -426,41 +430,41 @@ def test_parse_update_lineage_multi_dedupe():
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          },
-         {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
          "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          },
     ]
-        
-    results = reader.parse_update_lineage(json_rows)
 
+    with pytest.warns(UserWarning):
+        results = reader.parse_update_lineage(json_rows)
     assert(len(results) == 1)
     inputs = results[0]["attributes"]["inputs"]
     outputs = results[0]["attributes"]["outputs"]
     assert(len(outputs) == 1)
     assert(len(inputs) == 1)
 
+
 def test_parse_update_lineage_multi_row_with_na_last():
 
     reader = Reader(READER_CONFIG)
 
     json_rows = [
-        
-         {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
+
+        {"Target typeName": "demo_table", "Target qualifiedName": "demotarget",
          "Source typeName": "demo_table2", "Source qualifiedName": "demosource",
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          },
-         {"Target typeName": "N/A", "Target qualifiedName": "N/A",
+        {"Target typeName": "N/A", "Target qualifiedName": "N/A",
          "Source typeName": "demo_table2", "Source qualifiedName": "demosource2",
          "Process name": "proc01", "Process qualifiedName": "procqual01",
          "Process typeName": "Process2"
          },
     ]
-        
-    results = reader.parse_update_lineage(json_rows)
-
+    with pytest.warns(UserWarning):
+        results = reader.parse_update_lineage(json_rows)
     assert(len(results) == 1)
     inputs = results[0]["attributes"]["inputs"]
     outputs = results[0]["attributes"]["outputs"]
