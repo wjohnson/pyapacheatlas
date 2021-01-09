@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import json
+import warnings
 
 from ..core import AtlasEntity, AtlasProcess
 from . import util as reader_util
@@ -462,6 +463,9 @@ class LineageMixIn():
                         "uniqueAttributes": {"qualifiedName": qual_name}}]
         return results
 
+    def _header_qn(self, l):
+        return l["uniqueAttributes"]["qualifiedName"]
+
     def parse_update_lineage(self, json_rows):
         """
         Take in UpdateLineage dictionaries and create the mutated Process
@@ -486,6 +490,9 @@ class LineageMixIn():
         sp = self.config.source_prefix
         tp = self.config.target_prefix
         pp = self.config.process_prefix
+
+        processes_seen = dict()
+
         for row in json_rows:
             try:
                 target_type = row[f"{tp} typeName"]
@@ -504,14 +511,50 @@ class LineageMixIn():
                 source_qual_name, source_type)
             outputs = self._determine_dataset_to_use(
                 target_qual_name, target_type)
-            # Convert the target / source into
-            proc = AtlasProcess(
-                name=process_name,
-                typeName=process_type,
-                qualified_name=process_qual_name,
-                guid=self.guidTracker.get_guid(),
-                inputs=inputs,
-                outputs=outputs
-            )
-            results.append(proc.to_json())
+
+            if process_qual_name in processes_seen:
+                temp_proc = processes_seen[process_qual_name]
+                # Get the inputs and outputs as they exist before this row
+                temp_in = temp_proc.get_inputs()
+                temp_out = temp_proc.get_outputs()
+                # If we have an input, check if it already exists
+                if inputs and len(inputs) > 0:
+                    input_qn = self._header_qn(inputs[0])    
+                    if input_qn not in [self._header_qn(x) for x in temp_in]:
+                        temp_in.extend(inputs)
+                        temp_proc.set_inputs(temp_in)
+                        
+                    else:
+                        warnings.warn(f"Input '{input_qn}' is repeated in Process '{process_qual_name}'. Only the earliest entry is kept.")
+                elif isinstance(inputs, list):
+                    # We have an empty list, as the input, meaning destroy the input
+                    if len(temp_in) > 0:
+                        warnings.warn(f"Process '{process_qual_name}' has conflicting inputs and N/A values and will possibly be overwritten.")
+                    temp_proc.set_inputs(inputs)
+
+                if outputs:
+                    output_qn = self._header_qn(outputs[0])    
+                    if output_qn not in [self._header_qn(x) for x in temp_out]:
+                        temp_out.extend(outputs)
+                        temp_proc.set_outputs(temp_out)
+                    else:
+                        warnings.warn(f"Output '{output_qn}' is repeated in Process '{process_qual_name}'. Only the earliest entry is kept.")
+                elif isinstance(outputs, list):
+                    # We have an empty list, as the output, meaning destroy the output
+                    if len(temp_out) > 0:
+                        warnings.warn(f"Process '{process_qual_name}' has conflicting outputs and N/A values and will possibly be overwritten.")
+                    temp_proc.set_outputs(outputs)
+                
+            else:
+                proc = AtlasProcess(
+                    name=process_name,
+                    typeName=process_type,
+                    qualified_name=process_qual_name,
+                    guid=self.guidTracker.get_guid(),
+                    inputs=inputs,
+                    outputs=outputs
+                )
+                processes_seen[process_qual_name] = proc
+            
+            results = [v.to_json() for v in processes_seen.values()]
         return results
