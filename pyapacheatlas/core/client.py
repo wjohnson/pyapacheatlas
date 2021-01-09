@@ -5,6 +5,7 @@ import requests
 
 from .entity import AtlasEntity
 from .typedef import BaseTypeDef
+from .util import AtlasException
 
 
 class AtlasClient():
@@ -37,12 +38,16 @@ class AtlasClient():
         """
 
         try:
-            resp.raise_for_status()
             results = json.loads(resp.text)
-        except requests.RequestException:
-            raise Exception(resp.text)
+            resp.raise_for_status()
         except JSONDecodeError:
-            raise Exception("Error in parsing: {}".format(resp.text))
+            raise JSONDecodeError("Error in parsing: {}".format(resp.text))
+        except requests.RequestException as e:
+            if "errorCode" in results:
+                raise AtlasException(resp.text)
+            else:
+                raise e(resp.text)
+        
         return results
 
     def delete_entity(self, guid):
@@ -156,6 +161,48 @@ class AtlasClient():
 
         return results
 
+    def get_entity_classification(self, guid, classificationName):
+        """
+        Retrieve a specific entity from the given entity's guid.
+
+        :param str guid: The guid of the entity that you want to query.
+        :param str classificationName: The typeName of the classification you
+            want to query.
+        :return: An AtlasClassification object that contains entityGuid,
+            entityStatus, typeName, attributes, and propagate fields.
+        """
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/classification/{classificationName}"
+        getClassification = requests.get(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+        results = self._handle_response(getClassification)
+        return results
+
+    def get_entity_classifications(self, guid):
+        """
+        Retrieve all classifications from the given entity's guid.
+
+        :param str guid: The entity's guid.
+        :return: An AtlasClassifications object that contains keys 'list' (which
+            is the list of classifications on the entity), pageSize, sortBy,
+            startIndex, and totalCount.
+        :rtype: dict(str, object)
+        """
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/classifications"
+
+        getClassification = requests.get(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getClassification)
+
+        return results
+
     def get_entity_header(self, guid=None):
         """
         Retrieve one or many entity headers from your Atlas backed Data Catalog.
@@ -229,14 +276,17 @@ class AtlasClient():
 
         return results
 
-    def get_typedef(self, type_category, guid=None, name=None):
+    def get_typedef(self, type_category=None, guid=None, name=None):
         """
-        Retrieve a single type def based on its type category and
-        (guid or name).
+        Retrieve a single type def based on its guid, name, or type category and
+        (guid or name). Rule of thumb: Use guid if you have it, use name if you
+        want to essentially use duck typing and are testing what keys you're
+        reading from the response, or use type_category when you want to
+        guarantee the type being returned.
 
         :param type_category:
             The type category your type def belongs to. You most likely want
-            TypeCategory.ENTITY.
+            TypeCategory.ENTITY. Optional if name or guid is specified.
         :type type_category:
             :class:`~pyapacheatlas.core.typedef.TypeCategory`
         :param str,optional guid: A valid guid. Optional if name is specified.
@@ -245,13 +295,24 @@ class AtlasClient():
         :rtype: dict
         """
         results = None
-        atlas_endpoint = self.endpoint_url + \
-            "/types/{}def".format(type_category.value)
+        atlas_endpoint = self.endpoint_url + "/types/"
+
+        # If we are using type category
+        if type_category:
+            atlas_endpoint = atlas_endpoint + \
+                "{}def".format(type_category.value)
+        elif guid or name:
+            atlas_endpoint = atlas_endpoint + "typedef"
+        else:
+            raise ValueError(
+                "Either guid or name must be defined or type_category and one of guid or name must be defined.")
 
         if guid:
             atlas_endpoint = atlas_endpoint + '/guid/{}'.format(guid)
         elif name:
             atlas_endpoint = atlas_endpoint + '/name/{}'.format(name)
+        else:
+            raise ValueError("One of guid or name must be defined.")
 
         getTypeDef = requests.get(
             atlas_endpoint,
@@ -417,6 +478,218 @@ class AtlasClient():
             output[active_category].append(typedef["name"])
 
         return output
+
+    def classify_bulk_entities(self, entityGuids, classification):
+        """
+        Given a single classification, you want to apply it to many entities
+        and you know their guid. This call will fail if any one of the guids
+        already have the provided classification on that entity.
+
+        :param Union(str, list) entityGuids:
+            The guid or guids you want to classify.
+        :param dict classification:
+            The AtlasClassification object you want to apply to the entities.
+        :return: A message indicating success. The only key is 'message',
+            containing a brief string.
+        :rtype: dict(str, Union(list(str), str))
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + "/entity/bulk/classification"
+
+        classification_name = classification["typeName"]
+
+        if isinstance(entityGuids, str):
+            entityGuids = [entityGuids]
+        elif isinstance(entityGuids, list):
+            pass
+        else:
+            raise TypeError(
+                "guid should be str or list, not {}".format(type(entityGuids)))
+
+        payload = {
+            # TODO: Accept AtlasClassification class
+            "classification": classification,
+            "entityGuids": entityGuids
+        }
+
+        postBulkClassifications = requests.post(
+            atlas_endpoint,
+            json=payload,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        try:
+            postBulkClassifications.raise_for_status()
+        except requests.RequestException:
+            raise AtlasException(postBulkClassifications.text)
+
+        results = {"message": f"Successfully assigned {classification_name}",
+                   "entityGuids": entityGuids
+                   }
+        return results
+
+    def _classify_entity_adds(self, guid, classifications):
+        """
+        Update a given entity guid with the provided classifications.
+
+        :param str guid: The guid you want to classify.
+        :param list(dict) classifications:
+            The list of AtlasClassification object you want to apply to the
+            entity.
+        :return: The name of the classification provided are returned.
+        :rtype: list(str)
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/classifications"
+
+        postAddMultiClassifications = requests.post(
+            atlas_endpoint,
+            json=classifications,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        try:
+            postAddMultiClassifications.raise_for_status()
+        except requests.RequestException:
+            raise Exception(postAddMultiClassifications.text)
+
+        results = [c["typeName"] for c in classifications]
+        return results
+
+    def _classify_entity_updates(self, guid, classifications):
+        """
+        Update a given entity guid with the provided classifications.
+
+        :param str guid: The guid you want to classify.
+        :param list(dict) classifications:
+            The list of AtlasClassification object you want to update to the
+            entity.
+        :return: The name of the classification provided are returned.
+        :rtype: list(str)
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/classifications"
+
+        putUpdateMultiClassifications = requests.put(
+            atlas_endpoint,
+            json=classifications,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        try:
+            putUpdateMultiClassifications.raise_for_status()
+        except requests.RequestException:
+            raise Exception(putUpdateMultiClassifications.text)
+
+        results = [c["typeName"] for c in classifications]
+        return results
+
+    def classify_entity(self, guid, classifications, force_update=False):
+        """
+        Given a single entity, you want to apply many classifications.
+        This call will fail if any one of the classifications exist on the
+        entity already, unless you choose force_update=True.
+
+        force_update will query the existing entity and sort the classifications
+        into NEW (post) and UPDATE (put) and do two requests to add and update.
+
+        force_update is not transactional, it performs adds first. If the add
+        succeeds, it moves on to the updates. If the update fails, the adds
+        will continue to exist on the Atlas server and will not be rolledback.
+
+        An error can occur if, for example, the classification has some required
+        attribute that you do not provide.
+
+        :param str guid: The guid you want to classify.
+        :param list(dict) classifications:
+            The list of AtlasClassification object you want to apply to the
+            entities.
+        :param bool force_update: Mark as True if any of your classifications
+            may already exist on the given entity.
+        :return: A message indicating success and which classifications were
+            'updates' vs 'adds' for the given guid.
+        :rtype: dict(str, str)
+        """
+        results = None
+        adds = []
+        updates = []
+
+        if isinstance(classifications, dict):
+            classifications = [classifications]
+        elif isinstance(classifications, list):
+            pass
+        else:
+            raise TypeError("classifications should be dict or list, not {}".format(
+                type(classifications)))
+
+        if force_update:
+            # Get the existing entity's classifications
+            existing_classifications = set([
+                c["typeName"] for c in
+                self.get_entity_classifications(guid=guid)["list"]
+            ])
+
+            # Sort the list into adds and updates (if exists)
+            temp_adds = []
+            temp_updates = []
+            for classification in classifications:
+                if classification["typeName"] in existing_classifications:
+                    temp_updates.append(classification)
+                else:
+                    temp_adds.append(classification)
+
+            # execute adds
+            if len(temp_adds) > 0:
+                adds = self._classify_entity_adds(guid, temp_adds)
+            # execute updates
+            if len(temp_updates) > 0:
+                updates = self._classify_entity_updates(guid, temp_updates)
+        else:
+            # Assuming this is all new adds
+            # execute adds
+            adds = self._classify_entity_adds(guid, classifications)
+
+        results = {
+            "message": "Successfully assigned classifications",
+            "guid": guid,
+            "adds": adds,
+            "updates": updates
+        }
+        return results
+
+    def declassify_entity(self, guid, classificationName):
+        """
+        Given an entity guid and a classification name, remove the
+        classification from the given entity.
+
+        :param str guid: The guid for the entity that needs to be updated.
+        :param str classificationName:
+            The name of the classification to be deleted.
+        :return: A success message repeating what was deleted. The only key
+            is 'message', containing the classification name and guid.
+        :rtype: dict(str, str)
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/classification/{classificationName}"
+
+        deleteEntityClassification = requests.delete(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        try:
+            deleteEntityClassification.raise_for_status()
+        except requests.RequestException:
+            raise Exception(deleteEntityClassification.text)
+
+        results = {"message":
+                   f"Successfully removed classification: {classificationName} from {guid}.",
+                   "guid": guid,
+                   }
+        return results
 
     def upload_typedefs(self, typedefs, force_update=False):
         """

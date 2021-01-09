@@ -1,3 +1,6 @@
+class AtlasException(BaseException):
+    pass
+
 class GuidTracker():
     """
     Always grab the next available guid by either inrementing or decrementing.

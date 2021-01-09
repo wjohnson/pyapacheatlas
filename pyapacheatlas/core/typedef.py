@@ -106,6 +106,25 @@ class BaseTypeDef():
             ) if v is not None and omit_nulls}
         return output
 
+class ClassificationTypeDef(BaseTypeDef):
+    """
+    An implementation of AtlasClassificationDef
+    """
+    def __init__(self, name, entityTypes = [], superTypes = [], **kwargs):
+        """
+        :param str name: The name of the typedef.
+        """
+        kwargs["category"] = TypeCategory.CLASSIFICATION
+        super().__init__(name, **kwargs)
+        self.entityTypes = entityTypes
+        self.superTypes = superTypes
+        self.subTypes = kwargs.get("subTypes", []) or []
+        self.attributeDefs = kwargs.get("attributeDefs", []) or []
+        # Process supertype inherits inputs and outputs relationshipattribute
+
+    def __str__(self):
+        return self.name
+
 
 class EntityTypeDef(BaseTypeDef):
     """
