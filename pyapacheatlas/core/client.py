@@ -814,18 +814,24 @@ class AtlasClient():
 
         if isinstance(batch, list):
             # It's a list, so we're assuming it's a list of entities
-            # TODO Incorporate AtlasEntity
-            payload = {"entities": batch}
+            # Handles any type of AtlasEntity and mixed batches of dicts
+            # and AtlasEntities
+            dict_batch = [e.to_json() if isinstance(e, AtlasEntity) else e for e in batch]
+            payload = {"entities": dict_batch}
         elif isinstance(batch, dict):
             current_keys = list(batch.keys())
 
             # Does the dict entity conform to the required pattern?
             if not any([req in current_keys for req in required_keys]):
                 # Assuming this is a single entity
-                # TODO Incorporate AtlasEntity
+                # DESIGN DECISION: I'm assuming, if you're passing in
+                # json, you know the schema and I will not support
+                # AtlasEntity here.
                 payload = {"entities": [batch]}
         elif isinstance(batch, AtlasEntity):
             payload = {"entities": [batch.to_json()]}
+        else:
+            raise NotImplementedError(f"Uploading type: {type(batch)} is not supported.")
 
         return payload
 
@@ -833,8 +839,12 @@ class AtlasClient():
         """
         Upload entities to your Atlas backed Data Catalog.
 
-        :param batch: The batch of entities you want to upload.
-        :type batch: Union(list(dict), dict))
+        :param batch:
+            The batch of entities you want to upload. Supports a single dict,
+            AtlasEntity, list of dicts, list of atlas entities.
+        :type batch:
+            Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`,
+            list(dict), list(:class:`~pyapacheatlas.core.entity.AtlasEntity`) )
         :return: The results of your bulk entity upload.
         :rtype: dict
         """
