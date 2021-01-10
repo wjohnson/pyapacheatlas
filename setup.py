@@ -2,7 +2,7 @@ import setuptools
 from pyapacheatlas import __version__
 
 LONG_DESCRIPTION = """
-# PyApacheAtlas: API Support for Apache Atlas and Azure Purview
+# PyApacheAtlas: API Support for Azure Purview and Apache Atlas
 
 A python package to work with the Apache Atlas API and support bulk loading, custom lineage, and more from a Pythonic set of classes and Excel templates. 
 
@@ -20,6 +20,10 @@ The package currently supports:
 * Working with the glossary.
   * Uploading terms.
   * Downloading individual or all terms.
+* Working with classifications.
+  * Classify one entity with multiple classifications.
+  * Classify multiple entities with a single classification.
+  * Remove classification ("declassify") from an entity.
 * Working with relationships.
   * Able to create arbitrary relationships between entities.
   * e.g. associating a given column with a table.
