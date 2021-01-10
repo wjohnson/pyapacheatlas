@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 # PyApacheAtlas packages
 # Connect to Atlas via a Service Principal
 from pyapacheatlas.auth import ServicePrincipalAuthentication
-from pyapacheatlas.core import AtlasClient  # Communicate with your Atlas server
+from pyapacheatlas.core import PurviewClient  # Communicate with your Atlas server
 from pyapacheatlas.readers import ExcelConfiguration, ExcelReader
 
 from pyapacheatlas.core import TypeCategory
@@ -96,8 +96,8 @@ if __name__ == "__main__":
         client_id=os.environ.get("CLIENT_ID", ""),
         client_secret=os.environ.get("CLIENT_SECRET", "")
     )
-    client = AtlasClient(
-        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
+    client = PurviewClient(
+        account_name = os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
 

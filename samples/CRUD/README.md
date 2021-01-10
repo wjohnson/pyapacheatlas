@@ -1,7 +1,7 @@
 # Create, Read, Update, Delete Operations
 
 This section of samples provides examples on how to use the core
-AtlasClient and AtlasEntity objects to create, read, update, and delete
+PurviewClient and AtlasEntity objects to create, read, update, and delete
 entities using PyApacheAtlas.
 
 If you are interested in using the built-in Excel functionality, see the [excel samples](../excel/README.md).

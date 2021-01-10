@@ -46,7 +46,7 @@ I would strongly encourage you to run this in a dev / sandbox environment since 
 set TENANT_ID=YOUR_TENANT_ID
 set CLIENT_ID=YOUR_SERVICE_PRINCIPAL_CLIENT_ID
 set CLIENT_SECRET=YOUR_SERVICE_PRINCIPAL_CLIENT_SECRET
-set ENDPOINT_URL=https://YOURCATALOGNAME.catalog.babylon.azure.com/api/atlas/v2
+set PURVIEW_NAME=YOUR_PURVIEW_ACCOUNT_SERVICE_NAME
 ```
 
 ## Deleting Demo Entities and Types
