@@ -5,13 +5,14 @@ import os
 # Connect to Atlas via a Service Principal
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import PurviewClient, AtlasEntity, AtlasProcess
+from pyapacheatlas.core.util import AtlasException
 
 if __name__ == "__main__":
     """
-    This sample provides an example of reading an existing entity
-    through the rest api / pyapacheatlas classes.
+    This sample provides an example of reading an existing entity's
+    classifications through the rest api / pyapacheatlas classes.
 
-    You need either the Guid of the entity or the qualified name and type name.
+    You need the Guid of the entity and the .
 
     The schema of the response follows the /v2/entity/bulk GET operation
     even if you are requesting only one entity by Guid.
@@ -32,15 +33,20 @@ if __name__ == "__main__":
         authentication=oauth
     )
 
-    # When you know the GUID that you want to get
-    response = client.get_entity(guid="123-abc-456-def")
-    print(json.dumps(response, indent=2))
+    # For a given guid, check if a given classification type is applied
+    # If it's not, an AtlasException is thrown.
+    try:
+        single_class_check = client.get_entity_classification(
+            guid="b58fc81e-a85f-4dfc-aad1-ee33b3421b87",
+            classificationName="MICROSOFT.PERSONAL.IPADDRESS"
+        )
+        print(json.dumps(single_class_check, indent=2))
+    except AtlasException as e:
+        print("The provided classification was not found on the provied entity.")
+        print(e)
 
-    # When you need to find multiple Guids and they all are the same type
-    entities = client.get_entity(
-        qualifiedName=["qualifiedname1", "qualifiedname2", "qualifiedname3"],
-        typeName="my_type"
+    # You can also get ALL of the classifications from a given entity
+    all_class_check = client.get_entity_classifications(
+        guid="b58fc81e-a85f-4dfc-aad1-ee33b3421b83"
     )
-
-    for entity in entities.get("entities"):
-        print(json.dumps(entity, indent=2))
+    print(json.dumps(all_class_check, indent=2))

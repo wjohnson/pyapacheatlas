@@ -4,7 +4,7 @@ import json
 import os
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
-from pyapacheatlas.core import AtlasClient
+from pyapacheatlas.core import PurviewClient
 
 SearchOutput = namedtuple(
     typename="SearchOutput",
@@ -32,13 +32,18 @@ if __name__ == "__main__":
         client_id=os.environ.get("CLIENT_ID", ""),
         client_secret=os.environ.get("CLIENT_SECRET", "")
     )
-    client = AtlasClient(
-        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
+    client = PurviewClient(
+        account_name = os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
 
     glossary = client.get_glossary()
-    terms = glossary["terms"]
+    try:
+        terms = glossary["terms"]
+    except KeyError:
+        print("Your default glossary appears to be empty.")
+        print("Please add a term to your glossary and try this demo again.")
+        exit(3)
     # Consists of DisplayText and term
     term_variants = {
         t["displayText"]: {'guid': t["termGuid"], "variants": []} for t in terms

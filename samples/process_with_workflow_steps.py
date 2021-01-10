@@ -2,7 +2,7 @@ import json
 import os
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
-from pyapacheatlas.core import AtlasClient, AtlasEntity, TypeCategory
+from pyapacheatlas.core import PurviewClient, AtlasEntity, TypeCategory
 from pyapacheatlas.core.typedef import EntityTypeDef, RelationshipTypeDef
 
 if __name__ == "__main__":
@@ -18,8 +18,8 @@ if __name__ == "__main__":
         client_id=os.environ.get("CLIENT_ID", ""),
         client_secret=os.environ.get("CLIENT_SECRET", "")
     )
-    client = AtlasClient(
-        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
+    client = PurviewClient(
+        account_name = os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
 

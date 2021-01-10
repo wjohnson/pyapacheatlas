@@ -1,7 +1,7 @@
 # Databricks notebook source
 import os
 from pyapacheatlas.auth import ServicePrincipalAuthentication
-from pyapacheatlas.core import AtlasClient, AtlasEntity, AtlasProcess, TypeCategory
+from pyapacheatlas.core import PurviewClient, AtlasEntity, AtlasProcess, TypeCategory
 from pyapacheatlas.core.util import GuidTracker
 from pyapacheatlas.core.typedef import AtlasAttributeDef, EntityTypeDef, RelationshipTypeDef
 
@@ -11,8 +11,6 @@ client_id = ""
 client_secret = ""
 data_catalog_name = ""
 
-atlas_endpoint = "https://" + data_catalog_name + ".catalog.babylon.azure.com/api/atlas/v2"
-
 # COMMAND ----------
 
 oauth = ServicePrincipalAuthentication(
@@ -20,8 +18,8 @@ oauth = ServicePrincipalAuthentication(
         client_id=os.environ.get("CLIENT_ID", client_id),
         client_secret=os.environ.get("CLIENT_SECRET", client_secret)
     )
-client = AtlasClient(
-    endpoint_url=os.environ.get("ENDPOINT_URL", atlas_endpoint),
+client = PurviewClient(
+    account_name = os.environ.get("PURVIEW_NAME", ""),
     authentication=oauth
 )
 guid = GuidTracker()

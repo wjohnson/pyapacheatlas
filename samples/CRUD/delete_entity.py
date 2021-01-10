@@ -4,7 +4,7 @@ import os
 # PyApacheAtlas packages
 # Connect to Atlas via a Service Principal
 from pyapacheatlas.auth import ServicePrincipalAuthentication
-from pyapacheatlas.core import AtlasClient  # Communicate with your Atlas server
+from pyapacheatlas.core import PurviewClient  # Communicate with your Atlas server
 
 if __name__ == "__main__":
     """
@@ -17,8 +17,8 @@ if __name__ == "__main__":
         client_id=os.environ.get("CLIENT_ID", ""),
         client_secret=os.environ.get("CLIENT_SECRET", "")
     )
-    client = AtlasClient(
-        endpoint_url=os.environ.get("ENDPOINT_URL", ""),
+    client = PurviewClient(
+        account_name = os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     )
 
     for entity in entities.get("entities"):
-        response = AtlasClient.delete_entity(guid=entity["guid"])
+        response = PurviewClient.delete_entity(guid=entity["guid"])
         guid = response["guid"]
         delete_response = client.delete_entity(guid=guid)
         print(json.dumps(delete_response, indent=2))
