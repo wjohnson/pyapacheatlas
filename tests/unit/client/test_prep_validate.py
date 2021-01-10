@@ -1,5 +1,6 @@
 import json
 from pyapacheatlas.core import AtlasClient, AtlasEntity
+from pyapacheatlas.core.typedef import EntityTypeDef
 
 sample_entity = {
       "typeName": "hive_column",
@@ -103,3 +104,14 @@ def test_prepare_bulk_entity_from_mixed_atlas_entity_dict():
     ]}
 
     assert(results == expected)
+
+def test_prepare_type_def():
+    e = EntityTypeDef("pyapacheatlas_test1")
+    e2 = EntityTypeDef("pyapacheatlas_test2")
+    e3 = EntityTypeDef("pyapacheatlas_test3")
+    
+    results = AtlasClient._prepare_type_upload(
+        entityDefs = [e, e2.to_json(), e3],
+    )
+    assert(len(results["entityDefs"]) == 3)
+    assert( all( [isinstance(r, dict) for r in results["entityDefs"]]))

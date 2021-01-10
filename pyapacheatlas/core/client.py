@@ -697,46 +697,22 @@ class AtlasClient():
                    "guid": guid,
                    }
         return results
-
-    def upload_typedefs(self, typedefs, force_update=False):
+    
+    @staticmethod
+    def _prepare_type_upload(typedefs = None, **kwargs):
         """
-        Provides a way to upload a single or multiple type definitions.
-        If you provide one type def, it will format the required wrapper
-        for you based on the type category.
-
-        If you want to upload multiple, then you'll need to create the
-        wrapper yourself (e.g. {"entityDefs":[], "relationshipDefs":[]}).
-        If the dict you pass in contains at least one of these Def fields
-        it will be considered valid and an upload will be attempted as is.
-
-        When using force_update, it will look up all existing types and see
-        if any of your provided types exist.  If they do exist, they will be
-        updated. If they do not exist, they will be issued as new. New types
-        are uploaded first. Existing types are updated second. There are no
-        transactional updates.  New types can succeed and be inserted while
-        a batch of existing types can fail and not be updated.
-
-        :param typedefs: The set of type definitions you want to upload.
-        :type typedefs: dict
-        :param bool force_update:
-            Set to True if your typedefs contains any existing entities.
-        :return: The results of your upload attempt from the Atlas server.
-        :rtype: dict
+        Massage the type upload. See rules in upload_typedefs.
         """
-        # Should this take a list of type defs and figure out the formatting
-        # by itself?
-        # Should you pass in a AtlasTypesDef object and be forced to build
-        # it yourself?
-        results = None
-        atlas_endpoint = self.endpoint_url + "/types/typedefs"
-
-        payload = typedefs
+        payload = {}
         required_keys = ["classificationDefs", "entityDefs",
                          "enumDefs", "relationshipDefs", "structDefs"]
-        current_keys = list(typedefs.keys())
 
-        # Does the typedefs conform to the required pattern?
-        if not any([req in current_keys for req in required_keys]):
+        # If typedefs is defined as a dict and it contains at least one of the
+        # required keys for the TypeREST definition.
+        if isinstance(typedefs,dict) and len(set(typedefs.keys()).intersection(required_keys)) > 0:
+            payload = typedefs
+        # It isn't in the standard form but is it defined?
+        elif typedefs is not None:
             # Assuming this is a single typedef
             key = None
             if isinstance(typedefs, BaseTypeDef):
@@ -751,6 +727,78 @@ class AtlasClient():
                     .format(type(typedefs))
                 )
             payload = {key: val}
+        # Did we set any of the xDefs as arguments?
+        elif len( set(kwargs.keys()).intersection(required_keys) ) > 0:
+            for typeRestKey in required_keys:
+                # Did we specify this key?
+                if typeRestKey in kwargs.keys():
+                    payload[typeRestKey] = [
+                        t.to_json() if isinstance(t, BaseTypeDef) else t
+                        for t in kwargs[typeRestKey]
+                    ]
+        else:
+            raise RuntimeError(
+                f"Failed to upload typedefs for arguments: {kwargs}"
+            )
+        return payload
+
+    def upload_typedefs(self, typedefs = None, force_update=False, **kwargs):
+        """
+        Provides a way to upload a single or multiple type definitions.
+        If you provide one type def, it will format the required wrapper
+        for you based on the type category.
+
+        If you want to upload multiple type defs or typedefs of different
+        category, you can pass the in kwargs `entityDefs`, `classificationDefs`,
+        `enumDefs`, `relationshipDefs`, `structDefs` which take in a list of
+        dicts or appropriate TypeDef objects.
+        
+        Otherwise, you can pass in the wrapper yourself (e.g. {"entityDefs":[],
+        "relationshipDefs":[]}) by providing that dict to the typedefs
+        parameter. If the dict you pass in contains at least one of these Def
+        fields it will be considered valid and an upload will be attempted.
+
+        typedefs also takes in a BaseTypeDef object or a valid AtlasTypeDef
+        json / dict. If you provide a value in typedefs, it will ignore the
+        kwargs parameters.
+
+        When using force_update, it will look up all existing types and see
+        if any of your provided types exist.  If they do exist, they will be
+        updated. If they do not exist, they will be issued as new. New types
+        are uploaded first. Existing types are updated second. There are no
+        transactional updates.  New types can succeed and be inserted while
+        a batch of existing types can fail and not be updated.
+
+        :param typedefs: The set of type definitions you want to upload.
+        :type typedefs: Union(dict, :class:`~pyapacheatlas.core.typedef.BaseTypeDef`)
+        :param bool force_update:
+            Set to True if your typedefs contains any existing entities.
+        :return: The results of your upload attempt from the Atlas server.
+            :rtype: dict
+        
+        Kwargs:
+            :param entityDefs: EntityDefs to upload.
+            :type entityDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param classificationDefs: classificationDefs to upload.
+            :type classificationDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param enumDefs: enumDefs to upload.
+            :type enumDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param relationshipDefs: relationshipDefs to upload.
+            :type relationshipDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param structDefs: structDefs to upload.
+            :type structDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+
+        Returns:
+            
+        """
+        # Should this take a list of type defs and figure out the formatting
+        # by itself?
+        # Should you pass in a AtlasTypesDef object and be forced to build
+        # it yourself?
+        results = None
+        atlas_endpoint = self.endpoint_url + "/types/typedefs"
+
+        payload = AtlasClient._prepare_type_upload(typedefs, **kwargs)
 
         if not force_update:
             # This is just a plain push of new entities
