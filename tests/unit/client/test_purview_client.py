@@ -26,7 +26,8 @@ def test_purview_only_decorator():
     client = AtlasClient("DEMO")
     
     with pytest.warns(RuntimeWarning):
-        client.temp_func()
+        out = client.temp_func()
+    assert(out ==1)
 
 def test_purview_limited_decorator():
 
@@ -38,3 +39,5 @@ def test_purview_limited_decorator():
     
     with pytest.warns(RuntimeWarning):
         client.temp_func()
+        out = client.temp_func()
+    assert(out ==1)

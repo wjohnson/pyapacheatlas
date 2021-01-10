@@ -17,7 +17,7 @@ def PurviewOnly(func):
                 "You're using a Purview only feature on a non-purview endpoint.",
                 RuntimeWarning
             )
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
     return wrapper
 
 
@@ -32,7 +32,7 @@ def PurviewLimitation(func):
                 "You're using a feature that Purview does not implement fully.",
                 RuntimeWarning
             )
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
     return wrapper
 
 
