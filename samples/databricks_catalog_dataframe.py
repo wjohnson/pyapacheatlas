@@ -9,7 +9,7 @@ from pyapacheatlas.core.typedef import AtlasAttributeDef, EntityTypeDef, Relatio
 tenant_id = ""
 client_id = ""
 client_secret = ""
-data_catalog_name = ""
+purview_account_name = ""
 
 # COMMAND ----------
 
@@ -19,7 +19,7 @@ oauth = ServicePrincipalAuthentication(
         client_secret=os.environ.get("CLIENT_SECRET", client_secret)
     )
 client = PurviewClient(
-    account_name = os.environ.get("PURVIEW_NAME", ""),
+    account_name = os.environ.get("PURVIEW_NAME", "purview_account_name"),
     authentication=oauth
 )
 guid = GuidTracker()
