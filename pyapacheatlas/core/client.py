@@ -978,11 +978,14 @@ class AtlasClient():
             return_count = len(return_values)
 
             if return_count == 0:
-                raise StopIteration
+                return
 
             offset = offset + return_count
             search_params["offset"] = offset
-            yield return_values
+            try:
+                yield return_values
+            except StopIteration:
+                return
 
     @PurviewOnly
     def search_entities(self, query, limit=50, search_filter=None):
