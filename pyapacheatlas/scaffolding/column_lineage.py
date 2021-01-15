@@ -3,13 +3,13 @@ from ..core import typedef
 
 def column_lineage_scaffold(datasource,
                             use_column_mapping=False,
-                            column_attributes=None,
-                            table_attributes=None,
-                            table_column_relationship_attributes=None,
-                            column_lineage_attributes=None,
-                            table_process_attributes=None,
-                            column_lineage_process_attributes=None,
-                            table_process_column_lineage_relationship_attributes=None
+                            column_attributes=[],
+                            table_attributes=[],
+                            table_column_relationship_attributes=[],
+                            column_lineage_attributes=[],
+                            table_process_attributes=[],
+                            column_lineage_process_attributes=[],
+                            table_process_column_lineage_relationship_attributes=[]
                             ):
     """
     Create a base set of type definitions that adhere to the Hive Bridge
