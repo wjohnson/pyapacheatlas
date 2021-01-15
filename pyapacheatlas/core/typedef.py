@@ -149,74 +149,122 @@ class RelationshipTypeDef(BaseTypeDef):
     An implementation of AtlasRelationshipDef
     """
 
-    @staticmethod
-    def default_columns_endDef(typeName):
-        """
-        Returns a default columns end definition. It's meant to be
-        used on the table (endDef1) of table-column relationship.
-
-        :return: An end def named columns as a SET/container.
-        :rtype: dict
-        """
-        return {
-            "type": typeName,
-            "name": "columns",
-            "isContainer": True,
-            "cardinality": "SET",
-            "isLegacyAttribute": True
-        }
-
-    @staticmethod
-    def default_table_endDef(typeName):
-        """
-        Returns a default table end definition. It's meant to be
-        used on the column (endDef2) of table-column relationship.
-
-        :return: An end def named table as a SINGLE.
-        :rtype: dict
-        """
-        return {
-            "type": typeName,
-            "name": "table",
-            "isContainer": False,
-            "cardinality": "SINGLE",
-            "isLegacyAttribute": True
-        }
-
-    @staticmethod
-    def _decide_endDef(endDef, default_func):
-        """
-
-        :param Union(str, dict) endDef: Either a string to be passed into
-            the default_func or a dict.  If dict, it will be assumed that
-            it's a valid end def.
-        :param function default_func: The default function to use if endDef
-            is not a dict.  default_func must take one str parameter.
-        """
-        output = None
-
-        if isinstance(endDef, dict):
-            output = endDef
-        elif isinstance(endDef, str):
-            output = default_func(endDef)
-
-        else:
-            raise NotImplementedError(
-                "endDef1 of type {} is not supported. Use string or dict.".format(type(endDef)))
-        return output
-
-    def __init__(self, name, endDef1, endDef2, **kwargs):
+    def __init__(self, name, endDef1, endDef2, relationshipCategory, **kwargs):
         """
         :param str name: The name of the relationship type def.
-        :param Union(str, dict) endDef1: Either the name to be passed into
-            a default_columns_endDef function or a valid endDef dict.
-        :param Union(str, dict) endDef2: Either the name to be passed into
-            a default_table_endDef function or a valid endDef dict.
+        :param endDef1:
+            Either a valid AtlasRelationshipEndDef dict or class object.
+        :type endDef1:
+            Union(:class:~pyapacheatlas.core.typedef.AtlasRelationshipEndDef, dict)
+        :param endDef2:
+            Either a valid AtlasRelationshipEndDef dict or class object.
+        :type endDef2:
+            Union(:class:~pyapacheatlas.core.typedef.AtlasRelationshipEndDef, dict)
+        :param str relationshipCategory:
+            One of COMPOSITION, AGGREGATION, ASSOCIATION. You're most likely
+            looking at COMPOSITION to create a parent/child relationship.
         """
         super().__init__(name, category=TypeCategory.RELATIONSHIP, **kwargs)
 
-        self.endDef1 = RelationshipTypeDef._decide_endDef(
-            endDef1, RelationshipTypeDef.default_columns_endDef)
-        self.endDef2 = RelationshipTypeDef._decide_endDef(
-            endDef2, RelationshipTypeDef.default_table_endDef)
-        self.relationshipCategory = kwargs.get("relationshipCategory")
+        self.endDef1 = endDef1
+        self.endDef2 = endDef2
+        self.relationshipCategory = relationshipCategory
+    
+    @property
+    def endDef1(self):
+        return self._endDef1
+    
+    @endDef1.setter
+    def endDef1(self, value):
+        if isinstance(value, AtlasRelationshipEndDef):
+            self._endDef1=value.to_json()
+        elif isinstance(value, dict):
+            self._endDef1 = value
+        else:
+            raise NotImplementedError(f"An EndDef of type `{type(value)}` is not supported.")
+
+    @property
+    def endDef2(self):
+        return self._endDef2
+    
+    @endDef2.setter
+    def endDef2(self, value):
+        if isinstance(value, AtlasRelationshipEndDef):
+            self._endDef2=value.to_json()
+        elif isinstance(value, dict):
+            self._endDef2 = value
+        else:
+            raise NotImplementedError(f"An EndDef of type `{type(value)}` is not supported.")
+    
+    def to_json(self, omit_nulls=True):
+        output = super().to_json(omit_nulls)
+        output.update({"endDef1":self.endDef1, "endDef2":self.endDef2})
+        output.pop("_endDef1")
+        output.pop("_endDef2")
+        return output
+
+class AtlasRelationshipEndDef():
+    """
+    An implementation of AtlasRelationshipEndDef.
+
+    :param str name: The name that will appear on the entity's relationship attribute.
+    :param str typeName: The type that is required for this end of the relationship.
+    :param cardinality: The cardinality of the end definition.
+    :type cardinality": :class:`~pyapacheatlas.core.typedef.Cardinality`
+    :param bool isContainer:
+        This should be False when the cardinality is SINGLE. It should be
+        True when cardinality is SET or LIST. endDef1 should
+
+    Kwargs:
+        :param str description:
+            The description of this end of the relationship.
+        :param bool isLegacyAttribute: Defaults to False.
+    """
+    def __init__(self, name, typeName, cardinality = Cardinality.SINGLE, isContainer=False, **kwargs):
+        self.cardinality = cardinality.value
+        self.description = kwargs.get("description")
+        self.isLegacyAttribute = kwargs.get("isLegacyAttribute", False)
+        self.name = name
+        self.type = typeName
+        self.isContainer = isContainer
+    
+    def to_json(self, omit_nulls=True):
+        """
+        Converts the typedef object to a dict / json.
+
+        :param bool omit_null: If True, omits keys with value of None.
+        :return: The dict / json version of the type def.
+        :rtype: dict
+        """
+        output = self.__dict__
+        if omit_nulls:
+            output = {k: v for k, v in output.items(
+            ) if v is not None and omit_nulls}
+        return output
+
+class ParentEndDef(AtlasRelationshipEndDef):
+    """
+    A helper for creating a Parent end def (e.g. EndDef1 that is a container).
+    The goal being to simplify and reduce the margin of error when creating
+    containing relationships. This should be used in EndDef1 when the 
+    relationshipCategory is COMPOSITION or AGGREGATION.
+    """
+
+    def __init__(self, name, typeName, **kwargs):
+        super().__init__(name, typeName, 
+        cardinality = Cardinality.SET, 
+        isContainer=True, **kwargs
+    )
+
+class ChildEndDef(AtlasRelationshipEndDef):
+    """
+    A helper for creating a Child end def (e.g. EndDef2 that is a single).
+    The goal being to simplify and reduce the margin of error when creating
+    containing relationships. This should be used in EndDef2 when the 
+    relationshipCategory is COMPOSITION or AGGREGATION.
+    """
+    def __init__(self, name, typeName, **kwargs):
+        super().__init__(name, typeName, 
+        cardinality = Cardinality.SINGLE, 
+        isContainer=False, **kwargs
+    )
