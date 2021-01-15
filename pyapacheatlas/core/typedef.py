@@ -54,8 +54,6 @@ class AtlasAttributeDef():
         self.name = name  # string
         self.options = kwargs.get("options")  # map of string
         self.searchWeight = kwargs.get("searchWeight")  # number
-        # TODO: Figure out if there is a need for supporting another
-        # type that may add extra attributes?
         self.typeName = kwargs.get("typeName", "string")  # string
         self.valuesMaxCount = kwargs.get("valuesMaxCount", 1)  # number
         self.valuesMinCount = kwargs.get("valuesMinCount", 0)  # number
@@ -73,12 +71,14 @@ class BaseTypeDef():
     An implementation of AtlasBaseTypeDef
     """
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, category, **kwargs):
         """
         :param str name: The name of the typedef.
+        :param category: The name of the typedef.
+        :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
         """
         super().__init__()
-        self.category = kwargs.get("category").value.upper()
+        self.category = category.value.upper()
         self.createTime = kwargs.get("createTime")
         self.createdBy = kwargs.get("createdBy")
         self.dateFormatter = kwargs.get("dateFormatter")
@@ -114,13 +114,11 @@ class ClassificationTypeDef(BaseTypeDef):
         """
         :param str name: The name of the typedef.
         """
-        kwargs["category"] = TypeCategory.CLASSIFICATION
-        super().__init__(name, **kwargs)
+        super().__init__(name, category=TypeCategory.CLASSIFICATION, **kwargs)
         self.entityTypes = entityTypes
         self.superTypes = superTypes
         self.subTypes = kwargs.get("subTypes", []) or []
         self.attributeDefs = kwargs.get("attributeDefs", []) or []
-        # Process supertype inherits inputs and outputs relationshipattribute
 
     def __str__(self):
         return self.name
@@ -135,8 +133,7 @@ class EntityTypeDef(BaseTypeDef):
         """
         :param str name: The name of the typedef.
         """
-        kwargs["category"] = TypeCategory.ENTITY
-        super().__init__(name, **kwargs)
+        super().__init__(name, category=TypeCategory.ENTITY, **kwargs)
         self.attributeDefs = kwargs.get("attributeDefs", []) or []
         self.relationshipAttributeDefs = kwargs.get(
             "relationshipAttributeDefs", []) or []
@@ -216,8 +213,7 @@ class RelationshipTypeDef(BaseTypeDef):
         :param Union(str, dict) endDef2: Either the name to be passed into
             a default_table_endDef function or a valid endDef dict.
         """
-        kwargs["category"] = TypeCategory.RELATIONSHIP
-        super().__init__(name, **kwargs)
+        super().__init__(name, category=TypeCategory.RELATIONSHIP, **kwargs)
 
         self.endDef1 = RelationshipTypeDef._decide_endDef(
             endDef1, RelationshipTypeDef.default_columns_endDef)
