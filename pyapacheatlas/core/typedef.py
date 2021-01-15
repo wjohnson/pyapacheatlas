@@ -24,6 +24,12 @@ class Cardinality(Enum):
 class AtlasAttributeDef():
     """
     An implementation of AtlasAttributeDef.
+
+    Kwargs:
+        :param cardinality:
+            One of Cardinality.SINGLE, .SET, .LIST. Defaults to SINGLE.
+        :type cardinality: :class:`pyapacheatlas.core.typedef.Cardinality`
+        :param str typeName: The type of this attribute. Defaults to string.
     """
 
     propertiesEnum = [
@@ -74,7 +80,7 @@ class BaseTypeDef():
     def __init__(self, name, category, **kwargs):
         """
         :param str name: The name of the typedef.
-        :param category: The name of the typedef.
+        :param category: The category of the typedef.
         :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
         """
         super().__init__()
@@ -106,42 +112,121 @@ class BaseTypeDef():
             ) if v is not None and omit_nulls}
         return output
 
-class ClassificationTypeDef(BaseTypeDef):
+
+class AtlasStructDef(BaseTypeDef):
+    """
+    An implemention of AtlasStructDef. Not expected to be used by the end users.
+
+    :param str name: The name of the type definition.
+    :param category: The category of the typedef.
+    :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
+
+
+    Kwargs:
+        :param attributeDefs:
+            The AtlasAttributeDefs that should be available on the struct.
+        :type attributeDefs: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasAttributeDef`))
+    """
+
+    def __init__(self, name, category, **kwargs):
+        super().__init__(name=name, category=category, **kwargs)
+        self.attributeDefs = kwargs.get("attributeDefs", [])
+
+    @property
+    def attributeDefs(self):
+        """
+        :return: List of attribute definitions.
+        :rtype: list(dict)
+        """
+        return self._attributeDefs
+
+    @attributeDefs.setter
+    def attributeDefs(self, value):
+        """
+        :param value:
+            The attribute defs you are adding. They are comma delimited dicts
+            or AtlasAttributeDefs.
+        :type value: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasAttributeDef`))
+        """
+        self._attributeDefs = [
+            e.to_json()
+            if isinstance(e, AtlasAttributeDef)
+            else e
+            for e in value
+        ]
+
+    def addAttributeDef(self, *args):
+        """
+        Add one or many attribute definitions.
+
+        :param args:
+            The attribute defs you are adding. They are comma delimited dicts
+            or AtlasAttributeDefs. You can expand a list with `*my_list`.
+        :type args: Union(dict, :class:`pyapacheatlas.core.typedef.AtlasAttributeDef`)
+        """
+        self.attributeDefs = self.attributeDefs + [
+            e.to_json()
+            if isinstance(e, AtlasAttributeDef)
+            else e
+            for e in args
+        ]
+
+    def to_json(self, omit_nulls=True):
+        output = super().to_json(omit_nulls)
+        output.update({"attributeDefs": self.attributeDefs})
+        output.pop("_attributeDefs")
+        return output
+
+
+class ClassificationTypeDef(AtlasStructDef):
     """
     An implementation of AtlasClassificationDef
+
+    :param str name: The name of the type definition.
+    :param list(str) entityTypes: The list of entityTypes for the classification.
+    :param list(str) superTypes: The list of superTypes for the classification.
+
+    Kwargs:
+        :param attributeDefs:
+            The AtlasAttributeDefs that should be available on the Classification.
+        :type attributeDefs: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasAttributeDef`))
+        :param list(str) subTypes: The types that will inherit this classification.
     """
-    def __init__(self, name, entityTypes = [], superTypes = [], **kwargs):
-        """
-        :param str name: The name of the typedef.
-        """
+
+    def __init__(self, name, entityTypes=[], superTypes=[], **kwargs):
         super().__init__(name, category=TypeCategory.CLASSIFICATION, **kwargs)
         self.entityTypes = entityTypes
         self.superTypes = superTypes
         self.subTypes = kwargs.get("subTypes", []) or []
-        self.attributeDefs = kwargs.get("attributeDefs", []) or []
 
     def __str__(self):
         return self.name
 
 
-class EntityTypeDef(BaseTypeDef):
+class EntityTypeDef(AtlasStructDef):
     """
     An implementation of AtlasEntityDef
+
+    :param str name: The name of the type definition.
+    :param list(str) superTypes:
+        The list of superTypes for the classification. You most likely want
+        ['DataSet'] to create a DataSet asset which is the default.
+
+    Kwargs:
+        :param attributeDefs:
+            The AtlasAttributeDefs that should be available on the Entity.
+        :type attributeDefs: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasAttributeDef`))
     """
 
-    def __init__(self, name, **kwargs):
-        """
-        :param str name: The name of the typedef.
-        """
+    def __init__(self, name, superTypes=['DataSet'], **kwargs):
         super().__init__(name, category=TypeCategory.ENTITY, **kwargs)
-        self.attributeDefs = kwargs.get("attributeDefs", []) or []
         self.relationshipAttributeDefs = kwargs.get(
             "relationshipAttributeDefs", []) or []
-        self.superTypes = kwargs.get("superTypes", []) or []
-        # Process supertype inherits inputs and outputs relationshipattribute
+        self.superTypes = superTypes
 
     def __str__(self):
         return self.name
+        
 
 
 class RelationshipTypeDef(BaseTypeDef):
@@ -169,39 +254,42 @@ class RelationshipTypeDef(BaseTypeDef):
         self.endDef1 = endDef1
         self.endDef2 = endDef2
         self.relationshipCategory = relationshipCategory
-    
+
     @property
     def endDef1(self):
         return self._endDef1
-    
+
     @endDef1.setter
     def endDef1(self, value):
         if isinstance(value, AtlasRelationshipEndDef):
-            self._endDef1=value.to_json()
+            self._endDef1 = value.to_json()
         elif isinstance(value, dict):
             self._endDef1 = value
         else:
-            raise NotImplementedError(f"An EndDef of type `{type(value)}` is not supported.")
+            raise NotImplementedError(
+                f"An EndDef of type `{type(value)}` is not supported.")
 
     @property
     def endDef2(self):
         return self._endDef2
-    
+
     @endDef2.setter
     def endDef2(self, value):
         if isinstance(value, AtlasRelationshipEndDef):
-            self._endDef2=value.to_json()
+            self._endDef2 = value.to_json()
         elif isinstance(value, dict):
             self._endDef2 = value
         else:
-            raise NotImplementedError(f"An EndDef of type `{type(value)}` is not supported.")
-    
+            raise NotImplementedError(
+                f"An EndDef of type `{type(value)}` is not supported.")
+
     def to_json(self, omit_nulls=True):
         output = super().to_json(omit_nulls)
-        output.update({"endDef1":self.endDef1, "endDef2":self.endDef2})
+        output.update({"endDef1": self.endDef1, "endDef2": self.endDef2})
         output.pop("_endDef1")
         output.pop("_endDef2")
         return output
+
 
 class AtlasRelationshipEndDef():
     """
@@ -220,14 +308,15 @@ class AtlasRelationshipEndDef():
             The description of this end of the relationship.
         :param bool isLegacyAttribute: Defaults to False.
     """
-    def __init__(self, name, typeName, cardinality = Cardinality.SINGLE, isContainer=False, **kwargs):
+
+    def __init__(self, name, typeName, cardinality=Cardinality.SINGLE, isContainer=False, **kwargs):
         self.cardinality = cardinality.value
         self.description = kwargs.get("description")
         self.isLegacyAttribute = kwargs.get("isLegacyAttribute", False)
         self.name = name
         self.type = typeName
         self.isContainer = isContainer
-    
+
     def to_json(self, omit_nulls=True):
         """
         Converts the typedef object to a dict / json.
@@ -242,6 +331,7 @@ class AtlasRelationshipEndDef():
             ) if v is not None and omit_nulls}
         return output
 
+
 class ParentEndDef(AtlasRelationshipEndDef):
     """
     A helper for creating a Parent end def (e.g. EndDef1 that is a container).
@@ -251,10 +341,12 @@ class ParentEndDef(AtlasRelationshipEndDef):
     """
 
     def __init__(self, name, typeName, **kwargs):
-        super().__init__(name, typeName, 
-        cardinality = Cardinality.SET, 
-        isContainer=True, **kwargs
-    )
+        super().__init__(
+            name, typeName,
+            cardinality=Cardinality.SET,
+            isContainer=True, **kwargs
+        )
+
 
 class ChildEndDef(AtlasRelationshipEndDef):
     """
@@ -263,8 +355,10 @@ class ChildEndDef(AtlasRelationshipEndDef):
     containing relationships. This should be used in EndDef2 when the 
     relationshipCategory is COMPOSITION or AGGREGATION.
     """
+
     def __init__(self, name, typeName, **kwargs):
-        super().__init__(name, typeName, 
-        cardinality = Cardinality.SINGLE, 
-        isContainer=False, **kwargs
-    )
+        super().__init__(
+            name, typeName,
+            cardinality=Cardinality.SINGLE,
+            isContainer=False, **kwargs
+        )
