@@ -25,6 +25,8 @@ class AtlasAttributeDef():
     """
     An implementation of AtlasAttributeDef.
 
+    :param str name: The name of the Attribute Definition.
+
     Kwargs:
         :param cardinality:
             One of Cardinality.SINGLE, .SET, .LIST. Defaults to SINGLE.
@@ -70,6 +72,26 @@ class AtlasAttributeDef():
             output = {k: v for k, v in output.items(
             ) if v is not None and omit_nulls}
         return output
+
+class AtlasRelationshipAttributeDef(AtlasAttributeDef):
+    """
+    An implementation of AtlasRelationshipAttributeDef.
+
+    :param str name: The name of the Relationship Attribute Definition.
+    :param str relationshipTypeName:
+        The name of the relationship type being defined. Commonly uses
+        'endDef1_endDef2' where endDef's are the names given based on
+        the relationship being used.
+
+    Kwargs:
+        :param cardinality:
+            One of Cardinality.SINGLE, .SET, .LIST. Defaults to SINGLE.
+        :type cardinality: :class:`pyapacheatlas.core.typedef.Cardinality`
+        :param str typeName: The type of this attribute. Defaults to string.
+    """
+    def __init__(self, name, relationshipTypeName, **kwargs):
+        super().__init__(name, **kwargs)
+        self.relationshipTypeName = relationshipTypeName
 
 
 class BaseTypeDef():
@@ -226,7 +248,51 @@ class EntityTypeDef(AtlasStructDef):
 
     def __str__(self):
         return self.name
-        
+    
+    @property
+    def relationshipAttributeDefs(self):
+        """
+        :return: List of relationship attribute definitions.
+        :rtype: list(dict)
+        """
+        return self._relationshipAttributeDefs
+
+    @relationshipAttributeDefs.setter
+    def relationshipAttributeDefs(self, value):
+        """
+        :param value:
+            The attribute defs you are adding. They are comma delimited dicts
+            or AtlasRelationshipAttributeDefs.
+        :type value: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasRelationshipAttributeDef`))
+        """
+        self._relationshipAttributeDefs = [
+            e.to_json()
+            if isinstance(e, AtlasRelationshipAttributeDef)
+            else e
+            for e in value
+        ]
+
+    def addRelationshipAttributeDef(self, *args):
+        """
+        Add one or many attribute definitions.
+
+        :param args:
+            The attribute defs you are adding. They are comma delimited dicts
+            or AtlasAttributeDefs. You can expand a list with `*my_list`.
+        :type args: Union(dict, :class:`pyapacheatlas.core.typedef.relationshipAttributeDefs`)
+        """
+        self.relationshipAttributeDefs = self.relationshipAttributeDefs + [
+            e.to_json()
+            if isinstance(e, AtlasRelationshipAttributeDef)
+            else e
+            for e in args
+        ]
+    
+    def to_json(self, omit_nulls=True):
+        output = super().to_json(omit_nulls)
+        output.update({"relationshipAttributeDefs": self.relationshipAttributeDefs})
+        output.pop("_relationshipAttributeDefs")
+        return output
 
 
 class RelationshipTypeDef(BaseTypeDef):
