@@ -1,5 +1,6 @@
 import warnings
 
+
 class AtlasEntity():
     """
     A python representation of the AtlasEntity from Apache Atlas.
@@ -65,7 +66,7 @@ class AtlasEntity():
         :rtype: str
         """
         return self.attributes["name"]
-    
+
     @name.setter
     def name(self, value):
         """
@@ -74,7 +75,7 @@ class AtlasEntity():
         :param str value: The name of the entity.
         """
         self.attributes["name"] = value
-    
+
     @property
     def qualifiedName(self):
         """
@@ -84,7 +85,7 @@ class AtlasEntity():
         :rtype: str
         """
         return self.attributes["qualifiedName"]
-    
+
     @qualifiedName.setter
     def qualifiedName(self, value):
         """
@@ -94,6 +95,22 @@ class AtlasEntity():
         """
         self.attributes["qualifiedName"] = value
 
+    def addRelationship(self, **kwargs):
+        """
+        Add one or many relationshipAttributes to the outputs. This will
+        also update an existing attribute. You can pass in a parameter name and
+        then either an Atlas Entity or a dict. The dict is a 
+        table = AtlasEntity(...) or
+
+        Kwargs:
+            :param kwarg: The name of the relationship attribute you're adding.
+            :type kwarg:
+                Union[dict, :class:`pyapacheatlas.core.entity.AtlasEntity`]
+        """
+        for k,v in kwargs.items():
+            val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
+            self.relationshipAttributes.update({k: val })
+
     def get_name(self):
         """
         Deprecated in favor of .name property.
@@ -102,8 +119,8 @@ class AtlasEntity():
         :return: The name of the entity.
         :rtype: str
         """
-        warnings.warn("Get name using AtlasEntity.name.", 
-            category=DeprecationWarning, stacklevel=2)
+        warnings.warn("Get name using AtlasEntity.name.",
+                      category=DeprecationWarning, stacklevel=2)
         return self.attributes["name"]
 
     def get_qualified_name(self):
@@ -114,8 +131,8 @@ class AtlasEntity():
         :return: The qualified name of the entity.
         :rtype: str
         """
-        warnings.warn("Get qualified name using AtlasEntity.qualifiedName.", 
-            category=DeprecationWarning, stacklevel=2)
+        warnings.warn("Get qualified name using AtlasEntity.qualifiedName.",
+                      category=DeprecationWarning, stacklevel=2)
         return self.attributes["qualifiedName"]
 
     def to_json(self, minimum=False):
@@ -203,17 +220,17 @@ class AtlasProcess(AtlasEntity):
         self.attributes.update({"inputs": None, "outputs": None})
         self.inputs = inputs
         self.outputs = outputs
-    
+
     def _parse_atlas_entity(self, iterable):
         """
         :param iterable: An iterable of dict or AtlasEntity
         """
         return [
-                e.to_json(minimum=True)
-                if isinstance(e, AtlasEntity)
-                else e
-                for e in iterable
-            ]
+            e.to_json(minimum=True)
+            if isinstance(e, AtlasEntity)
+            else e
+            for e in iterable
+        ]
 
     @property
     def inputs(self):
@@ -238,7 +255,7 @@ class AtlasProcess(AtlasEntity):
             self.attributes["outputs"] = self._parse_atlas_entity(value)
         else:
             self.attributes["outputs"] = None
-    
+
     def addInput(self, *args):
         """
         Add one or many entities to the inputs.
@@ -287,7 +304,8 @@ class AtlasProcess(AtlasEntity):
 
         :param list(dict) inputs: The minimum json inputs.
         """
-        warnings.warn("Set inputs using AtlasProcess.inputs = ...", category=DeprecationWarning, stacklevel=2)
+        warnings.warn("Set inputs using AtlasProcess.inputs = ...",
+                      category=DeprecationWarning, stacklevel=2)
         self.attributes["inputs"] = inputs
 
     def set_outputs(self, outputs):
@@ -298,7 +316,8 @@ class AtlasProcess(AtlasEntity):
 
         :param list(dict) outputs: The minimum json outputs.
         """
-        warnings.warn("Set outputs using AtlasProcess.outputs = ...", category=DeprecationWarning, stacklevel=2)
+        warnings.warn("Set outputs using AtlasProcess.outputs = ...",
+                      category=DeprecationWarning, stacklevel=2)
         self.attributes["outputs"] = outputs
 
     def get_inputs(self):
@@ -309,7 +328,8 @@ class AtlasProcess(AtlasEntity):
         :return: The minimum json inputs.
         :rtype: list(dict)
         """
-        warnings.warn("Get inputs using AtlasProcess.inputs.", category=DeprecationWarning, stacklevel=2)
+        warnings.warn("Get inputs using AtlasProcess.inputs.",
+                      category=DeprecationWarning, stacklevel=2)
         return self.attributes.get("inputs")
 
     def get_outputs(self):
@@ -320,16 +340,18 @@ class AtlasProcess(AtlasEntity):
         :return: The minimum json inputs.
         :rtype: list(dict)
         """
-        warnings.warn("Get outputs using AtlasProcess.outputs.", category=DeprecationWarning, stacklevel=2)
+        warnings.warn("Get outputs using AtlasProcess.outputs.",
+                      category=DeprecationWarning, stacklevel=2)
         return self.attributes.get("outputs")
+
 
 class AtlasClassification():
     """
     A python implementation of the AtlasClassification from Apache Atlas.
     """
 
-    def __init__(self, typeName, entityStatus = "ACTIVE", propagate=False,
-        removePropagationsOnEntityDelete = False, **kwargs):
+    def __init__(self, typeName, entityStatus="ACTIVE", propagate=False,
+                 removePropagationsOnEntityDelete=False, **kwargs):
         """
         :param str typeName: The name of this classification.
         :param str entityStatus: One of ACTIVE, DELETED, PURGED.
@@ -349,7 +371,8 @@ class AtlasClassification():
         """
         super().__init__()
         if entityStatus not in ["ACTIVE", "PURGED", "DELETED"]:
-            raise ValueError(f"entityStatus must be one of ACTIVE, PURGED, or DELETED.")
+            raise ValueError(
+                f"entityStatus must be one of ACTIVE, PURGED, or DELETED.")
         self.typeName = typeName
         self.entityStatus = entityStatus
         self.propagate = propagate
@@ -380,11 +403,11 @@ class AtlasClassification():
         """
 
         output = {
-            "typeName":self.typeName,
-            "entityStatus":self.entityStatus,
-            "propagate":self.propagate,
+            "typeName": self.typeName,
+            "entityStatus": self.entityStatus,
+            "propagate": self.propagate,
             "removePropagationsOnEntityDelete": self.removePropagationsOnEntityDelete,
-            "validityPeriods":self.validityPeriods,
-            "attributes":self.attributes
+            "validityPeriods": self.validityPeriods,
+            "attributes": self.attributes
         }
         return output
