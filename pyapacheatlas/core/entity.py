@@ -4,26 +4,28 @@ import warnings
 class AtlasEntity():
     """
     A python representation of the AtlasEntity from Apache Atlas.
+
+    :param str name: The name of this instance of an atlas entity.
+    :param str typeName: The type this entity should be.
+    :param str qualified_name: The unique "qualified name" of this
+        instance of an atlas entity.
+    :param Union(str,int) guid:
+        The guid to reference this entity by. Should be a negative number
+        if you're adding an entity. Consider using get_guid() method from
+        :class:`~pyapacheatlas.core.util.GuidTracker` to retrieve unique
+        negative numbers.
+    :param dict, optional relationshipAttributes: The relationship attributes
+        representing how this entity is connected to others.  Commonly
+        used for "columns" to indicate entity is a column of a table or
+        "query" to indicate a process entity is tied another process in
+        a column lineage scenario.
+    :param dict, optional attributes: Additional attributes that your
+        atlas entity may require.
+    :param dict, optional classifications: Classifications that may
+        be applied to this atlas entity.
     """
 
     def __init__(self, name, typeName, qualified_name, guid=None, **kwargs):
-        """
-        :param str name: The name of this instance of an atlas entity.
-        :param str typeName: The type this entity should be.
-        :param str qualified_name: The unique "qualified name" of this
-            instance of an atlas entity.
-        :param Union(str,int), optional guid:
-            The guid to reference this entity by.
-        :param dict relationshipAttributes: The relationship attributes
-            representing how this entity is connected to others.  Commonly
-            used for "columns" to indicate entity is a column of a table or
-            "query" to indicate a process entity is tied another process in
-            a column lineage scenario.
-        :param dict, optional attributes: Additional attributes that your
-            atlas entity may require.
-        :param dict, optional classifications: Classifications that may
-            be applied to this atlas entity.
-        """
         super().__init__()
         self.typeName = typeName
         self.guid = guid
@@ -105,7 +107,7 @@ class AtlasEntity():
         Kwargs:
             :param kwarg: The name of the relationship attribute you're adding.
             :type kwarg:
-                Union[dict, :class:`pyapacheatlas.core.entity.AtlasEntity`]
+                Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
         for k,v in kwargs.items():
             val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
@@ -166,6 +168,13 @@ class AtlasEntity():
         return output
 
     def merge(self, other):
+        """
+        Update the calling object with the attributes and classifications of
+        the passed in AtlasEntity.
+
+        :param :class:`~pyapacheatlas.core.entity.AtlasEntity` other:
+            The other AtlasEntity object that you want to merge.
+        """
         if self.qualifiedName != other.qualifiedName:
             raise TypeError("Type:{} cannot be merged with {}".format(
                 type(other), type(self)))
@@ -198,13 +207,13 @@ class AtlasProcess(AtlasEntity):
     :param inputs:
         The list of input entities expressed as dicts and in minimum
         format (guid, type name, qualified name) or an AtlasEntity.
-    :type inputs: Union[list(dict), :class:`pyapacheatlas.core.entity.EntityDef`]
+    :type inputs: Union(list(dict), :class:`pyapacheatlas.core.entity.EntityDef`)
     :param outputs:
         The list of output entities expressed as dicts and in minimum format
         (guid, type name, qualified name) or an AtlasEntity.
-    :type outputs: Union[list(dict), :class:`pyapacheatlas.core.entity.EntityDef`]
+    :type outputs: Union(list(dict), :class:`pyapacheatlas.core.entity.EntityDef`)
     :param Union(str,int), optional guid: The guid to reference this entity by.
-    :param dict relationshipAttributes: The relationship attributes
+    :param dict, optional relationshipAttributes: The relationship attributes
         representing how this entity is connected to others.  Commonly
         used for "columns" to indicate entity is a column of a table or
         "query" to indicate a process entity is tied another process in
@@ -234,10 +243,24 @@ class AtlasProcess(AtlasEntity):
 
     @property
     def inputs(self):
+        """
+        Retrieves the inputs attribute for the process.
+
+        :return: The list of inputs as dicts.
+        :rtype: Union(list(dict),None)
+        """
         return self.attributes.get("inputs")
 
     @inputs.setter
     def inputs(self, value):
+        """
+        Set the inputs attribute for the process. If you pass in a dict list, it
+        should be have keys: guid, typeName, qualifiedName. Passing in a list of
+        AtlasEntity, it will automatically convert the entities to dicts.
+
+        :param value: List of dicts or atlas entities to set as the inputs.
+        :type value: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
+        """
         # TODO: Consider checking if there is a valid guid to return a simpler min
         if value is not None:
             self.attributes["inputs"] = self._parse_atlas_entity(value)
@@ -246,10 +269,24 @@ class AtlasProcess(AtlasEntity):
 
     @property
     def outputs(self):
+        """
+        Retrieves the outputs attribute for the process.
+
+        :return: The list of outputs as dicts.
+        :rtype: Union(list(dict),None)
+        """
         return self.attributes.get("outputs")
 
     @outputs.setter
     def outputs(self, value):
+        """
+        Set the outputs attribute for the process. If you pass in a dict list, it
+        should be have keys: guid, typeName, qualifiedName. Passing in a list of
+        AtlasEntity, it will automatically convert the entities to dicts.
+
+        :param value: List of dicts or atlas entities to set as the outputs.
+        :type value: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
+        """
         # TODO: Consider checking if there is a valid guid to return a simpler min
         if value is not None:
             self.attributes["outputs"] = self._parse_atlas_entity(value)
@@ -263,7 +300,7 @@ class AtlasProcess(AtlasEntity):
         :param args:
             The atlas entities you are adding. They are comma delimited dicts
             or AtlasEntity. You can expand a list with `*my_list`.
-        :type args: Union[dict, :class:`pyapacheatlas.core.entity.AtlasEntity`]
+        :type args: Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
         self.inputs = self.inputs + self._parse_atlas_entity(args)
 
@@ -274,7 +311,7 @@ class AtlasProcess(AtlasEntity):
         :param args:
             The atlas entities you are adding. They are comma delimited dicts
             or AtlasEntity. You can expand a list with `*my_list`.
-        :type args: Union[dict, :class:`pyapacheatlas.core.entity.AtlasEntity`]
+        :type args: Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
         self.outputs = self.outputs + self._parse_atlas_entity(args)
 
@@ -282,6 +319,9 @@ class AtlasProcess(AtlasEntity):
         """
         Combine the inputs and outputs of a process. Fails if one side has a
         null input or output. Updates the object that merge is called on.
+
+        :param :class:`~pyapacheatlas.core.entity.AtlasEntity` other:
+            The other AtlasEntity object that you want to merge.
         """
         super().merge(other)
         # Requires that the input and output attributes have
@@ -348,27 +388,23 @@ class AtlasProcess(AtlasEntity):
 class AtlasClassification():
     """
     A python implementation of the AtlasClassification from Apache Atlas.
+
+    :param str typeName: The name of this classification.
+    :param str entityStatus: One of ACTIVE, DELETED, PURGED.
+    :param bool propagate:
+        Whether the classification should propagate to child entities. Not
+        implemented in Purview as of release time.
+    :param bool removePropagationsOnEntityDelete:
+        Whether the classification should be removed on child entities if the
+        parent entity is deleted. Not implemented in Purview as of release time.
+    :param dict, optional attributes: Additional attributes that your
+        atlas entity may require.
+    :param dict, optional validityPeriods: Validity Periods that may
+        be applied to this atlas classification.
     """
 
     def __init__(self, typeName, entityStatus="ACTIVE", propagate=False,
                  removePropagationsOnEntityDelete=False, **kwargs):
-        """
-        :param str typeName: The name of this classification.
-        :param str entityStatus: One of ACTIVE, DELETED, PURGED.
-        :param str qualified_name: The unique "qualified name" of this
-            instance of an atlas entity.
-        :param Union(str,int), optional guid:
-            The guid to reference this entity by.
-        :param dict relationshipAttributes: The relationship attributes
-            representing how this entity is connected to others.  Commonly
-            used for "columns" to indicate entity is a column of a table or
-            "query" to indicate a process entity is tied another process in
-            a column lineage scenario.
-        :param dict, optional attributes: Additional attributes that your
-            atlas entity may require.
-        :param dict, optional classifications: Classifications that may
-            be applied to this atlas entity.
-        """
         super().__init__()
         if entityStatus not in ["ACTIVE", "PURGED", "DELETED"]:
             raise ValueError(

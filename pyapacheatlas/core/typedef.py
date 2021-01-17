@@ -25,7 +25,9 @@ class AtlasAttributeDef():
     """
     An implementation of AtlasAttributeDef.
 
-    :param str name: The name of the Attribute Definition.
+    :param str name:
+        The name of the Attribute Definition. Provides a standard way to pass
+        in an attribute definition when defining an Entity.
 
     Kwargs:
         :param cardinality:
@@ -75,7 +77,9 @@ class AtlasAttributeDef():
 
 class AtlasRelationshipAttributeDef(AtlasAttributeDef):
     """
-    An implementation of AtlasRelationshipAttributeDef.
+    An implementation of AtlasRelationshipAttributeDef. Provides a standard
+    way to pass in a relationship definition when defining an Entity rather
+    than creating a separate relationship def.
 
     :param str name: The name of the Relationship Attribute Definition.
     :param str relationshipTypeName:
@@ -96,15 +100,15 @@ class AtlasRelationshipAttributeDef(AtlasAttributeDef):
 
 class BaseTypeDef():
     """
-    An implementation of AtlasBaseTypeDef
+    An implementation of AtlasBaseTypeDef.
+    
+    :param str name: The name of the typedef.
+    :param category: The category of the typedef.
+    :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
     """
 
     def __init__(self, name, category, **kwargs):
-        """
-        :param str name: The name of the typedef.
-        :param category: The category of the typedef.
-        :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
-        """
+        
         super().__init__()
         self.category = category.value.upper()
         self.createTime = kwargs.get("createTime")
@@ -142,7 +146,6 @@ class AtlasStructDef(BaseTypeDef):
     :param str name: The name of the type definition.
     :param category: The category of the typedef.
     :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
-
 
     Kwargs:
         :param attributeDefs:
@@ -297,24 +300,23 @@ class EntityTypeDef(AtlasStructDef):
 
 class RelationshipTypeDef(BaseTypeDef):
     """
-    An implementation of AtlasRelationshipDef
+    An implementation of AtlasRelationshipDef.
+
+    :param str name: The name of the relationship type def.
+    :param endDef1:
+        Either a valid AtlasRelationshipEndDef dict or class object.
+    :type endDef1:
+        Union(:class:`~pyapacheatlas.core.typedef.AtlasRelationshipEndDef`, dict)
+    :param endDef2:
+        Either a valid AtlasRelationshipEndDef dict or class object.
+    :type endDef2:
+        Union(:class:`~pyapacheatlas.core.typedef.AtlasRelationshipEndDef`, dict)
+    :param str relationshipCategory:
+        One of COMPOSITION, AGGREGATION, ASSOCIATION. You're most likely
+        looking at COMPOSITION to create a parent/child relationship.
     """
 
     def __init__(self, name, endDef1, endDef2, relationshipCategory, **kwargs):
-        """
-        :param str name: The name of the relationship type def.
-        :param endDef1:
-            Either a valid AtlasRelationshipEndDef dict or class object.
-        :type endDef1:
-            Union(:class:~pyapacheatlas.core.typedef.AtlasRelationshipEndDef, dict)
-        :param endDef2:
-            Either a valid AtlasRelationshipEndDef dict or class object.
-        :type endDef2:
-            Union(:class:~pyapacheatlas.core.typedef.AtlasRelationshipEndDef, dict)
-        :param str relationshipCategory:
-            One of COMPOSITION, AGGREGATION, ASSOCIATION. You're most likely
-            looking at COMPOSITION to create a parent/child relationship.
-        """
         super().__init__(name, category=TypeCategory.RELATIONSHIP, **kwargs)
 
         self.endDef1 = endDef1
@@ -323,10 +325,20 @@ class RelationshipTypeDef(BaseTypeDef):
 
     @property
     def endDef1(self):
+        """
+        :return: The first end definition.
+        :rtype: dict
+        """
         return self._endDef1
 
     @endDef1.setter
     def endDef1(self, value):
+        """
+        :param value:
+            The first end def for you are adding. They are comma delimited dicts
+            or AtlasRelationshipEndDef.
+        :type value: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasRelationshipEndDef`))
+        """
         if isinstance(value, AtlasRelationshipEndDef):
             self._endDef1 = value.to_json()
         elif isinstance(value, dict):
@@ -337,10 +349,20 @@ class RelationshipTypeDef(BaseTypeDef):
 
     @property
     def endDef2(self):
+        """
+        :return: The second end definition.
+        :rtype: dict
+        """
         return self._endDef2
 
     @endDef2.setter
     def endDef2(self, value):
+        """
+        :param value:
+            The second end def for you are adding. They are comma delimited
+            dicts or AtlasRelationshipEndDef.
+        :type value: list(Union(dict, :class:`pyapacheatlas.core.typedef.AtlasRelationshipEndDef`))
+        """
         if isinstance(value, AtlasRelationshipEndDef):
             self._endDef2 = value.to_json()
         elif isinstance(value, dict):
@@ -404,6 +426,8 @@ class ParentEndDef(AtlasRelationshipEndDef):
     The goal being to simplify and reduce the margin of error when creating
     containing relationships. This should be used in EndDef1 when the 
     relationshipCategory is COMPOSITION or AGGREGATION.
+
+    Defaults to cardinality of SET and isContainer=True.
     """
 
     def __init__(self, name, typeName, **kwargs):
@@ -420,6 +444,8 @@ class ChildEndDef(AtlasRelationshipEndDef):
     The goal being to simplify and reduce the margin of error when creating
     containing relationships. This should be used in EndDef2 when the 
     relationshipCategory is COMPOSITION or AGGREGATION.
+
+    Defaults to cardinality of SINGLE and isContainer=False.
     """
 
     def __init__(self, name, typeName, **kwargs):

@@ -13,18 +13,17 @@ class AtlasClient():
     """
     Provides communication between your application and the Apache Atlas
     server with your entities and type definitions.
+
+    :param str endpoint_url:
+        The http url for communicating with your Apache Atlas server.
+        It will most likely end in /api/atlas/v2.
+    :param authentication:
+        The method of authentication.
+    :type authentication:
+        :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
     """
 
     def __init__(self, endpoint_url, authentication=None):
-        """
-        :param str endpoint_url:
-            The http url for communicating with your Apache Atlas server.
-            It will most likely end in /api/atlas/v2.
-        :param authentication:
-            The method of authentication.
-        :type authentication:
-            :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-        """
         super().__init__()
         self.authentication = authentication
         self.endpoint_url = endpoint_url
@@ -60,11 +59,11 @@ class AtlasClient():
         Delete one or many guids from your Apache Atlas server.
 
         :param guid: The guid or guids you want to remove.
-        :type guid: Union[str, list(str)]
+        :type guid: Union(str,list(str))
         :return:
             An EntityMutationResponse containing guidAssignments,
             mutatedEntities, and partialUpdatedEntities (list).
-        :rtype: dict(str, Union[dict,list])
+        :rtype: dict(str, Union(dict,list))
         """
         results = None
 
@@ -112,23 +111,29 @@ class AtlasClient():
         """
         Retrieve one or many guids from your Atlas backed Data Catalog.
 
+        Returns a dictionary with keys "referredEntities" and "entities". You'll
+        want to grab the entities values which is a list of entities.
+
+        You can provide a single guid or a list of guids. You can provide a
+        single typeName and multiple qualified names in a list.
+
         :param guid:
             The guid or guids you want to retrieve. Not used if using typeName
             and qualifiedName.
-        :type guid: Union[str, list(str)]
+        :type guid: Union(str, list(str))
         :param qualifiedName:
             The qualified name of the entity you want to find. Must provide
             typeName if using qualifiedName. You may search for multiple
             qualified names under the same type. Ignored if using guid
             parameter.
-        :type qualifiedName: Union[str, list(str)]
+        :type qualifiedName: Union(str, list(str))
         :param str typeName:
             The type name of the entity you want to find. Must provide
             qualifiedName if using typeName. Ignored if using guid parameter.
         :return:
             An AtlasEntitiesWithExtInfo object which includes a list of
             entities and accessible with the "entities" key.
-        :rtype: dict(str, Union[list(dict),dict])
+        :rtype: dict(str, Union(list(dict),dict))
         """
         results = None
         parameters = {}
@@ -175,6 +180,7 @@ class AtlasClient():
             want to query.
         :return: An AtlasClassification object that contains entityGuid,
             entityStatus, typeName, attributes, and propagate fields.
+        :rtype: dict(str, object)
         """
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classification/{classificationName}"
@@ -215,7 +221,7 @@ class AtlasClient():
         :param guid:
             The guid or guids you want to retrieve. Not used if using typeName
             and qualifiedName.
-        :type guid: Union[str, list(str)]
+        :type guid: Union(str, list(str))
         :return:
             An AtlasEntityHeader dict which includes the keys: guid, attributes
             (which is a dict that contains qualifiedName and name keys), an
@@ -264,9 +270,10 @@ class AtlasClient():
         """
         Retrieve all of the type defs available on the Apache Atlas server.
 
-        :return: A dict representing an AtlasTypesDef, containing lists of
-        type defs wrapped in their corresponding definition types
-        {"entityDefs", "relationshipDefs"}.
+        :return:
+            A dict representing an AtlasTypesDef, containing lists of
+            type defs wrapped in their corresponding definition types
+            {"entityDefs", "relationshipDefs"}.
         :rtype: dict(str, list(dict))
         """
         results = None
@@ -491,14 +498,15 @@ class AtlasClient():
         and you know their guid. This call will fail if any one of the guids
         already have the provided classification on that entity.
 
-        :param Union(str, list) entityGuids:
+        :param Union(str,list) entityGuids:
             The guid or guids you want to classify.
         :param classification:
             The AtlasClassification object you want to apply to the entities.
-        :type classification: Union[dict,:class:`pyapacheatlas.core.entity.AtlasClassification`]
+        :type classification:
+            Union(dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
         :return: A message indicating success. The only key is 'message',
             containing a brief string.
-        :rtype: dict(str, Union(list(str), str))
+        :rtype: dict(str,Union(list(str),str))
         """
         results = None
         atlas_endpoint = self.endpoint_url + "/entity/bulk/classification"
@@ -618,7 +626,7 @@ class AtlasClient():
             The list of AtlasClassification object you want to apply to the
             entities.
         :type classification: 
-            Union[dict,:class:`pyapacheatlas.core.entity.AtlasClassification`]
+            Union(dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
         :param bool force_update: Mark as True if any of your classifications
             may already exist on the given entity.
         :return: A message indicating success and which classifications were
@@ -925,7 +933,19 @@ class AtlasClient():
 
     def upload_relationship(self, relationship):
         """
-        Upload a relationship json.
+        Upload a AtlasRelationship json. Should take the form of the following::
+
+            {
+                "typeName": "hive_table_columns",
+                "attributes": {},
+                "guid": -100,
+                "end1": {
+                    "guid": assignments["-1"]
+                },
+                "end2": {
+                    "guid": assignments["-5"]
+                    }
+            }
 
         :param dict relationship: The relationship you want to upload.
         :return: The results of your relationship upload.
@@ -1013,7 +1033,7 @@ class AtlasClient():
             return for each page of the search results.
         :param dict search_filter: A search filter to reduce your results.
         :return: The results of your search as a generator.
-        :rtype: Iterator[list(dict)]
+        :rtype: Iterator(list(dict))
         """
 
         if limit > 1000 or limit < 1:
@@ -1040,18 +1060,18 @@ class AtlasClient():
 
 class PurviewClient(AtlasClient):
     """
-    Provides communication between your application and the Apache Atlas
-    server with your entities and type definitions.
+    Provides communication between your application and the Azure Purview
+    service. Simplifies the requirements for knowing the endpoint url and
+    requires only the Purview account name.
+
+    :param str account_name:
+        Your Purview account name.
+    :param authentication:
+        The method of authentication.
+    :type authentication:
+        :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
     """
 
     def __init__(self, account_name, authentication=None):
-        """
-        :param str account_name:
-            Your Purview account name.
-        :param authentication:
-            The method of authentication.
-        :type authentication:
-            :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-        """
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
         super().__init__(endpoint_url, authentication)
