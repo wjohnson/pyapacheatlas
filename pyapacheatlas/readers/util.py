@@ -141,13 +141,13 @@ def first_process_containing_io(input_name, output_name, atlas_entities):
                              ((input_name is None) and (num_inputs == 0)) or
                              ((input_name is not None) and (num_inputs > 0) and
                               (any([e["qualifiedName"] ==
-                                    input_name for e in entity.get_inputs()]))
+                                    input_name for e in entity.inputs ]))
                               )
                              )
             output_matches = (
                 ((output_name is None) and (num_outputs == 0)) or
                 ((output_name is not None) and (num_outputs > 0) and
-                    (any([e["qualifiedName"] == output_name for e in entity.get_outputs()]))
+                    (any([e["qualifiedName"] == output_name for e in entity.outputs ]))
                  )
             )
         if input_matches and output_matches:

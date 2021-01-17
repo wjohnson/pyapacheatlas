@@ -1,3 +1,5 @@
+import warnings
+
 class AtlasEntity():
     """
     A python representation of the AtlasEntity from Apache Atlas.
@@ -136,10 +138,14 @@ class AtlasProcess(AtlasEntity):
     :param str typeName: The type this entity should be.
     :param str qualified_name: The unique "qualified name" of this
         instance of an atlas entity.
-    :param list(dict) inputs: The list of input entities expressed as dicts
-        and in minimum format (guid, type name, qualified name).
-    :param list(dict) outputs: The list of output entities expressed as dicts
-        and in minimum format (guid, type name, qualified name).
+    :param inputs:
+        The list of input entities expressed as dicts and in minimum
+        format (guid, type name, qualified name) or an AtlasEntity.
+    :type inputs: Union[list(dict), :class:`pyapacheatlas.core.entity.EntityDef`]
+    :param outputs:
+        The list of output entities expressed as dicts and in minimum format
+        (guid, type name, qualified name) or an AtlasEntity.
+    :type outputs: Union[list(dict), :class:`pyapacheatlas.core.entity.EntityDef`]
     :param Union(str,int), optional guid: The guid to reference this entity by.
     :param dict relationshipAttributes: The relationship attributes
         representing how this entity is connected to others.  Commonly
@@ -154,57 +160,128 @@ class AtlasProcess(AtlasEntity):
 
     def __init__(self, name, typeName, qualified_name, inputs, outputs, guid=None, **kwargs):
         super().__init__(name, typeName, qualified_name, guid=guid, **kwargs)
-        self.attributes.update({"inputs": inputs, "outputs": outputs})
+        self.attributes.update({"inputs": None, "outputs": None})
+        self.inputs = inputs
+        self.outputs = outputs
+    
+    def _parse_atlas_entity(self, iterable):
+        """
+        :param iterable: An iterable of dict or AtlasEntity
+        """
+        return [
+                e.to_json(minimum=True)
+                if isinstance(e, AtlasEntity)
+                else e
+                for e in iterable
+            ]
+
+    @property
+    def inputs(self):
+        return self.attributes.get("inputs")
+
+    @inputs.setter
+    def inputs(self, value):
+        # TODO: Consider checking if there is a valid guid to return a simpler min
+        if value is not None:
+            self.attributes["inputs"] = self._parse_atlas_entity(value)
+        else:
+            self.attributes["inputs"] = None
+
+    @property
+    def outputs(self):
+        return self.attributes.get("outputs")
+
+    @outputs.setter
+    def outputs(self, value):
+        # TODO: Consider checking if there is a valid guid to return a simpler min
+        if value is not None:
+            self.attributes["outputs"] = self._parse_atlas_entity(value)
+        else:
+            self.attributes["outputs"] = None
+    
+    def addInput(self, *args):
+        """
+        Add one or many entities to the inputs.
+
+        :param args:
+            The atlas entities you are adding. They are comma delimited dicts
+            or AtlasEntity. You can expand a list with `*my_list`.
+        :type args: Union[dict, :class:`pyapacheatlas.core.entity.AtlasEntity`]
+        """
+        self.inputs = self.inputs + self._parse_atlas_entity(args)
+
+    def addOutput(self, *args):
+        """
+        Add one or many entities to the outputs.
+
+        :param args:
+            The atlas entities you are adding. They are comma delimited dicts
+            or AtlasEntity. You can expand a list with `*my_list`.
+        :type args: Union[dict, :class:`pyapacheatlas.core.entity.AtlasEntity`]
+        """
+        self.outputs = self.outputs + self._parse_atlas_entity(args)
 
     def merge(self, other):
+        """
+        Combine the inputs and outputs of a process. Fails if one side has a
+        null input or output. Updates the object that merge is called on.
+        """
         super().merge(other)
         # Requires that the input and output attributes have
         # not been altered on self.
-        _combined_inputs = self.get_inputs() + other.get_inputs()
-        _combined_outputs = self.get_outputs() + other.get_outputs()
+        _combined_inputs = self.inputs + other.inputs
+        _combined_outputs = self.outputs + other.outputs
 
         _deduped_inputs = [dict(t) for t in set(
             tuple(d.items()) for d in _combined_inputs)]
         _deduped_outputs = [dict(t) for t in set(
             tuple(d.items()) for d in _combined_outputs)]
-        self.set_inputs(_deduped_inputs)
-        self.set_outputs(_deduped_outputs)
+        self.inputs = _deduped_inputs
+        self.outputs = _deduped_outputs
 
     def set_inputs(self, inputs):
         """
+        Deprecated: Use AtlasEntity.inputs to set inputs.
         Set the inputs to the process.  Inputs should be AtlasEntity minimum
         json of `{qualifiedName:..., guid:..., typeName:...}`.
 
         :param list(dict) inputs: The minimum json inputs.
         """
+        warnings.warn("Set inputs using AtlasProcess.inputs = ...", category=DeprecationWarning, stacklevel=2)
         self.attributes["inputs"] = inputs
 
     def set_outputs(self, outputs):
         """
+        Deprecated: Use AtlasEntity.outputs to set outputs.
         Set the outputs to the process.  Outputs should be AtlasEntity minimum
         json of `{qualifiedName:..., guid:..., typeName:...}`.
 
         :param list(dict) outputs: The minimum json outputs.
         """
+        warnings.warn("Set outputs using AtlasProcess.outputs = ...", category=DeprecationWarning, stacklevel=2)
         self.attributes["outputs"] = outputs
 
     def get_inputs(self):
         """
+        Deprecated: Use AtlasEntity.inputs to get inputs.
         Return the inputs to the process.
 
         :return: The minimum json inputs.
         :rtype: list(dict)
         """
-        return self.attributes["inputs"]
+        warnings.warn("Get inputs using AtlasProcess.inputs.", category=DeprecationWarning, stacklevel=2)
+        return self.attributes.get("inputs")
 
     def get_outputs(self):
         """
+        Deprecated: Use AtlasEntity.outputs to set outputs.
         Set the outputs to the process.
 
         :return: The minimum json inputs.
         :rtype: list(dict)
         """
-        return self.attributes["outputs"]
+        warnings.warn("Get outputs using AtlasProcess.outputs.", category=DeprecationWarning, stacklevel=2)
+        return self.attributes.get("outputs")
 
 class AtlasClassification():
     """
