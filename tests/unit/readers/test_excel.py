@@ -295,8 +295,8 @@ def test_excel_column_lineage():
         table1_t00 = None
         table0_t00 = None
         col_lineage_process = None
-        table_lookup = {e.get_name():e for e in table_entities}
-        column_lookup = {e.get_name():e for e in column_entities}
+        table_lookup = {e.name:e for e in table_entities}
+        column_lookup = {e.name:e for e in column_entities}
         
         # We have five columns (t00 > t00) + ((tA + tB) > tcombo) 
         # and two processes

@@ -27,40 +27,37 @@ class AtlasEntity():
         self.typeName = typeName
         self.guid = guid
         self.attributes = kwargs.get("attributes", {})
-        self.attributes.update({"name": name, "qualifiedName": qualified_name})
+        self.attributes.update({"name": None, "qualifiedName": None})
+        self.name = name
+        self.qualifiedName = qualified_name
         if "description" in kwargs:
             self.attributes.update({"description": kwargs["description"]})
-        # Example Relationship Attribute
-        # {"relationshipName": {
-        #   "qualifiedName": "",
-        #   "guid": "",
-        #   "typeName": ""
-        # }}
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
         self.classifications = kwargs.get("classifications", [])
 
     def __eq__(self, other):
-        return self.get_qualified_name() == other
+        return self.qualifiedName == other
 
     def __hash__(self):
-        return hash(self.get_qualified_name())
+        return hash(self.qualifiedName)
 
     def __ne__(self, other):
-        return self.get_qualified_name() != other
+        return self.qualifiedName != other
 
     def __repr__(self):
         return "AtlasEntity({type_name},{qual_name})".format(
             type_name=self.typeName,
-            qual_name=self.get_qualified_name()
+            qual_name=self.qualifiedName
         )
 
     def __str__(self):
         return "AtlasEntity({type_name},{qual_name})".format(
             type_name=self.typeName,
-            qual_name=self.get_qualified_name()
+            qual_name=self.qualifiedName
         )
 
-    def get_name(self):
+    @property
+    def name(self):
         """
         Retrieve the name of this entity.
 
@@ -68,14 +65,57 @@ class AtlasEntity():
         :rtype: str
         """
         return self.attributes["name"]
+    
+    @name.setter
+    def name(self, value):
+        """
+        Set the name of this entity.
+
+        :param str value: The name of the entity.
+        """
+        self.attributes["name"] = value
+    
+    @property
+    def qualifiedName(self):
+        """
+        Retrieve the qualifiedName of this entity.
+
+        :return: The name of the entity.
+        :rtype: str
+        """
+        return self.attributes["qualifiedName"]
+    
+    @qualifiedName.setter
+    def qualifiedName(self, value):
+        """
+        Set the qualifiedName of this entity.
+
+        :param str value: The qualifiedName of the entity.
+        """
+        self.attributes["qualifiedName"] = value
+
+    def get_name(self):
+        """
+        Deprecated in favor of .name property.
+        Retrieve the name of this entity.
+
+        :return: The name of the entity.
+        :rtype: str
+        """
+        warnings.warn("Get name using AtlasEntity.name.", 
+            category=DeprecationWarning, stacklevel=2)
+        return self.attributes["name"]
 
     def get_qualified_name(self):
         """
+        Deprecated in favor of .qualifiedName.
         Retrieve the qualified (unique) name of this entity.
 
         :return: The qualified name of the entity.
         :rtype: str
         """
+        warnings.warn("Get qualified name using AtlasEntity.qualifiedName.", 
+            category=DeprecationWarning, stacklevel=2)
         return self.attributes["qualifiedName"]
 
     def to_json(self, minimum=False):
@@ -109,7 +149,7 @@ class AtlasEntity():
         return output
 
     def merge(self, other):
-        if self.get_qualified_name() != other.get_qualified_name():
+        if self.qualifiedName != other.qualifiedName:
             raise TypeError("Type:{} cannot be merged with {}".format(
                 type(other), type(self)))
 

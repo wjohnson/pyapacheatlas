@@ -200,7 +200,7 @@ class LineageMixIn():
             `:class:~pyapacheatlas.core.entity.AtlasEntity`
         """
         _qual_name = reader_util._make_col_qual_name(
-            row[headers["column"]], parent_table_entity.get_name())
+            row[headers["column"]], parent_table_entity.name)
 
         _clean_attribs = reader_util.columns_matching_pattern(
             row, prefix,
@@ -238,7 +238,7 @@ class LineageMixIn():
             popped_entity = column_entities.pop(new_entity)
             new_entity.merge(popped_entity)
         # Add to outputs
-        payload = {new_entity.get_qualified_name(): new_entity}
+        payload = {new_entity.qualifiedName: new_entity}
         column_entities.update(payload)
 
         return _qual_name
@@ -338,16 +338,15 @@ class LineageMixIn():
                 table_process = reader_util.first_process_containing_io(
                     "*", row[target_header["table"]], atlas_entities)
 
-            if table_process.get_name() in table_and_proc_mappings:
-                process_type = table_and_proc_mappings[table_process.get_name(
-                )]["column_lineage_type"]
+            if table_process.name in table_and_proc_mappings:
+                process_type = table_and_proc_mappings[table_process.name]["column_lineage_type"]
             else:
                 process_type = reader_util.from_process_lookup_col_lineage(
-                    table_process.get_name(),
+                    table_process.name,
                     atlas_entities,
                     atlas_typedefs["relationshipDefs"]
                 )
-                table_and_proc_mappings[table_process.get_name()] = {
+                table_and_proc_mappings[table_process.name] = {
                     "column_lineage_type": process_type
                 }
 
@@ -363,7 +362,7 @@ class LineageMixIn():
                      })
 
             process_qual_name = (
-                table_process.get_name() +
+                table_process.name +
                 "@derived_column:{}".format(
                     row[target_header["column"]]
                 ))
@@ -374,7 +373,7 @@ class LineageMixIn():
                 columnEntitiesOutput[target_qual_name].to_json(minimum=True)]
 
             process_entity = AtlasProcess(
-                name=table_process.get_name(),
+                name=table_process.name,
                 typeName=process_type,
                 # qualifiedName can be overwritten via the
                 # attributes functionality
@@ -394,16 +393,16 @@ class LineageMixIn():
                 process_entity.merge(popped_entity)
             # Add to outputs
             columnEntitiesOutput.update(
-                {process_entity.get_qualified_name(): process_entity})
+                {process_entity.qualifiedName: process_entity})
 
             if use_column_mapping:
                 # Handles multiple source columns from multiple source datasets
                 col_map_source_col = (
                     "*" if source_qual_name is None
-                    else columnEntitiesOutput[source_qual_name].get_name()
+                    else columnEntitiesOutput[source_qual_name].name
                 )
                 col_map_target_col = (
-                    columnEntitiesOutput[target_qual_name].get_name()
+                    columnEntitiesOutput[target_qual_name].name
                 )
                 col_map_source_table = row[source_header["table"]] or "*"
                 col_map_target_table = row[target_header["table"]]
