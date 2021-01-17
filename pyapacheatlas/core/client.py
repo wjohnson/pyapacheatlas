@@ -50,7 +50,7 @@ class AtlasClient():
             if "errorCode" in results:
                 raise AtlasException(resp.text)
             else:
-                raise e(resp.text)
+                raise requests.RequestException(resp.text)
 
         return results
 
