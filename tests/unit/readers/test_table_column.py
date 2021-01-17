@@ -112,9 +112,9 @@ def test_table_lineage_multiple_inputs():
     assert(results[3].to_json(minimum=True) == {
            "typeName": "proc_type", "guid": -1003, "qualifiedName": "proc01"})
     process_inputs_qualified_names = [
-        p["qualifiedName"] for p in results[3].get_inputs()]
+        p["qualifiedName"] for p in results[3].inputs ]
     process_outputs_qualified_names = [
-        p["qualifiedName"] for p in results[3].get_outputs()]
+        p["qualifiedName"] for p in results[3].outputs ]
     assert(len(process_inputs_qualified_names) == 2)
     assert(len(process_outputs_qualified_names) == 1)
 
@@ -285,9 +285,9 @@ def test_column_lineage_entities_when_multi_tabled_inputs():
     process_entity = process_entities[0]
 
     process_inputs_qualified_names = [p["qualifiedName"]
-                                      for p in process_entity.get_inputs()]
+                                      for p in process_entity.inputs ]
     process_outputs_qualified_names = [
-        p["qualifiedName"] for p in process_entity.get_outputs()]
+        p["qualifiedName"] for p in process_entity.outputs ]
     assert(len(process_inputs_qualified_names) == 2)
     assert(len(process_outputs_qualified_names) == 1)
 

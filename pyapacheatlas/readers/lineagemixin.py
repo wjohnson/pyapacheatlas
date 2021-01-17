@@ -515,14 +515,14 @@ class LineageMixIn():
             if process_qual_name in processes_seen:
                 temp_proc = processes_seen[process_qual_name]
                 # Get the inputs and outputs as they exist before this row
-                temp_in = temp_proc.get_inputs()
-                temp_out = temp_proc.get_outputs()
+                temp_in = temp_proc.inputs
+                temp_out = temp_proc.outputs
                 # If we have an input, check if it already exists
                 if inputs and len(inputs) > 0:
                     input_qn = self._header_qn(inputs[0])    
                     if input_qn not in [self._header_qn(x) for x in temp_in]:
                         temp_in.extend(inputs)
-                        temp_proc.set_inputs(temp_in)
+                        temp_proc.inputs = temp_in
                         
                     else:
                         warnings.warn(f"Input '{input_qn}' is repeated in Process '{process_qual_name}'. Only the earliest entry is kept.")
@@ -530,20 +530,20 @@ class LineageMixIn():
                     # We have an empty list, as the input, meaning destroy the input
                     if len(temp_in) > 0:
                         warnings.warn(f"Process '{process_qual_name}' has conflicting inputs and N/A values and will possibly be overwritten.")
-                    temp_proc.set_inputs(inputs)
+                    temp_proc.inputs(inputs)
 
                 if outputs:
                     output_qn = self._header_qn(outputs[0])    
                     if output_qn not in [self._header_qn(x) for x in temp_out]:
                         temp_out.extend(outputs)
-                        temp_proc.set_outputs(temp_out)
+                        temp_proc.outputs = temp_out
                     else:
                         warnings.warn(f"Output '{output_qn}' is repeated in Process '{process_qual_name}'. Only the earliest entry is kept.")
                 elif isinstance(outputs, list):
                     # We have an empty list, as the output, meaning destroy the output
                     if len(temp_out) > 0:
                         warnings.warn(f"Process '{process_qual_name}' has conflicting outputs and N/A values and will possibly be overwritten.")
-                    temp_proc.set_outputs(outputs)
+                    temp_proc.outputs = outputs
                 
             else:
                 proc = AtlasProcess(
