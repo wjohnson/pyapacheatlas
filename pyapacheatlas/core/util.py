@@ -1,3 +1,4 @@
+from functools import wraps
 import warnings
 
 
@@ -11,6 +12,7 @@ def PurviewOnly(func):
     client. Intended to wrap specific client methods that are only available
     in Purview.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if not args[0].is_purview:
             warnings.warn(
@@ -26,6 +28,7 @@ def PurviewLimitation(func):
     Raise a runtime warning if you are using a PurviewClient. Intended to wrap
     specific client methods that have limitations due to Purview.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if args[0].is_purview:
             warnings.warn(

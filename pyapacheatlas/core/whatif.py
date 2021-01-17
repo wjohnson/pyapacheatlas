@@ -9,7 +9,13 @@ class WhatIfValidator():
     """
     Provides a simple way to validate that your entities will successfully
     upload.  Provides functions to validate the type, check if required
-    attributes are missing, and check if superfluous attributes are inclded.
+    attributes are missing, and check if superfluous attributes are included.
+
+    :param dict type_defs:
+        The list of type definitions to be validated against.  Should be
+        in the form of an AtlasTypeDef composite wrapper.
+    :param list(dict) existing_entities:
+        The existing entities that should be validated against.
     """
     ASSET_ATTRIBUTES = ["name", "description", "owner"]
     REFERENCABLE_ATTRIBUTES = ["qualifiedName"]
@@ -24,13 +30,6 @@ class WhatIfValidator():
     }
 
     def __init__(self, type_defs={}, existing_entities=[]):
-        """
-        :param dict type_defs:
-            The list of type definitions to be validated against.  Should be
-            in the form of an AtlasTypeDef composite wrapper.
-        :param list(dict) existing_entities:
-            The existing entities that should be validated against.
-        """
         if len(type_defs) == 0 and len(existing_entities) == 0:
             warnings.warn(
                 "WARNING: Provided type_defs and existing_entities are empty.  All validations will pass.")

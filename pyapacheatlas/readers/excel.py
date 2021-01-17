@@ -20,6 +20,22 @@ class ExcelConfiguration(ReaderConfiguration):
     The Tables sheet must contain a "Source/Target" Table and Type along with
     a Process Name and Process Type.  The Process is related to the mechanism
     by which source becomes the target (e.g. a Stored Procedure or Query).
+
+    :param str column_sheet: Defaults to "Columns"
+    :param str table_sheet: Defaults to "Tables"
+    :param str entityDef_sheet: Defaults to "EntityDefs"
+    :param str entity_source_prefix:
+        Defaults to "source" and represents the prefix of the columns
+        in Excel to be considered related to the source table or column.
+    :param str entity_target_prefix:
+        Defaults to "target" and represents the prefix of the columns
+        in Excel to be considered related to the target table or column.
+    :param str entity_process_prefix:
+        Defaults to "process" and represents the prefix of the columns
+        in Excel to be considered related to the table process.
+    :param str column_transformation_name:
+        Defaults to "transformation" and identifies the column that
+        represents the transformation for a specific column.
     """
 
     def __init__(self, column_sheet="ColumnsLineage",
@@ -27,25 +43,6 @@ class ExcelConfiguration(ReaderConfiguration):
                  entityDef_sheet="EntityDefs", bulkEntity_sheet="BulkEntities",
                  updateLineage_sheet="UpdateLineage",
                  **kwargs):
-        """
-        The following parameters apply to the
-        :param str column_sheet: Defaults to "Columns"
-        :param str table_sheet: Defaults to "Tables"
-        :param str entityDef_sheet: Defaults to "EntityDefs"
-        :param str entity_source_prefix:
-            Defaults to "source" and represents the prefix of the columns
-            in Excel to be considered related to the source table or column.
-        :param str entity_target_prefix:
-            Defaults to "target" and represents the prefix of the columns
-            in Excel to be considered related to the target table or column.
-        :param str entity_process_prefix:
-            Defaults to "process" and represents the prefix of the columns
-            in Excel to be considered related to the table process.
-        :param str column_transformation_name:
-            Defaults to "transformation" and identifies the column that
-            represents the transformation for a specific column.
-        """
-
         super().__init__(**kwargs)
         # Required attributes:
         # qualifiedName, column, transformation, table
