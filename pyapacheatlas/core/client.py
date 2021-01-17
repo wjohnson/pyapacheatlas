@@ -4,7 +4,7 @@ import logging
 import re
 import requests
 
-from .entity import AtlasEntity
+from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
 from .util import AtlasException, PurviewLimitation, PurviewOnly
 
@@ -493,14 +493,18 @@ class AtlasClient():
 
         :param Union(str, list) entityGuids:
             The guid or guids you want to classify.
-        :param dict classification:
+        :param classification:
             The AtlasClassification object you want to apply to the entities.
+        :type classification: Union[dict,:class:`pyapacheatlas.core.entity.AtlasClassification`]
         :return: A message indicating success. The only key is 'message',
             containing a brief string.
         :rtype: dict(str, Union(list(str), str))
         """
         results = None
         atlas_endpoint = self.endpoint_url + "/entity/bulk/classification"
+
+        if isinstance(classification, AtlasClassification):
+            classification = classification.to_json()
 
         classification_name = classification["typeName"]
 
@@ -610,9 +614,11 @@ class AtlasClient():
         attribute that you do not provide.
 
         :param str guid: The guid you want to classify.
-        :param list(dict) classifications:
+        :param classifications:
             The list of AtlasClassification object you want to apply to the
             entities.
+        :type classification: 
+            Union[dict,:class:`pyapacheatlas.core.entity.AtlasClassification`]
         :param bool force_update: Mark as True if any of your classifications
             may already exist on the given entity.
         :return: A message indicating success and which classifications were
@@ -625,8 +631,13 @@ class AtlasClient():
 
         if isinstance(classifications, dict):
             classifications = [classifications]
+        elif isinstance(classifications, AtlasClassification):
+            classifications = [classifications.to_json()]
         elif isinstance(classifications, list):
-            pass
+            classifications = [
+                c.to_json()
+                if isinstance(c, AtlasClassification)
+                else c for c in classifications]
         else:
             raise TypeError("classifications should be dict or list, not {}".format(
                 type(classifications)))
