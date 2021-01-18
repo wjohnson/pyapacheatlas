@@ -3,7 +3,12 @@ import os
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import PurviewClient, AtlasEntity, TypeCategory
-from pyapacheatlas.core.typedef import EntityTypeDef, RelationshipTypeDef
+from pyapacheatlas.core.typedef import (
+    ChildEndDef,
+    EntityTypeDef,
+    RelationshipTypeDef,
+    ParentEndDef
+)
 
 if __name__ == "__main__":
     """
@@ -19,7 +24,7 @@ if __name__ == "__main__":
         client_secret=os.environ.get("CLIENT_SECRET", "")
     )
     client = PurviewClient(
-        account_name = os.environ.get("PURVIEW_NAME", ""),
+        account_name=os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
 
@@ -43,20 +48,12 @@ if __name__ == "__main__":
     relationship = RelationshipTypeDef(
         name="process_with_steps_steps",
         relationshipCategory="COMPOSITION",
-        endDef1={
-            "type": "process_with_steps",
-            "name": "steps",
-            "isContainer": True,
-            "cardinality": "SET",
-            "isLegacyAttribute": False
-        },
-        endDef2={
-            "type": "step_in_process",
-            "name": "parent_process",
-            "isContainer": False,
-            "cardinality": "SINGLE",
-            "isLegacyAttribute": False
-        }
+        # Use the Parent/Child standard end definitions
+        # "steps" will be an attribute on the process_with_steps entities
+        # it will contain a list of step_in_process and display on the schema.
+        # "parent_process" will be an attribute on the step_in_process entity.
+        endDef1=ParentEndDef(name="steps", typeName="process_with_steps"),
+        endDef2=ChildEndDef(name="parent_process", typeName="step_in_process")
     )
 
     # Create the process, steps in the process, and dummy inputs and outputs
@@ -113,24 +110,22 @@ if __name__ == "__main__":
         }
     )
 
-    # Create a batch of entities to be uploaded as json/dicts
+    # Create a batch of entities to be uploaded to Purview
     batch = [
-        step01.to_json(), step02.to_json(),
-        step03.to_json(), parent.to_json(),
-        input01.to_json(), output01.to_json()
+        step01, step02,
+        step03, parent,
+        input01, output01
     ]
 
     # Upload the types
     typeResults = client.upload_typedefs(
-        {
-            "entityDefs": [processWithSteps.to_json(), processSteps.to_json()],
-            "relationshipDefs": [relationship.to_json()]
-        },
+        entityDefs=[processWithSteps, processSteps],
+        relationshipDefs=[relationship],
         force_update=True
     )
 
     # Upload the entities
-    results = client.upload_entities({"entities": batch})
+    results = client.upload_entities(batch)
 
     # Print the results of the entities upload
     print(json.dumps(results, indent=2))

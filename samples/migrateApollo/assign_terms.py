@@ -152,7 +152,7 @@ if __name__ == "__main__":
                     "end2": {
                         "typeName": pair_entity.typeName,
                         "uniqueAttributes": {
-                            "qualifiedName": pair_entity.get_qualified_name()
+                            "qualifiedName": pair_entity.qualifiedName
                         }
                     }
                 }
