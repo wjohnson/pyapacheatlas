@@ -1013,10 +1013,12 @@ class AtlasClient():
 
             offset = offset + return_count
             search_params["offset"] = offset
-            try:
-                yield return_values
-            except StopIteration:
-                return
+            
+            for sub_result in return_values:
+                try:
+                    yield sub_result
+                except StopIteration:
+                    return
 
     @PurviewOnly
     def search_entities(self, query, limit=50, search_filter=None, starting_offset=0):
@@ -1033,7 +1035,7 @@ class AtlasClient():
             return for each page of the search results.
         :param dict search_filter: A search filter to reduce your results.
         :return: The results of your search as a generator.
-        :rtype: Iterator(list(dict))
+        :rtype: Iterator(dict)
         """
 
         if limit > 1000 or limit < 1:
