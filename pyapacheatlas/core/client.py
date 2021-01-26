@@ -968,7 +968,10 @@ class AtlasClient():
 
     def upload_terms(self, batch, force_update=False):
         """
-        Upload terms to your Atlas backed Data Catalog.
+        Upload terms to your Atlas backed Data Catalog. Supports Purview Term
+        Templates by passing in an attributes field with the term template's
+        name as a field within attributes and an object of the required and
+        optional fields.
 
         :param batch: A list of AtlasGlossaryTerm objects to be uploaded.
         :type batch: list(dict)
@@ -1075,3 +1078,34 @@ class PurviewClient(AtlasClient):
     def __init__(self, account_name, authentication=None):
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
         super().__init__(endpoint_url, authentication)
+    
+    @PurviewOnly
+    def import_terms(self, terms, glossary_name="Glossary", glossary_guid=None):
+        # If you've got the guid: POST /atlas/v2/glossary/{glossaryGuid}/terms/import
+        # If you don't have the guid: POST /atlas/v2/glossary/name/{glossaryName}/terms/import
+
+        # file: file Name,Definition,Status,Related Terms,Synonyms,Acronym,Experts,Stewards
+        # Term Templates are
+
+        # 202 Accepted
+        # json_ImportCSVOperation
+        # Accepted. A job to import glossary terms via csv has been accepted.
+
+        # 400 Bad Request
+        # If csv file is not valid
+
+        # 404 Not Found
+        # If glossary GUID is invalid.
+        pass
+
+    @PurviewOnly
+    def import_terms_status(self, operationGuid):
+        # GET /atlas/v2/glossary/terms/import/{operationGuid}
+        pass
+
+    @PurviewOnly
+    def export_terms(self, guids, name="Glossary"):
+        """
+        :param list(str) guids: List of guids that should be exported as csv.
+        """
+        pass
