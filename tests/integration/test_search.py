@@ -33,10 +33,9 @@ def test_purview_search_iterates_safely():
     search_results = client.search_entities(r"custom_type_entity")
 
     counter = 0
-    for page in search_results:
-        for entity in page:
-            len(entity["id"])
-            counter = counter + 1
+    for entity in search_results:
+        len(entity["id"])
+        counter = counter + 1
     
     assert(counter == 1)
 
@@ -61,10 +60,9 @@ def test_purview_search_iterates_safely_over_multiple():
     search_results = client.search_entities(r"there_can_be_only_two")
 
     counter = 0
-    for page in search_results:
-        for entity in page:
-            len(entity["id"])
-            counter = counter + 1
+    for entity in search_results:
+        len(entity["id"])
+        counter = counter + 1
     
     assert(counter == 2)
 
@@ -82,10 +80,9 @@ def test_purview_search_iterates_safely_over_none():
     search_results = client.search_entities(r"this_should_never_exist")
 
     counter = 0
-    for page in search_results:
-        for entity in page:
-            len(entity["id"])
-            counter = counter + 1
+    for entity in search_results:
+        len(entity["id"])
+        counter = counter + 1
     
     assert(counter == 0)
 
