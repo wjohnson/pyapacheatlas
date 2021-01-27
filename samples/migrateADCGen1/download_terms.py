@@ -5,11 +5,8 @@ import requests
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 
-config = configparser.ConfigParser()
-config.read("./samples/migrateADCGen1/config.ini")
 
-
-def download_gen1_terms(output_path):
+def download_gen1_terms(config):
     catalog_name = config["OldClient"]["CATALOG_NAME"]
     glossary_name = config["OldClient"]["GLOSSARY_NAME"]
     api_version = "2016-03-30"
@@ -37,13 +34,12 @@ def download_gen1_terms(output_path):
         else:
             enumerate_uri = content["nextLink"]
     
-    with open(output_path, 'w') as fp:
+    with open(config["Default"]["ADCTermsPath"], 'w') as fp:
         json.dump(output, fp, indent=1)
 
     return output
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--filepath", default="./gen1_terms.json")
-    args = parser.parse_args()
-    download_gen1_terms(args.filepath)
+    config = configparser.ConfigParser()
+    config.read("./samples/migrateADCGen1/config.ini")
+    download_gen1_terms(config)
