@@ -74,9 +74,8 @@ spark_column_to_df_relationship = RelationshipTypeDef(
 )
 
 typedef_results = client.upload_typedefs(
-  {"entityDefs":[type_spark_df, type_spark_columns, type_spark_job ],
-   "relationshipDefs":[spark_column_to_df_relationship]
-  }, 
+  entityDefs = [type_spark_df, type_spark_columns, type_spark_job ],
+  relationshipDefs = [spark_column_to_df_relationship],
   force_update=True)
 print(typedef_results)
 
