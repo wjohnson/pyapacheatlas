@@ -996,12 +996,12 @@ class AtlasClient():
 
         return results
 
-    def _search_generator(self, search_params):
+    def _search_generator(self, search_params, starting_offset=0):
         """
         Generator to page through the search query results.
         """
         atlas_endpoint = self.endpoint_url + "/search/advanced"
-        offset = 0
+        offset = starting_offset
 
         while True:
             postSearchResults = requests.post(
@@ -1018,13 +1018,15 @@ class AtlasClient():
 
             offset = offset + return_count
             search_params["offset"] = offset
-            try:
-                yield return_values
-            except StopIteration:
-                return
+            
+            for sub_result in return_values:
+                try:
+                    yield sub_result
+                except StopIteration:
+                    return
 
     @PurviewOnly
-    def search_entities(self, query, limit=50, search_filter=None):
+    def search_entities(self, query, limit=50, search_filter=None, starting_offset=0):
         """
         Search entities based on a query and automaticall handles limits and
         offsets to page through results.
@@ -1038,7 +1040,7 @@ class AtlasClient():
             return for each page of the search results.
         :param dict search_filter: A search filter to reduce your results.
         :return: The results of your search as a generator.
-        :rtype: Iterator(list(dict))
+        :rtype: Iterator(dict)
         """
 
         if limit > 1000 or limit < 1:
@@ -1058,7 +1060,7 @@ class AtlasClient():
             # {"filter": {"typeName": "DataSet", "includeSubTypes": True} }
             search_params.update({"filter": search_filter})
 
-        search_generator = self._search_generator(search_params)
+        search_generator = self._search_generator(search_params, starting_offset=starting_offset)
 
         return search_generator
 
