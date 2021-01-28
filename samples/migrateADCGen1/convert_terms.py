@@ -20,18 +20,24 @@ def convert_gen1_to_purview_terms(config):
         output.append(
             {
             "name": term["name"],
+            "status": "Approved", # Defaulting to Approved
             "definition": term["definition"], # May want term["description"] instead?
-            "status": "ACTIVE", # Defaulting to Active
+            "acronyms":"",
+            "resources":"",
             "related_term": term.get("parentId", ""),
             "synonyms":"",
-            "acronyms":"",
-            "experts":';'.join([s["upn"] for s in term["stakeholders"]]),
-            "stewards":""
+            "stewards":';'.join([s["upn"] for s in term["stakeholders"]]),
+            "experts":""
             }
         )
 
-    with open(config["Default"]["PurviewImportPath"], 'w', newline='') as fp:
-        importwriter = csv.writer(fp)
+    with open(config["Default"]["PurviewImportPath"], 'w', newline='',
+         encoding='utf-8') as fp:
+        importwriter = csv.writer(fp, quoting=csv.QUOTE_ALL, quotechar='"',
+            lineterminator='\n')
+        # Write Header with no quotes
+        fp.write("Name,Status,Definition,Acronym,Resources,Related Terms,Synonyms,Stewards,Experts\n")
+
         for row in output:
             # Update the related term if it exists
             if row["related_term"] != "":
