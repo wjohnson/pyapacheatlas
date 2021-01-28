@@ -19,7 +19,7 @@ oauth = ServicePrincipalAuthentication(
         client_secret=os.environ.get("CLIENT_SECRET", client_secret)
     )
 client = PurviewClient(
-    account_name = os.environ.get("PURVIEW_NAME", "purview_account_name"),
+    account_name = os.environ.get("PURVIEW_NAME", purview_account_name),
     authentication=oauth
 )
 guid = GuidTracker()
