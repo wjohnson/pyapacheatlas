@@ -28,7 +28,7 @@ class AtlasClient():
         self.authentication = authentication
         self.endpoint_url = endpoint_url
         self.is_purview = False
-        self._purview_url_pattern = r"https:\/\/[a-z0-9]*?\.(catalog\.purview.azure.com)"
+        self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
         if re.match(self._purview_url_pattern, self.endpoint_url):
             self.is_purview = True
 
