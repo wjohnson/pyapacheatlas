@@ -1080,9 +1080,26 @@ class PurviewClient(AtlasClient):
         super().__init__(endpoint_url, authentication)
     
     @PurviewOnly
-    def import_terms(self, terms, glossary_name="Glossary", glossary_guid=None):
+    def import_terms(self, terms_path, glossary_name="Glossary", glossary_guid=None):
         # If you've got the guid: POST /atlas/v2/glossary/{glossaryGuid}/terms/import
         # If you don't have the guid: POST /atlas/v2/glossary/name/{glossaryName}/terms/import
+        results = None
+        if glossary_guid:
+            atlas_endpoint = self.endpoint_url + f"/glossary/{glossary_guid}/terms/import"
+        elif glossary_name:
+            atlas_endpoint = self.endpoint_url + f"/glossary/name/{glossary_name}/terms/import"
+        else:
+            raise ValueError("Either glossary_name or glossary_guid must be defined.")
+
+        postResp = requests.post(
+            atlas_endpoint,
+            files = {'file': open(terms_path, 'rb')},
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(postResp)
+
+        return results
 
         # file: file Name,Definition,Status,Related Terms,Synonyms,Acronym,Experts,Stewards
         # Term Templates are
@@ -1099,9 +1116,19 @@ class PurviewClient(AtlasClient):
         pass
 
     @PurviewOnly
-    def import_terms_status(self, operationGuid):
+    def import_terms_status(self, operation_guid):
         # GET /atlas/v2/glossary/terms/import/{operationGuid}
-        pass
+        results = None
+        atlas_endpoint = self.endpoint_url + f"/glossary/terms/import/{operation_guid}"
+
+        postResp = requests.get(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(postResp)
+
+        return results
 
     @PurviewOnly
     def export_terms(self, guids, name="Glossary"):
