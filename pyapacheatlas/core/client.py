@@ -716,9 +716,9 @@ class AtlasClient():
                    "guid": guid,
                    }
         return results
-    
+
     @staticmethod
-    def _prepare_type_upload(typedefs = None, **kwargs):
+    def _prepare_type_upload(typedefs=None, **kwargs):
         """
         Massage the type upload. See rules in upload_typedefs.
         """
@@ -728,7 +728,7 @@ class AtlasClient():
 
         # If typedefs is defined as a dict and it contains at least one of the
         # required keys for the TypeREST definition.
-        if isinstance(typedefs,dict) and len(set(typedefs.keys()).intersection(required_keys)) > 0:
+        if isinstance(typedefs, dict) and len(set(typedefs.keys()).intersection(required_keys)) > 0:
             payload = typedefs
         # It isn't in the standard form but is it defined?
         elif typedefs is not None:
@@ -747,7 +747,7 @@ class AtlasClient():
                 )
             payload = {key: val}
         # Did we set any of the xDefs as arguments?
-        elif len( set(kwargs.keys()).intersection(required_keys) ) > 0:
+        elif len(set(kwargs.keys()).intersection(required_keys)) > 0:
             for typeRestKey in required_keys:
                 # Did we specify this key?
                 if typeRestKey in kwargs.keys():
@@ -761,7 +761,7 @@ class AtlasClient():
             )
         return payload
 
-    def upload_typedefs(self, typedefs = None, force_update=False, **kwargs):
+    def upload_typedefs(self, typedefs=None, force_update=False, **kwargs):
         """
         Provides a way to upload a single or multiple type definitions.
         If you provide one type def, it will format the required wrapper
@@ -771,7 +771,7 @@ class AtlasClient():
         category, you can pass the in kwargs `entityDefs`, `classificationDefs`,
         `enumDefs`, `relationshipDefs`, `structDefs` which take in a list of
         dicts or appropriate TypeDef objects.
-        
+
         Otherwise, you can pass in the wrapper yourself (e.g. {"entityDefs":[],
         "relationshipDefs":[]}) by providing that dict to the typedefs
         parameter. If the dict you pass in contains at least one of these Def
@@ -794,7 +794,7 @@ class AtlasClient():
             Set to True if your typedefs contains any existing entities.
         :return: The results of your upload attempt from the Atlas server.
             :rtype: dict
-        
+
         Kwargs:
             :param entityDefs: EntityDefs to upload.
             :type entityDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
@@ -808,7 +808,7 @@ class AtlasClient():
             :type structDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
 
         Returns:
-            
+
         """
         # Should this take a list of type defs and figure out the formatting
         # by itself?
@@ -883,7 +883,8 @@ class AtlasClient():
             # It's a list, so we're assuming it's a list of entities
             # Handles any type of AtlasEntity and mixed batches of dicts
             # and AtlasEntities
-            dict_batch = [e.to_json() if isinstance(e, AtlasEntity) else e for e in batch]
+            dict_batch = [e.to_json() if isinstance(
+                e, AtlasEntity) else e for e in batch]
             payload = {"entities": dict_batch}
         elif isinstance(batch, dict):
             current_keys = list(batch.keys())
@@ -898,7 +899,8 @@ class AtlasClient():
         elif isinstance(batch, AtlasEntity):
             payload = {"entities": [batch.to_json()]}
         else:
-            raise NotImplementedError(f"Uploading type: {type(batch)} is not supported.")
+            raise NotImplementedError(
+                f"Uploading type: {type(batch)} is not supported.")
 
         return payload
 
@@ -1078,48 +1080,74 @@ class PurviewClient(AtlasClient):
     def __init__(self, account_name, authentication=None):
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
         super().__init__(endpoint_url, authentication)
-    
+
     @PurviewOnly
-    def import_terms(self, terms_path, glossary_name="Glossary", glossary_guid=None):
-        # If you've got the guid: POST /atlas/v2/glossary/{glossaryGuid}/terms/import
-        # If you don't have the guid: POST /atlas/v2/glossary/name/{glossaryName}/terms/import
+    def import_terms(self, csv_path, glossary_name="Glossary", glossary_guid=None):
+        """
+        Bulk import terms from an existing csv file. If you are using the system
+        default, you must include the following headers:
+        Name,Definition,Status,Related Terms,Synonyms,Acronym,Experts,Stewards
+
+        For custom term templates, additional attributes must include
+        [Attribute][termTemplateName]attributeName as the header.
+
+        :param str csv_path: Path to CSV that will be imported.
+        :param str glossary_name:
+            Name of the glossary. Defaults to 'Glossary'. Not used if
+            glossary_guid is provided.
+        :param str glossary_guid:
+            Guid of the glossary, optional if glossary_name is provided.
+            Otherwise, this parameter takes priority over glossary_name.
+
+        :return:
+            A dict that contains an `id` that you can use in
+            `import_terms_status` to get the status of the import operation.
+        :rtype: dict
+        """
         results = None
         if glossary_guid:
-            atlas_endpoint = self.endpoint_url + f"/glossary/{glossary_guid}/terms/import"
+            atlas_endpoint = self.endpoint_url + \
+                f"/glossary/{glossary_guid}/terms/import"
         elif glossary_name:
-            atlas_endpoint = self.endpoint_url + f"/glossary/name/{glossary_name}/terms/import"
+            atlas_endpoint = self.endpoint_url + \
+                f"/glossary/name/{glossary_name}/terms/import"
         else:
-            raise ValueError("Either glossary_name or glossary_guid must be defined.")
+            raise ValueError(
+                "Either glossary_name or glossary_guid must be defined.")
+
+        headers = self.authentication.get_authentication_headers()
+        # Pop the default of application/json so that request can fill in the
+        # multipart/form-data; boundary=xxxx that is automatically generated
+        # when using the files argument.
+        headers.pop("Content-Type")
 
         postResp = requests.post(
             atlas_endpoint,
-            files = {'file': open(terms_path, 'rb')},
-            headers=self.authentication.get_authentication_headers()
+            files={'file': ("file", open(csv_path, 'rb'))},
+            headers=headers
         )
 
         results = self._handle_response(postResp)
 
         return results
 
-        # file: file Name,Definition,Status,Related Terms,Synonyms,Acronym,Experts,Stewards
-        # Term Templates are
-
-        # 202 Accepted
-        # json_ImportCSVOperation
-        # Accepted. A job to import glossary terms via csv has been accepted.
-
-        # 400 Bad Request
-        # If csv file is not valid
-
-        # 404 Not Found
-        # If glossary GUID is invalid.
-        pass
-
     @PurviewOnly
     def import_terms_status(self, operation_guid):
-        # GET /atlas/v2/glossary/terms/import/{operationGuid}
+        """
+        Get the operation status of a glossary term import activity. You get
+        the operation_guid after executing the `import_terms` method and find
+        the `id` field in the response dict/json.
+
+        :param str operation_guid: The id of the import operation.
+        :return: The status of the import operation as a dict. The dict includes
+            a field called `status` that will report back RUNNING, SUCCESS, or
+            FAILED. Other fields include the number of terms detected and
+            number of errors.
+        :rtype: dict
+        """
         results = None
-        atlas_endpoint = self.endpoint_url + f"/glossary/terms/import/{operation_guid}"
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/terms/import/{operation_guid}"
 
         postResp = requests.get(
             atlas_endpoint,
@@ -1131,8 +1159,52 @@ class PurviewClient(AtlasClient):
         return results
 
     @PurviewOnly
-    def export_terms(self, guids, name="Glossary"):
+    def export_terms(self, guids, csv_path, glossary_name="Glossary", glossary_guid=None):
         """
         :param list(str) guids: List of guids that should be exported as csv.
+        :param str csv_path: Path to CSV that will be imported.
+        :param str glossary_name:
+            Name of the glossary. Defaults to 'Glossary'. Not used if
+            glossary_guid is provided.
+        :param str glossary_guid:
+            Guid of the glossary, optional if glossary_name is provided.
+            Otherwise, this parameter takes priority over glossary_name.
+            Providing glossary_guid is also faster as you avoid a lookup based
+            on glossary_name.
+
+        :return: A csv file is written to the csv_path.
+        :rtype: None
         """
-        pass
+        if glossary_guid:
+            # Glossary guid is defined so we don't need to look up the guid
+            pass
+        elif glossary_name:
+            glossary = self.get_glossary(glossary_name)
+            glossary_guid = glossary["guid"]
+        else:
+            raise ValueError(
+                "Either glossary_name or glossary_guid must be defined.")
+
+        results = None
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/{glossary_guid}/terms/export"
+
+        postResp = requests.post(
+            atlas_endpoint,
+            json=guids,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        # Can't use handle response since it expects json
+        try:
+            postResp.raise_for_status()
+        except requests.RequestException as e:
+            if "errorCode" in postResp:
+                raise AtlasException(postResp.text)
+            else:
+                raise requests.RequestException(postResp.text)
+
+        with open(csv_path, 'wb') as fp:
+            fp.write(postResp.content)
+
+        return None
