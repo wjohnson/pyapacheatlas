@@ -8,7 +8,6 @@ on:
     branches:
       - master
       - release/**
-      - github/**
     paths-ignore:
       - 'docs/**'
       - 'samples/**'
@@ -52,6 +51,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.7
@@ -70,10 +70,14 @@ jobs:
 
     - name: What version am I using?
       run: |
-        VERSION=$(python setup.py --version)
-        echo "$VERSION"
+        CODE_VERSION=$(python setup.py --version)
+        echo "$CODE_VERSION"
+        TAG_VERSION=$(echo $GITHUB_REF | sed 's#.*/v##')
+        echo "$TAG_VERSION"
+        if [[ "$TAG_VERSION" == "$CODE_VERSION" ]]; then echo "Match"; else echo "No Match" && exit 1; fi
 
     - name: Create Release
+      if: startsWith(github.ref, 'refs/tags')
       id: create_release
       uses: actions/create-release@v1
       env:
