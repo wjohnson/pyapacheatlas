@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 config = configparser.ConfigParser()
-config.read("./samples/migrateADC/config.ini")
+config.read("./samples/migratePurview/config.ini")
 
 folder_path = config["Default"]["EntitiesFolder"]
 output_path = config["Default"]["EntitiesRemapped"]
