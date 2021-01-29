@@ -45,7 +45,7 @@ class AtlasClient():
             results = json.loads(resp.text)
             resp.raise_for_status()
         except JSONDecodeError:
-            raise JSONDecodeError("Error in parsing: {}".format(resp.text))
+            raise ValueError("Error in parsing: {}".format(resp.text))
         except requests.RequestException as e:
             if "errorCode" in results:
                 raise AtlasException(resp.text)
