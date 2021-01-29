@@ -71,7 +71,7 @@ jobs:
     - name: What version am I using?
       run: |
         CODE_VERSION=$(python setup.py --version)
-        TAG_VERSION=$(echo $GITHUB_REF | sed 's#.*/v##')
+        TAG_VERSION=$(echo $GITHUB_REF | sed 's#.*/##')
         if [[ "$TAG_VERSION" == "$CODE_VERSION" ]]; then echo "Match"; else echo "No Match" && exit 1; fi
         echo ::set-output name=package_version::$TAG_VERSION
       id: vnum      
