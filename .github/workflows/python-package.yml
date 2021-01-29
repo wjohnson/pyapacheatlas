@@ -52,22 +52,23 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install wheel
+
     - name: Create the artifacts
       run: |
         python setup.py bdist_wheel sdist
-    - name: validate
-      run: |
-        ls -R
+
     - name: Seeing what I get
       run: |
         echo "$GITHUB_REF"
         echo "$GITHUB_RUN_ID"
         VERSION=$(python setup.py --version)
         echo "$VERSION"
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -75,22 +76,20 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.run_id }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          Changes in this Release
-          - First Change
-          - Second Change
+        release_name: Build ${{ github.run_id }}
         draft: false
         prerelease: true
+
     - name: Publish to Test PyPI
+      if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@v1.4.1
       with:
+        user: __token__
         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
         repository_url: https://test.pypi.org/legacy/
-    
+
     - name: Publish to PyPI
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@v1.4.1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
-      
