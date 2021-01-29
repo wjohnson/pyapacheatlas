@@ -45,7 +45,7 @@ class AtlasClient():
             results = json.loads(resp.text)
             resp.raise_for_status()
         except JSONDecodeError:
-            raise JSONDecodeError("Error in parsing: {}".format(resp.text))
+            raise ValueError("Error in parsing: {}".format(resp.text))
         except requests.RequestException as e:
             if "errorCode" in results:
                 raise AtlasException(resp.text)
@@ -1064,6 +1064,38 @@ class AtlasClient():
 
         return search_generator
 
+    def get_entity_lineage(self, guid, depth=3, width=10, direction="BOTH", includeParent=False, getDerivedLineage=False):
+        """
+        Gets lineage info about the specified entity by guid.
+
+        :param str guid: The guid of the entity for which you want to
+            retrieve lineage.
+        :param int depth: The number of hops for lineage
+        :param int width: The number of max expanding width in lineage
+        :param str direction: The direction of the lineage, which could
+            be INPUT, OUTPUT or BOTH.
+        :param bool includeParent: True to include the parent chain in
+            the response
+        :param bool getDerivedLineage: True to include derived lineage in
+            the response
+        :return: A dict representing AtlasLineageInfo with an array
+            of parentRelations and an array of relations
+        :rtype: dict(str, dict)
+        """
+        direction = direction.strip().upper()
+        assert direction in ("BOTH", "INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: BOTH, INPUT, OUTPUT".format(direction)
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/lineage/{guid}"
+
+        getLineageRequest = requests.get(
+            atlas_endpoint,
+            params={"depth": depth, "width": width, "direction": direction, "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
+            headers=self.authentication.get_authentication_headers()
+        )
+        results = self._handle_response(getLineageRequest)
+        return results
+
 
 class PurviewClient(AtlasClient):
     """
@@ -1084,6 +1116,37 @@ class PurviewClient(AtlasClient):
         super().__init__(endpoint_url, authentication)
 
     @PurviewOnly
+    def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
+        """
+        Returns immediate next level lineage info about entity with pagination
+
+        :param str guid: The guid of the entity for which you want to
+            retrieve lineage.
+        :param str direction: The direction of the lineage, which could
+            be INPUT or OUTPUT.
+        :param bool getDerivedLineage: True to include derived lineage in
+            the response
+        :param int offset: The offset for pagination purpose.
+        :param int limit: The page size - by default there is no paging.
+        :return: A dict representing AtlasLineageInfo with an array
+            of parentRelations and an array of relations
+        :rtype: dict(str, dict)
+        """
+        direction = direction.strip().upper()
+        assert direction in ("INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: INPUT, OUTPUT".format(direction)
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/lineage/{guid}/next"
+
+        # TODO: Implement paging with offset and limit
+        getLineageRequest = requests.get(
+            atlas_endpoint,
+            params={"direction": direction, "getDerivedLineage": getDerivedLineage, "offset": offset, "limit": limit},
+            headers=self.authentication.get_authentication_headers()
+        )
+        results = self._handle_response(getLineageRequest)
+        return results
+
     def import_terms(self, csv_path, glossary_name="Glossary", glossary_guid=None):
         """
         Bulk import terms from an existing csv file. If you are using the system
