@@ -9,8 +9,14 @@ on:
       - master
       - release/**
       - github/**
+    paths-ignore:
+      - 'docs/**'
+      - 'samples/**'
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - 'docs/**'
+      - 'samples/**'
 
 jobs:
   build:
