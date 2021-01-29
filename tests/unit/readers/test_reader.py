@@ -39,6 +39,9 @@ def test_parse_bulk_entities():
     assert(len(ghi["classifications"]) == 2)
     assert(len(jkl["classifications"]) == 1)
 
+    # The classifications should default to NOT propagate
+    assert( all( [c["propagate"]==False for c in ghi["classifications"] + jkl["classifications"]] ))
+
     assert(jkl["classifications"][0]["typeName"] == "PII")
     ghi_classification_types = set(
         [x["typeName"] for x in ghi["classifications"]]
