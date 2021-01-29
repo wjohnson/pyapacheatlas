@@ -23,6 +23,10 @@ class AtlasEntity():
         atlas entity may require.
     :param dict, optional classifications: Classifications that may
         be applied to this atlas entity.
+    :param dict(str, dict(str, list(dict(strt,str)))), optional contacts:
+        Contacts should contain keys Experts and/or Owners. Their values should
+        be a list of dicts with keys id and info. Id is a microsoft graph
+        object id. Info is a string of extra information.
     """
 
     def __init__(self, name, typeName, qualified_name, guid=None, **kwargs):
@@ -37,6 +41,9 @@ class AtlasEntity():
             self.attributes.update({"description": kwargs["description"]})
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
         self.classifications = kwargs.get("classifications", [])
+        # This isn't implemented in Apache Atlas, so being cautious
+        if "contacts" in kwargs:
+            self.contacts = kwargs.get("contacts", {})
 
     def __eq__(self, other):
         return self.qualifiedName == other
@@ -164,6 +171,9 @@ class AtlasEntity():
             # Add ins for optional top level attributes
             if len(self.classifications) > 0:
                 output.update({"classifications": self.classifications})
+            if hasattr(self, 'contacts'):
+                output.update({"contacts": self.contacts})
+
 
         return output
 
