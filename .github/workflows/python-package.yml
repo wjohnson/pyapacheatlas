@@ -70,8 +70,7 @@ jobs:
 
     - name: Seeing what I get
       run: |
-        echo "$GITHUB_REF"
-        echo "$GITHUB_RUN_ID"
+        ls ./dist
         VERSION=$(python setup.py --version)
         echo "$VERSION"
 
