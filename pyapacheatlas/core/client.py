@@ -1110,6 +1110,7 @@ class PurviewClient(AtlasClient):
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
         super().__init__(endpoint_url, authentication)
 
+    @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
         """
         Returns immediate next level lineage info about entity with pagination
