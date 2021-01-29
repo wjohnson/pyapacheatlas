@@ -62,13 +62,19 @@ jobs:
     - name: validate
       run: |
         ls -R
+    - name: Seeing what I get
+      run: |
+        echo "$GITHUB_REF"
+        echo "$GITHUB_RUN_ID"
+        VERSION=$(python setup.py --version)
+        echo "$VERSION"
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.run.id }}
+        tag_name: ${{ github.run_id }}
         release_name: Release ${{ github.ref }}
         body: |
           Changes in this Release
