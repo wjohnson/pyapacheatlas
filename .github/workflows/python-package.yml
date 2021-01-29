@@ -77,7 +77,7 @@ jobs:
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ VERSION }}
       with:
         tag_name: ${{ github.run_id }}
         release_name: Build ${{ github.run_id }}
@@ -85,7 +85,7 @@ jobs:
         prerelease: true
 
     - name: Publish to Test PyPI
-      # if: startsWith(github.ref, 'refs/tags')
+      if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@v1.4.1
       with:
         user: __token__
