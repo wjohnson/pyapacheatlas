@@ -1091,6 +1091,25 @@ class AtlasClient():
         results = self._handle_response(getLineageRequest)
         return results
 
+
+class PurviewClient(AtlasClient):
+    """
+    Provides communication between your application and the Azure Purview
+    service. Simplifies the requirements for knowing the endpoint url and
+    requires only the Purview account name.
+
+    :param str account_name:
+        Your Purview account name.
+    :param authentication:
+        The method of authentication.
+    :type authentication:
+        :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
+    """
+
+    def __init__(self, account_name, authentication=None):
+        endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
+        super().__init__(endpoint_url, authentication)
+
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
         """
         Returns immediate next level lineage info about entity with pagination
@@ -1121,21 +1140,3 @@ class AtlasClient():
         )
         results = self._handle_response(getLineageRequest)
         return results
-
-class PurviewClient(AtlasClient):
-    """
-    Provides communication between your application and the Azure Purview
-    service. Simplifies the requirements for knowing the endpoint url and
-    requires only the Purview account name.
-
-    :param str account_name:
-        Your Purview account name.
-    :param authentication:
-        The method of authentication.
-    :type authentication:
-        :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-    """
-
-    def __init__(self, account_name, authentication=None):
-        endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
-        super().__init__(endpoint_url, authentication)
