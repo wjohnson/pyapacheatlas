@@ -77,10 +77,10 @@ jobs:
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ VERSION }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.run_id }}
-        release_name: Build ${{ github.run_id }}
+        tag_name: ${{ VERSION }}
+        release_name: Release ${{ VERSION }}
         draft: false
         prerelease: true
 
