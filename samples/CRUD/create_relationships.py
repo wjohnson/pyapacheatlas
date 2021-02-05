@@ -44,57 +44,50 @@ if __name__ == "__main__":
     )
 
     # Creating the entities that will be used in uploads.
-    table = AtlasEntity("rel01","hive_table", "tests://rel01", guid=-1)
-    c1 = AtlasEntity("rel01#01", "hive_column", "tests://rel01#c", guid=-2, attributes={"type":"str"})
-    c2 = AtlasEntity("rel01#02", "hive_column", "tests://rel02#c", guid=-3, attributes={"type":"str"})
-    c3 = AtlasEntity("rel01#03", "hive_column", "tests://rel03#c", guid=-4, attributes={"type":"str"})
-    c4 = AtlasEntity("rel01#04", "hive_column", "tests://rel04#c", guid=-5, attributes={"type":"str"})
+    # One table will be added
+    table = AtlasEntity("rel10","hive_table", "tests://rel10", guid=-1)
+    # Four columns will be added
+    c1 = AtlasEntity("rel10#01", "hive_column", "tests://rel10#c", guid=-2, attributes={"type":"str"})
+    c2 = AtlasEntity("rel10#02", "hive_column", "tests://rel02#c", guid=-3, attributes={"type":"str"})
+    c3 = AtlasEntity("rel10#03", "hive_column", "tests://rel03#c", guid=-4, attributes={"type":"str"})
+    c4 = AtlasEntity("rel10#04", "hive_column", "tests://rel04#c", guid=-5, attributes={"type":"str"})
 
-    # Add c1 as the only relationship to the table
-    table.addRelationship(columns=[c1.to_json(minimum=True)])
+    # Add relationships to the columns from the table overwriting existing columns
+    # Good if you want to overwrite existing schema or creating a brand new table
+    # and Schema.
+    columns_to_add = [ c1, c2, c3 ]
+    # Use a list comprehension to convert them into dictionaries when adding a list
+    table.addRelationship(columns=[c.to_json(minimum=True) for c in columns_to_add])
 
-    c2.relationshipAttributes.update({"table": table.to_json(minimum=True) })
-    c3.addRelationship(table = table)
+    # OR Add a table relationship to a column. This lets you essentially APPEND
+    # a column to a table's schema.
+    c4.addRelationship(table = table)
 
+    # Upload all of the tables and columns that are referenced.
     assignments = client.upload_entities([table, c1, c2, c3, c4])["guidAssignments"]
-
-    try:
-        live_table = client.get_entity(guid=assignments["-1"])["entities"][0]
         
-        # Should have two attributes because one is from the table having the
-        # relationship defined as an array of columns and the second two from
-        # the column's having the table relationshipAttribute defined on them.
-        print("Here's what the upload looks like!")
-        print(json.dumps(live_table["relationshipAttributes"], indent=2))
-        print("Now we are creating a relationship.")
+    # Check that we have one more relationship
+    print("Now we can see that there should be one more relationship attribute.")
+    live_table_post_relationship = client.get_entity(guid=assignments["-1"])["entities"][0]
+    print(json.dumps(live_table_post_relationship["relationshipAttributes"], indent=2))
 
-        relationship = {
-                    # When creating manually, you have to "know" the typeName
-                    # and the types of each end.
-                    "typeName": "hive_table_columns",
-                    "attributes": {},
-                    "guid": -100,
-                    # Ends are either guid or guid + typeName 
-                    # (in case there are ambiguities?)
-                    # End1 is the hive_table
-                    "end1": {
-                        "guid": assignments["-1"]
-                    },
-                    # End2 is the hive_column
-                    "end2": {
-                        "guid": assignments["-5"]
-                    }
-                }
-
-        relation_upload = client.upload_relationship(relationship)
-        
-        # Check that we have one more relationship
-        print("Now we can see that there should be one more relationship attribute.")
-        live_table_post_relationship = client.get_entity(guid=assignments["-1"])["entities"][0]
-        print(json.dumps(live_table_post_relationship["relationshipAttributes"], indent=2))
-
-    finally:
-        # Need to delete all columns BEFORE you delete the table
-        for local_id in [str(s) for s in range(-5,0)]:
-            guid = assignments[local_id]
-            _ = client.delete_entity(guid)
+    # Alternatively, you can upload a relationship directly, though this is
+    # only useful for one at a time uploads and not the most efficient way.
+    # relationship = {
+    #     # When creating manually, you have to "know" the typeName
+    #     # and the types of each end.
+    #     "typeName": "hive_table_columns",
+    #     "attributes": {},
+    #     "guid": -100,
+    #     # Ends are either guid or guid + typeName 
+    #     # (in case there are ambiguities?)
+    #     # End1 is the hive_table
+    #     "end1": {
+    #         "guid": "abc-123-def-456"
+    #     },
+    #     # End2 is the hive_column
+    #     "end2": {
+    #         "guid": "ghi-789-jkl-101"
+    #     }
+    # }
+    # relation_upload = client.upload_relationship(relationship)
