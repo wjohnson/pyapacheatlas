@@ -1,0 +1,80 @@
+# In current folder, make a folder .vscode
+# In .vscode folder create a settings.json file with the following:
+#
+# {
+#	"rest-client.environmentVariables": {
+#		"$shared": {},
+# 		"pyapacheatlas": {
+# 			"tenantId": "<tenantId>",
+# 			"clientId": "<service principal id>",
+# 			"clientSecret": "<service principal secret>",
+#				"purviewCatalog": "<accountname>"
+# 		}
+# 	}
+# }
+#
+# In VSCode set the environment with CTRL+ALT+E (Cmd+ALT+E for macOS)
+# and choose the pyapacheatlas environment.
+#
+# Note: VSCode may need to be restarted if these values change
+
+# @name auth
+POST https://login.microsoftonline.com/{{tenantId}}/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}
+&client_secret={{clientSecret}}
+&grant_type=client_credentials
+&resource=73c2949e-da2d-457a-9607-fcc665198967
+
+###
+
+# @name GetTypeDef
+
+GET https://{{purviewCatalog}}.catalog.purview.azure.com/api/atlas/v2/types/typedefs
+Authorization: Bearer {{auth.response.body.access_token}}
+
+###
+
+# @name UploadTypeDefs
+
+POST https://{{purviewCatalog}}.catalog.purview.azure.com/api/atlas/v2/types/typedefs
+Content-Type: application/json
+Authorization: Bearer {{auth.response.body.access_token}}
+
+< ./pyapacheatlas_mysql_typedefs_v2.json
+
+###
+
+# @name DeleteTypeDefs
+
+DELETE https://{{purviewCatalog}}.catalog.purview.azure.com/api/atlas/v2/types/typedefs
+Content-Type: application/json
+Authorization: Bearer {{auth.response.body.access_token}}
+
+< ./pyapacheatlas_mysql_typedefs_v2.json
+
+###
+
+# @name GetEntityDetails
+@guid = ''
+GET https://{{purviewCatalog}}.catalog.purview.azure.com/api/atlas/v2/entity/guid/{{guid}}
+Authorization: Bearer {{auth.response.body.access_token}}
+
+###
+
+# @name GetRelationDetails
+@guid = ''
+GET https://{{purviewCatalog}}.catalog.purview.azure.com/api/atlas/v2/relationship/guid/{{guid}}
+Authorization: Bearer {{auth.response.body.access_token}}
+
+###
+
+# @name DeleteGUIDS
+# Output from the mysql_metadata_ingest.py can be cut/paste into the request below
+# for the purposes of clean up after the sample has been run
+
+DELETE https://{{purviewCatalog}}.catalog.purview.azure.com/api/atlas/v2/entity/bulk
+	?guid=...
+Authorization: Bearer {{auth.response.body.access_token}}
+Content-Type: application/json
