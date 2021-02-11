@@ -207,9 +207,9 @@ def test_column_lineage_entities_with_classifications():
     col_lineage_entity = results[2]
 
     assert(len(target_col_entity.classifications) == 2)
-    assert({"typeName": "CustomerInfo", "attributes": {}}
+    assert({"typeName": "CustomerInfo", "attributes": {}, 'propagate': False}
            in target_col_entity.classifications)
-    assert({"typeName": "PII", "attributes": {}}
+    assert({"typeName": "PII", "attributes": {}, 'propagate': False}
            in target_col_entity.classifications)
     assert(len(source_col_entity.classifications) == 0)
 

@@ -18,7 +18,7 @@ The process looks like the following:
 
 ## Instructions
 
-* Update the `/samples/migrateADC/config.ini` with your service principal information for new and old "clients".
+* Update the `/samples/migratePurview/config.ini` with your service principal information for new and old "clients".
 * Run the following scripts in order, from the root of the pyapacheatlas project directory.
 * `setup_folders.py`: Create the necessary folder structure.
 * `glossary_terms.py`: Extract and upload the glossary terms.
