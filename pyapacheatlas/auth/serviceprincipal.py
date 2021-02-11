@@ -45,7 +45,7 @@ class ServicePrincipalAuthentication(AtlasAuthBase):
         authJson = json.loads(authResponse.text)
 
         self.access_token = authJson["access_token"]
-        self.expiration = datetime.fromtimestamp(int(authJson["expires_in"]))
+        self.expiration = datetime.fromtimestamp(int(authJson["expires_on"]))
 
     def get_authentication_headers(self):
         """
