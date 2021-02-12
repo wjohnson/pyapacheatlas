@@ -301,11 +301,4 @@
             }
         }
     ]
-},
-"HierarchyDefs": {
-    "_comment": "Below Section details are needed for generating unique qualified Name for entities in compliant with Data catalog and is mandatory ",
-    "data_source": "pyapacheatlas_mysql",
-    "entity_hierarchy": [
-        "{pyapacheatlas_mysql_instance}/{pyapacheatlas_mysql_db}/{pyapacheatlas_mysql_table}#{pyapacheatlas_mysql_column}"
-    ]
 }

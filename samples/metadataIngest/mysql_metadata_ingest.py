@@ -1,6 +1,7 @@
 import mysql.connector as mysqlConnector
 import os
 import json
+import time
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import PurviewClient, AtlasEntity, AtlasProcess
@@ -122,10 +123,10 @@ def save_entities(atlas_mysql):
         entities.append(column)
 
     assignments = client.upload_entities(entities)['guidAssignments']
-    print('\t?', end = '')
+    f = open(f"entities.{time.time()}.txt", "a")
     for guid in assignments:
-        print(f'guid={assignments[guid]}', end = '\n\t&')
-    print()
+        f.write(assignments[guid] + "\n")
+    f.close()
 
 def scan_server_instance(conn, atlas_mysql):
     instance_fqn = f'mysql://{MYSQL_SERVER_HOSTNAME}/'
@@ -172,4 +173,4 @@ def scan_columns(conn, atlas_mysql, database, atlas_table):
 if __name__ == '__main__':
     atlas_mysql = AtlasMySQL()
     scan_meta_data(atlas_mysql)
-    # save_entities(atlas_mysql)
+    save_entities(atlas_mysql)

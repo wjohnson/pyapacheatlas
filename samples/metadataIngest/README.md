@@ -17,7 +17,7 @@ VSCode with the "Rest Client" Extension by Huachao Mao installed
 
 ## Required Environment Variable settings
 
-Use the following code to set the environment for phython to run
+Use the following code to set the environment for Python to run
 
 ``` bash
 export MYSQL_SERVER_HOSTNAME=<localhost or ipaddress>
@@ -86,47 +86,6 @@ table
 ``` sql
 ALTER TABLE city CHANGE id id int not null COMMENT "id of city";
 ```
-
-## Adding a Custom Type Definition for the MySQL Data
-
-Start Visual Studio Code and open the folder for this source.
-
-To create an environment for running the Rest Client so that secrets are not stored
-in the code, follow these steps
-
-- Create a folder named `.vscode`
-- Create a file named `settings.json`
-- Add the following settings (example shows how to set two environments)
-
-``` json
-{
-  "rest-client.environmentVariables": {
-    "$shared": {},
-    "<environment name>": {
-      "tenantId": "<aad tenant id>",
-      "clientId": "<service principal id>",
-      "clientSecret": "<service principal secret>",
-      "purviewCatalog": "<Azure Purview account name>"
-    },
-    "<environment name 2>": {
-      "tenantId": "<aad tenant id>",
-      "clientId": "<service principal id>",
-      "clientSecret": "<service principal secret>",
-      "purviewCatalog": "<Azure Purview account name>"
-    }
-  }
-}
-```
-
-- Restart Visual Studio Code
-- Open the folder for this source
-- Open the `installtypedef.http` file
-- Press `Ctrl-Alt-E` and select the environment from the "Rest Client Environment"
-list
-- Under the `# @name auth` code, press `Send Request` to request an authentication
-token (another tab should open showing success)
-- Under the `# @name UploadTypeDefs` code, press `Send Request` to upload the custom
-type definition json document (another tab should open showing success)
 
 ## Running the Custom Ingestion script for MySQL
 
