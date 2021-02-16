@@ -1,0 +1,304 @@
+{
+    "entityDefs": [
+        {
+            "category": "ENTITY",
+            "name": "pyapacheatlas_mysql_instance",
+            "description": "Instance that the mysql server is running on indexed by pyapacheatlas",
+            "serviceType": "pyapacheatlas_mysql",
+            "attributeDefs": [
+                {
+                    "name": "cloudOrOnPrem",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "hostname",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "port",
+                    "typeName": "int",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": false,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "contact_info",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "comment",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                }
+            ],
+            "superTypes": [
+                "DataSet"
+            ],
+            "subTypes": [],
+            "relationshipAttributeDefs": []
+        },
+        {
+            "category": "ENTITY",
+            "name": "pyapacheatlas_mysql_db",
+            "description": "mysql database in pyapacheatlas_mysql_instance",
+            "serviceType": "pyapacheatlas_mysql",
+            "attributeDefs": [
+                {
+                    "name": "prodOrOther",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "contact_info",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                }
+            ],
+            "superTypes": [
+                "DataSet"
+            ],
+            "subTypes": [],
+            "relationshipAttributeDefs": []
+        },
+        {
+            "category": "ENTITY",
+            "name": "pyapacheatlas_mysql_table",
+            "description": "Table in pyapacheatlas_mysql database",
+            "serviceType": "pyapacheatlas_mysql",
+            "options": {
+                "schemaElementsAttribute": "columns"
+            },
+            "attributeDefs": [
+                {
+                    "name": "createTime",
+                    "typeName": "date",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": false,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "comment",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "contact_info",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                }
+            ],
+            "superTypes": [
+                "DataSet"
+            ],
+            "subTypes": [],
+            "relationshipAttributeDefs": []
+        },
+        {
+            "category": "ENTITY",
+            "name": "pyapacheatlas_mysql_column",
+            "description": "Column in pyapacheatlas_mysql table",
+            "serviceType": "pyapacheatlas_mysql",
+            "attributeDefs": [
+                {
+                    "name": "data_type",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "length",
+                    "typeName": "int",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": false,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "default_value",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": false,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "comment",
+                    "typeName": "string",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": true,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "isNullable",
+                    "typeName": "boolean",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": false,
+                    "includeInNotification": false
+                },
+                {
+                    "name": "isPrimaryKey",
+                    "typeName": "boolean",
+                    "isOptional": true,
+                    "cardinality": "SINGLE",
+                    "valuesMinCount": 0,
+                    "valuesMaxCount": 1,
+                    "isUnique": false,
+                    "isIndexable": false,
+                    "includeInNotification": false
+                }
+            ],
+            "superTypes": [
+                "DataSet"
+            ],
+            "subTypes": [],
+            "relationshipAttributeDefs": []
+        }
+    ],
+    "relationshipDefs": [
+        {
+            "category": "RELATIONSHIP",
+            "name": "pyapacheatlas_mysql_instance_dbs",
+            "description": "pyapacheatlas_mysql_instance_dbs",
+            "serviceType": "pyapacheatlas_mysql",
+            "relationshipCategory": "COMPOSITION",
+            "propagateTags": "NONE",
+            "endDef1": {
+                "type": "pyapacheatlas_mysql_instance",
+                "name": "dbs",
+                "isContainer": true,
+                "cardinality": "SET",
+                "isLegacyAttribute": false
+            },
+            "endDef2": {
+                "type": "pyapacheatlas_mysql_db",
+                "name": "instance",
+                "isContainer": false,
+                "cardinality": "SINGLE",
+                "isLegacyAttribute": false
+            }
+        },
+        {
+            "category": "RELATIONSHIP",
+            "name": "pyapacheatlas_mysql_db_tables",
+            "description": "pyapacheatlas_mysql_db_tables",
+            "serviceType": "pyapacheatlas_mysql",
+            "attributeDefs": [],
+            "relationshipCategory": "COMPOSITION",
+            "propagateTags": "NONE",
+            "endDef1": {
+                "type": "pyapacheatlas_mysql_db",
+                "name": "tables",
+                "isContainer": true,
+                "cardinality": "SET",
+                "isLegacyAttribute": false
+            },
+            "endDef2": {
+                "type": "pyapacheatlas_mysql_table",
+                "name": "db",
+                "isContainer": false,
+                "cardinality": "SINGLE",
+                "isLegacyAttribute": false
+            }
+        },
+        {
+            "category": "RELATIONSHIP",
+            "name": "pyapacheatlas_mysql_table_columns",
+            "description": "pyapacheatlas_mysql_table_columns",
+            "serviceType": "pyapacheatlas_mysql",
+            "relationshipCategory": "COMPOSITION",
+            "propagateTags": "NONE",
+            "endDef1": {
+                "type": "pyapacheatlas_mysql_table",
+                "name": "columns",
+                "isContainer": true,
+                "cardinality": "SET",
+                "isLegacyAttribute": false
+            },
+            "endDef2": {
+                "type": "pyapacheatlas_mysql_column",
+                "name": "table",
+                "isContainer": false,
+                "cardinality": "SINGLE",
+                "isLegacyAttribute": false
+            }
+        }
+    ]
+}
