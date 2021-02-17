@@ -13,7 +13,6 @@ Python 3.6 or higher
 Docker (if using the MySQL instance)
 Azure Purview account
 Azure Service Principal with Data Curator privileges to Azure Purview account
-VSCode with the "Rest Client" Extension by Huachao Mao installed
 
 ## Required Environment Variable settings
 
@@ -57,7 +56,7 @@ docker run --name mysqllocal -p 3306:3306  --network mysqlnet -e MYSQL_ROOT_PASS
 Connect to MySQL and grant permissions
 
 ``` bash
-docker run -it --rm --network mysqlnet mysql mysql -hdccf-mysql -p $MYSQL_PASSWORD
+docker run -it --rm --network mysqlnet mysql mysql -hmysqllocal -p$MYSQL_PASSWORD
 ```
 
 At the `mysql>` prompt, execute the following script to use unix socket authentication
@@ -77,7 +76,7 @@ None of the sample data has comments, so for this sample, we will need to update
 a table with a comment. Log in to MySQL with the following
 
 ``` bash
-docker run -it --rm --network mysqlnet mysql mysql -hdccf-mysql -p $MYSQL_PASSWORD
+docker run -it --rm --network mysqlnet mysql mysql -hmysqllocal -p$MYSQL_PASSWORD
 ```
 
 At the `mysql>` prompt, execute the following script to add a comment to the `city`
