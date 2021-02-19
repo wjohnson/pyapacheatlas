@@ -6,9 +6,13 @@ from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import PurviewClient, AtlasEntity, AtlasProcess
 from pyapacheatlas.core.typedef import EntityTypeDef, AtlasAttributeDef
 from pyapacheatlas.core.util import GuidTracker
-# from pyapacheatlas.readers.reader import Reader, ReaderConfiguration
+
 if __name__ == "__main__":
     """
+    This sample demonstrates using the columnMapping feature of Azure Purview.
+    You will create a process with two inputs and one output. From there you
+    will create a valid column mapping JSON object that will display column
+    level lineage in the Purview UI.
     """
     oauth = ServicePrincipalAuthentication(
         tenant_id=os.environ.get("TENANT_ID", ""),
