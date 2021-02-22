@@ -29,18 +29,18 @@ if __name__ == "__main__":
     input01 = AtlasEntity(
         name="input01",
         typeName="DataSet",
-        qualified_name="pyapacheatlas://demoinput01",
+        qualified_name="pyapacheatlas://demoinputclassification01",
         guid=-100
     )
     input02 = AtlasEntity(
         name="input02",
         typeName="DataSet",
-        qualified_name="pyapacheatlas://demoinput02",
+        qualified_name="pyapacheatlas://demoinputclassification02",
         guid=-101
     )
 
     results = client.upload_entities(
-        batch=[input01.to_json(), input02.to_json()]
+        batch=[input01, input02]
     )
 
     # Get the Guids for us to work with
@@ -51,19 +51,18 @@ if __name__ == "__main__":
     one_entity_multi_class = client.classify_entity(
         guid=guids[0], 
         classifications=[
-            AtlasClassification("MICROSOFT.PERSONAL.DATE_OF_BIRTH").to_json(),
-            AtlasClassification("MICROSOFT.PERSONAL.NAME").to_json()
+            AtlasClassification("MICROSOFT.PERSONAL.DATE_OF_BIRTH"),
+            AtlasClassification("MICROSOFT.PERSONAL.NAME")
             ],
         force_update=True
     )
     print(json.dumps(one_entity_multi_class, indent=2))
-    exit()
 
     # Classify Multiple Entities with one classification
     try:
         multi_entity_single_class = client.classify_bulk_entities(
             entityGuids=guids,
-            classification=AtlasClassification("MICROSOFT.PERSONAL.IPADDRESS").to_json()
+            classification=AtlasClassification("MICROSOFT.PERSONAL.IPADDRESS")
         )
         print(json.dumps(multi_entity_single_class, indent=2))
     except AtlasException as e:

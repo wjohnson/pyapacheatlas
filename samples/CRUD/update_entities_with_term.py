@@ -33,7 +33,7 @@ if __name__ == "__main__":
         client_secret=os.environ.get("CLIENT_SECRET", "")
     )
     client = PurviewClient(
-        account_name = os.environ.get("PURVIEW_NAME", ""),
+        account_name=os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         # off at a specific relevance threshold (default is 3.0).
         for batch in search_query:
             for entity in batch:
-                if entity["typeName"] == "AtlasGlossaryTerm":
+                if entity["entityType"] == "AtlasGlossaryTerm":
                     continue
                 search_score = entity['@search.score']
                 lowest_seen_score = search_score if search_score < lowest_seen_score else lowest_seen_score
@@ -83,7 +83,7 @@ if __name__ == "__main__":
                     search_reason = entity['@search.highlights']
                 searchoutput = SearchOutput(
                     search_score, entity['id'],
-                    entity['typeName'], term_guid, primary_display_text,
+                    entity['entityType'], term_guid, primary_display_text,
                     search_reason
                 )
 
@@ -122,4 +122,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(
                 f"\tException for {so.TermId}:{so.AssetId} and was not uploaded: {e}")
-        print("\n")

@@ -4,7 +4,7 @@ import logging
 import re
 import requests
 
-from .entity import AtlasEntity
+from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
 from .util import AtlasException, PurviewLimitation, PurviewOnly
 
@@ -13,23 +13,22 @@ class AtlasClient():
     """
     Provides communication between your application and the Apache Atlas
     server with your entities and type definitions.
+
+    :param str endpoint_url:
+        The http url for communicating with your Apache Atlas server.
+        It will most likely end in /api/atlas/v2.
+    :param authentication:
+        The method of authentication.
+    :type authentication:
+        :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
     """
 
     def __init__(self, endpoint_url, authentication=None):
-        """
-        :param str endpoint_url:
-            The http url for communicating with your Apache Atlas server.
-            It will most likely end in /api/atlas/v2.
-        :param authentication:
-            The method of authentication.
-        :type authentication:
-            :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-        """
         super().__init__()
         self.authentication = authentication
         self.endpoint_url = endpoint_url
         self.is_purview = False
-        self._purview_url_pattern = r"https:\/\/[a-z0-9]*?\.(catalog\.purview.azure.com)"
+        self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
         if re.match(self._purview_url_pattern, self.endpoint_url):
             self.is_purview = True
 
@@ -46,12 +45,12 @@ class AtlasClient():
             results = json.loads(resp.text)
             resp.raise_for_status()
         except JSONDecodeError:
-            raise JSONDecodeError("Error in parsing: {}".format(resp.text))
+            raise ValueError("Error in parsing: {}".format(resp.text))
         except requests.RequestException as e:
             if "errorCode" in results:
                 raise AtlasException(resp.text)
             else:
-                raise e(resp.text)
+                raise requests.RequestException(resp.text)
 
         return results
 
@@ -60,11 +59,11 @@ class AtlasClient():
         Delete one or many guids from your Apache Atlas server.
 
         :param guid: The guid or guids you want to remove.
-        :type guid: Union[str, list(str)]
+        :type guid: Union(str,list(str))
         :return:
             An EntityMutationResponse containing guidAssignments,
             mutatedEntities, and partialUpdatedEntities (list).
-        :rtype: dict(str, Union[dict,list])
+        :rtype: dict(str, Union(dict,list))
         """
         results = None
 
@@ -112,23 +111,29 @@ class AtlasClient():
         """
         Retrieve one or many guids from your Atlas backed Data Catalog.
 
+        Returns a dictionary with keys "referredEntities" and "entities". You'll
+        want to grab the entities values which is a list of entities.
+
+        You can provide a single guid or a list of guids. You can provide a
+        single typeName and multiple qualified names in a list.
+
         :param guid:
             The guid or guids you want to retrieve. Not used if using typeName
             and qualifiedName.
-        :type guid: Union[str, list(str)]
+        :type guid: Union(str, list(str))
         :param qualifiedName:
             The qualified name of the entity you want to find. Must provide
             typeName if using qualifiedName. You may search for multiple
             qualified names under the same type. Ignored if using guid
             parameter.
-        :type qualifiedName: Union[str, list(str)]
+        :type qualifiedName: Union(str, list(str))
         :param str typeName:
             The type name of the entity you want to find. Must provide
             qualifiedName if using typeName. Ignored if using guid parameter.
         :return:
             An AtlasEntitiesWithExtInfo object which includes a list of
             entities and accessible with the "entities" key.
-        :rtype: dict(str, Union[list(dict),dict])
+        :rtype: dict(str, Union(list(dict),dict))
         """
         results = None
         parameters = {}
@@ -175,6 +180,7 @@ class AtlasClient():
             want to query.
         :return: An AtlasClassification object that contains entityGuid,
             entityStatus, typeName, attributes, and propagate fields.
+        :rtype: dict(str, object)
         """
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classification/{classificationName}"
@@ -215,7 +221,7 @@ class AtlasClient():
         :param guid:
             The guid or guids you want to retrieve. Not used if using typeName
             and qualifiedName.
-        :type guid: Union[str, list(str)]
+        :type guid: Union(str, list(str))
         :return:
             An AtlasEntityHeader dict which includes the keys: guid, attributes
             (which is a dict that contains qualifiedName and name keys), an
@@ -264,9 +270,10 @@ class AtlasClient():
         """
         Retrieve all of the type defs available on the Apache Atlas server.
 
-        :return: A dict representing an AtlasTypesDef, containing lists of
-        type defs wrapped in their corresponding definition types
-        {"entityDefs", "relationshipDefs"}.
+        :return:
+            A dict representing an AtlasTypesDef, containing lists of
+            type defs wrapped in their corresponding definition types
+            {"entityDefs", "relationshipDefs"}.
         :rtype: dict(str, list(dict))
         """
         results = None
@@ -491,16 +498,21 @@ class AtlasClient():
         and you know their guid. This call will fail if any one of the guids
         already have the provided classification on that entity.
 
-        :param Union(str, list) entityGuids:
+        :param Union(str,list) entityGuids:
             The guid or guids you want to classify.
-        :param dict classification:
+        :param classification:
             The AtlasClassification object you want to apply to the entities.
+        :type classification:
+            Union(dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
         :return: A message indicating success. The only key is 'message',
             containing a brief string.
-        :rtype: dict(str, Union(list(str), str))
+        :rtype: dict(str,Union(list(str),str))
         """
         results = None
         atlas_endpoint = self.endpoint_url + "/entity/bulk/classification"
+
+        if isinstance(classification, AtlasClassification):
+            classification = classification.to_json()
 
         classification_name = classification["typeName"]
 
@@ -610,9 +622,11 @@ class AtlasClient():
         attribute that you do not provide.
 
         :param str guid: The guid you want to classify.
-        :param list(dict) classifications:
+        :param classifications:
             The list of AtlasClassification object you want to apply to the
             entities.
+        :type classification: 
+            Union(dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
         :param bool force_update: Mark as True if any of your classifications
             may already exist on the given entity.
         :return: A message indicating success and which classifications were
@@ -625,8 +639,13 @@ class AtlasClient():
 
         if isinstance(classifications, dict):
             classifications = [classifications]
+        elif isinstance(classifications, AtlasClassification):
+            classifications = [classifications.to_json()]
         elif isinstance(classifications, list):
-            pass
+            classifications = [
+                c.to_json()
+                if isinstance(c, AtlasClassification)
+                else c for c in classifications]
         else:
             raise TypeError("classifications should be dict or list, not {}".format(
                 type(classifications)))
@@ -697,9 +716,9 @@ class AtlasClient():
                    "guid": guid,
                    }
         return results
-    
+
     @staticmethod
-    def _prepare_type_upload(typedefs = None, **kwargs):
+    def _prepare_type_upload(typedefs=None, **kwargs):
         """
         Massage the type upload. See rules in upload_typedefs.
         """
@@ -709,7 +728,7 @@ class AtlasClient():
 
         # If typedefs is defined as a dict and it contains at least one of the
         # required keys for the TypeREST definition.
-        if isinstance(typedefs,dict) and len(set(typedefs.keys()).intersection(required_keys)) > 0:
+        if isinstance(typedefs, dict) and len(set(typedefs.keys()).intersection(required_keys)) > 0:
             payload = typedefs
         # It isn't in the standard form but is it defined?
         elif typedefs is not None:
@@ -728,7 +747,7 @@ class AtlasClient():
                 )
             payload = {key: val}
         # Did we set any of the xDefs as arguments?
-        elif len( set(kwargs.keys()).intersection(required_keys) ) > 0:
+        elif len(set(kwargs.keys()).intersection(required_keys)) > 0:
             for typeRestKey in required_keys:
                 # Did we specify this key?
                 if typeRestKey in kwargs.keys():
@@ -742,7 +761,7 @@ class AtlasClient():
             )
         return payload
 
-    def upload_typedefs(self, typedefs = None, force_update=False, **kwargs):
+    def upload_typedefs(self, typedefs=None, force_update=False, **kwargs):
         """
         Provides a way to upload a single or multiple type definitions.
         If you provide one type def, it will format the required wrapper
@@ -752,7 +771,7 @@ class AtlasClient():
         category, you can pass the in kwargs `entityDefs`, `classificationDefs`,
         `enumDefs`, `relationshipDefs`, `structDefs` which take in a list of
         dicts or appropriate TypeDef objects.
-        
+
         Otherwise, you can pass in the wrapper yourself (e.g. {"entityDefs":[],
         "relationshipDefs":[]}) by providing that dict to the typedefs
         parameter. If the dict you pass in contains at least one of these Def
@@ -775,7 +794,7 @@ class AtlasClient():
             Set to True if your typedefs contains any existing entities.
         :return: The results of your upload attempt from the Atlas server.
             :rtype: dict
-        
+
         Kwargs:
             :param entityDefs: EntityDefs to upload.
             :type entityDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
@@ -789,7 +808,7 @@ class AtlasClient():
             :type structDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
 
         Returns:
-            
+
         """
         # Should this take a list of type defs and figure out the formatting
         # by itself?
@@ -864,7 +883,8 @@ class AtlasClient():
             # It's a list, so we're assuming it's a list of entities
             # Handles any type of AtlasEntity and mixed batches of dicts
             # and AtlasEntities
-            dict_batch = [e.to_json() if isinstance(e, AtlasEntity) else e for e in batch]
+            dict_batch = [e.to_json() if isinstance(
+                e, AtlasEntity) else e for e in batch]
             payload = {"entities": dict_batch}
         elif isinstance(batch, dict):
             current_keys = list(batch.keys())
@@ -879,7 +899,8 @@ class AtlasClient():
         elif isinstance(batch, AtlasEntity):
             payload = {"entities": [batch.to_json()]}
         else:
-            raise NotImplementedError(f"Uploading type: {type(batch)} is not supported.")
+            raise NotImplementedError(
+                f"Uploading type: {type(batch)} is not supported.")
 
         return payload
 
@@ -914,7 +935,19 @@ class AtlasClient():
 
     def upload_relationship(self, relationship):
         """
-        Upload a relationship json.
+        Upload a AtlasRelationship json. Should take the form of the following::
+
+            {
+                "typeName": "hive_table_columns",
+                "attributes": {},
+                "guid": -100,
+                "end1": {
+                    "guid": assignments["-1"]
+                },
+                "end2": {
+                    "guid": assignments["-5"]
+                    }
+            }
 
         :param dict relationship: The relationship you want to upload.
         :return: The results of your relationship upload.
@@ -937,7 +970,10 @@ class AtlasClient():
 
     def upload_terms(self, batch, force_update=False):
         """
-        Upload terms to your Atlas backed Data Catalog.
+        Upload terms to your Atlas backed Data Catalog. Supports Purview Term
+        Templates by passing in an attributes field with the term template's
+        name as a field within attributes and an object of the required and
+        optional fields.
 
         :param batch: A list of AtlasGlossaryTerm objects to be uploaded.
         :type batch: list(dict)
@@ -960,12 +996,12 @@ class AtlasClient():
 
         return results
 
-    def _search_generator(self, search_params):
+    def _search_generator(self, search_params, starting_offset=0):
         """
         Generator to page through the search query results.
         """
         atlas_endpoint = self.endpoint_url + "/search/advanced"
-        offset = 0
+        offset = starting_offset
 
         while True:
             postSearchResults = requests.post(
@@ -982,13 +1018,15 @@ class AtlasClient():
 
             offset = offset + return_count
             search_params["offset"] = offset
-            try:
-                yield return_values
-            except StopIteration:
-                return
+            
+            for sub_result in return_values:
+                try:
+                    yield sub_result
+                except StopIteration:
+                    return
 
     @PurviewOnly
-    def search_entities(self, query, limit=50, search_filter=None):
+    def search_entities(self, query, limit=50, search_filter=None, starting_offset=0):
         """
         Search entities based on a query and automaticall handles limits and
         offsets to page through results.
@@ -1002,7 +1040,7 @@ class AtlasClient():
             return for each page of the search results.
         :param dict search_filter: A search filter to reduce your results.
         :return: The results of your search as a generator.
-        :rtype: Iterator[list(dict)]
+        :rtype: Iterator(dict)
         """
 
         if limit > 1000 or limit < 1:
@@ -1022,25 +1060,216 @@ class AtlasClient():
             # {"filter": {"typeName": "DataSet", "includeSubTypes": True} }
             search_params.update({"filter": search_filter})
 
-        search_generator = self._search_generator(search_params)
+        search_generator = self._search_generator(search_params, starting_offset=starting_offset)
 
         return search_generator
+
+    def get_entity_lineage(self, guid, depth=3, width=10, direction="BOTH", includeParent=False, getDerivedLineage=False):
+        """
+        Gets lineage info about the specified entity by guid.
+
+        :param str guid: The guid of the entity for which you want to
+            retrieve lineage.
+        :param int depth: The number of hops for lineage
+        :param int width: The number of max expanding width in lineage
+        :param str direction: The direction of the lineage, which could
+            be INPUT, OUTPUT or BOTH.
+        :param bool includeParent: True to include the parent chain in
+            the response
+        :param bool getDerivedLineage: True to include derived lineage in
+            the response
+        :return: A dict representing AtlasLineageInfo with an array
+            of parentRelations and an array of relations
+        :rtype: dict(str, dict)
+        """
+        direction = direction.strip().upper()
+        assert direction in ("BOTH", "INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: BOTH, INPUT, OUTPUT".format(direction)
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/lineage/{guid}"
+
+        getLineageRequest = requests.get(
+            atlas_endpoint,
+            params={"depth": depth, "width": width, "direction": direction, "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
+            headers=self.authentication.get_authentication_headers()
+        )
+        results = self._handle_response(getLineageRequest)
+        return results
 
 
 class PurviewClient(AtlasClient):
     """
-    Provides communication between your application and the Apache Atlas
-    server with your entities and type definitions.
+    Provides communication between your application and the Azure Purview
+    service. Simplifies the requirements for knowing the endpoint url and
+    requires only the Purview account name.
+
+    :param str account_name:
+        Your Purview account name.
+    :param authentication:
+        The method of authentication.
+    :type authentication:
+        :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
     """
 
     def __init__(self, account_name, authentication=None):
-        """
-        :param str account_name:
-            Your Purview account name.
-        :param authentication:
-            The method of authentication.
-        :type authentication:
-            :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-        """
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
         super().__init__(endpoint_url, authentication)
+
+    @PurviewOnly
+    def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
+        """
+        Returns immediate next level lineage info about entity with pagination
+
+        :param str guid: The guid of the entity for which you want to
+            retrieve lineage.
+        :param str direction: The direction of the lineage, which could
+            be INPUT or OUTPUT.
+        :param bool getDerivedLineage: True to include derived lineage in
+            the response
+        :param int offset: The offset for pagination purpose.
+        :param int limit: The page size - by default there is no paging.
+        :return: A dict representing AtlasLineageInfo with an array
+            of parentRelations and an array of relations
+        :rtype: dict(str, dict)
+        """
+        direction = direction.strip().upper()
+        assert direction in ("INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: INPUT, OUTPUT".format(direction)
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/lineage/{guid}/next"
+
+        # TODO: Implement paging with offset and limit
+        getLineageRequest = requests.get(
+            atlas_endpoint,
+            params={"direction": direction, "getDerivedLineage": getDerivedLineage, "offset": offset, "limit": limit},
+            headers=self.authentication.get_authentication_headers()
+        )
+        results = self._handle_response(getLineageRequest)
+        return results
+
+    def import_terms(self, csv_path, glossary_name="Glossary", glossary_guid=None):
+        """
+        Bulk import terms from an existing csv file. If you are using the system
+        default, you must include the following headers:
+        Name,Definition,Status,Related Terms,Synonyms,Acronym,Experts,Stewards
+
+        For custom term templates, additional attributes must include
+        [Attribute][termTemplateName]attributeName as the header.
+
+        :param str csv_path: Path to CSV that will be imported.
+        :param str glossary_name:
+            Name of the glossary. Defaults to 'Glossary'. Not used if
+            glossary_guid is provided.
+        :param str glossary_guid:
+            Guid of the glossary, optional if glossary_name is provided.
+            Otherwise, this parameter takes priority over glossary_name.
+
+        :return:
+            A dict that contains an `id` that you can use in
+            `import_terms_status` to get the status of the import operation.
+        :rtype: dict
+        """
+        results = None
+        if glossary_guid:
+            atlas_endpoint = self.endpoint_url + \
+                f"/glossary/{glossary_guid}/terms/import"
+        elif glossary_name:
+            atlas_endpoint = self.endpoint_url + \
+                f"/glossary/name/{glossary_name}/terms/import"
+        else:
+            raise ValueError(
+                "Either glossary_name or glossary_guid must be defined.")
+
+        headers = self.authentication.get_authentication_headers()
+        # Pop the default of application/json so that request can fill in the
+        # multipart/form-data; boundary=xxxx that is automatically generated
+        # when using the files argument.
+        headers.pop("Content-Type")
+
+        postResp = requests.post(
+            atlas_endpoint,
+            files={'file': ("file", open(csv_path, 'rb'))},
+            headers=headers
+        )
+
+        results = self._handle_response(postResp)
+
+        return results
+
+    @PurviewOnly
+    def import_terms_status(self, operation_guid):
+        """
+        Get the operation status of a glossary term import activity. You get
+        the operation_guid after executing the `import_terms` method and find
+        the `id` field in the response dict/json.
+
+        :param str operation_guid: The id of the import operation.
+        :return: The status of the import operation as a dict. The dict includes
+            a field called `status` that will report back RUNNING, SUCCESS, or
+            FAILED. Other fields include the number of terms detected and
+            number of errors.
+        :rtype: dict
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/terms/import/{operation_guid}"
+
+        postResp = requests.get(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(postResp)
+
+        return results
+
+    @PurviewOnly
+    def export_terms(self, guids, csv_path, glossary_name="Glossary", glossary_guid=None):
+        """
+        :param list(str) guids: List of guids that should be exported as csv.
+        :param str csv_path: Path to CSV that will be imported.
+        :param str glossary_name:
+            Name of the glossary. Defaults to 'Glossary'. Not used if
+            glossary_guid is provided.
+        :param str glossary_guid:
+            Guid of the glossary, optional if glossary_name is provided.
+            Otherwise, this parameter takes priority over glossary_name.
+            Providing glossary_guid is also faster as you avoid a lookup based
+            on glossary_name.
+
+        :return: A csv file is written to the csv_path.
+        :rtype: None
+        """
+        if glossary_guid:
+            # Glossary guid is defined so we don't need to look up the guid
+            pass
+        elif glossary_name:
+            glossary = self.get_glossary(glossary_name)
+            glossary_guid = glossary["guid"]
+        else:
+            raise ValueError(
+                "Either glossary_name or glossary_guid must be defined.")
+
+        results = None
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/{glossary_guid}/terms/export"
+
+        postResp = requests.post(
+            atlas_endpoint,
+            json=guids,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        # Can't use handle response since it expects json
+        try:
+            postResp.raise_for_status()
+        except requests.RequestException as e:
+            if "errorCode" in postResp:
+                raise AtlasException(postResp.text)
+            else:
+                raise requests.RequestException(postResp.text)
+
+        with open(csv_path, 'wb') as fp:
+            fp.write(postResp.content)
+
+        return None

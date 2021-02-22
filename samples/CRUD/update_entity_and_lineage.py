@@ -39,7 +39,7 @@ if __name__ == "__main__":
     #     typeName="Process",
     #     qualified_name="pyapacheatlas://democustomprocess",
     #     inputs=None, # Set to None so no update will occur
-    #     outputs=None, # We will update this with set_outputs below
+    #     outputs=None, # We will update this with .outputs below
     #     guid=-101
     # )
 
@@ -51,9 +51,7 @@ if __name__ == "__main__":
     # )
 
     # # Completely overwrite the outputs
-    # existing_process.set_outputs(
-    #     [ new_output.to_json(minimum=True) ]
-    # )
+    # existing_process.outputs = [ new_output ]
 
     # # Convert the individual entities into json before uploading.
     # results = client.upload_entities(
@@ -70,7 +68,7 @@ if __name__ == "__main__":
         typeName="Process",
         qualified_name="pyapacheatlas://democustomprocess",
         inputs=None,  # Set to None so no update will occur
-        outputs=None,  # We will update this with set_outputs below
+        outputs=None,  # We will update this with .outputs below
         guid=-104
     )
 
@@ -93,12 +91,10 @@ if __name__ == "__main__":
     )
 
     # Add the existing and new output to the dummy process
-    dummy_existing_process.set_outputs(
-        existing_outputs + [one_more_output.to_json(minimum=True)]
-    )
+    dummy_existing_process.outputs = existing_outputs + [one_more_output]
 
     complex_results = client.upload_entities(
-        batch=[dummy_existing_process.to_json(), one_more_output.to_json()]
+        batch=[dummy_existing_process, one_more_output]
     )
 
     print(json.dumps(complex_results, indent=2))

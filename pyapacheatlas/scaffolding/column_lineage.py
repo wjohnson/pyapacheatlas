@@ -3,13 +3,13 @@ from ..core import typedef
 
 def column_lineage_scaffold(datasource,
                             use_column_mapping=False,
-                            column_attributes=None,
-                            table_attributes=None,
-                            table_column_relationship_attributes=None,
-                            column_lineage_attributes=None,
-                            table_process_attributes=None,
-                            column_lineage_process_attributes=None,
-                            table_process_column_lineage_relationship_attributes=None
+                            column_attributes=[],
+                            table_attributes=[],
+                            table_column_relationship_attributes=[],
+                            column_lineage_attributes=[],
+                            table_process_attributes=[],
+                            column_lineage_process_attributes=[],
+                            table_process_column_lineage_relationship_attributes=[]
                             ):
     """
     Create a base set of type definitions that adhere to the Hive Bridge
@@ -58,20 +58,8 @@ def column_lineage_scaffold(datasource,
         name=src_table_columns_typeName,
         attributeDefs=table_column_relationship_attributes,
         relationshipCategory="COMPOSITION",
-        endDef1={
-            "type": table_entity.name,
-            "name": "columns",
-            "isContainer": True,
-            "cardinality": "SET",
-            "isLegacyAttribute": False
-        },
-        endDef2={
-            "type": column_entity.name,
-            "name": "table",
-            "isContainer": False,
-            "cardinality": "SINGLE",
-            "isLegacyAttribute": False
-        }
+        endDef1=typedef.ParentEndDef(name="columns",typeName=table_entity.name),
+        endDef2=typedef.ChildEndDef(name="table",typeName=column_entity.name)
     )
 
     # Define {datasource}_column_lineage
@@ -111,20 +99,12 @@ def column_lineage_scaffold(datasource,
         name="{}_process_column_lineage".format(datasource),
         relationshipCategory="COMPOSITION",
         attributeDefs=table_process_column_lineage_relationship_attributes,
-        endDef1={
-            "type": column_lineage_process_entity.name,
-            "name": "query",
-            "isContainer": False,
-            "cardinality": "SINGLE",
-            "isLegacyAttribute": True
-        },
-        endDef2={
-            "type": table_process_entity.name,
-            "name": "columnLineages",
-            "isContainer": True,
-            "cardinality": "SET",
-            "isLegacyAttribute": False
-        }
+        endDef1=typedef.ChildEndDef(name="query",
+            typeName=column_lineage_process_entity.name,
+            isLegacyAttribute=True),
+        endDef2=typedef.ParentEndDef(name="columnLineages",
+            typeName=table_process_entity.name,
+            isLegacyAttribute=False)
     )
 
     # Output composite entity

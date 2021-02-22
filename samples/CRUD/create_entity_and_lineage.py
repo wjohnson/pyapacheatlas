@@ -56,14 +56,14 @@ if __name__ == "__main__":
         name="sample process",
         typeName="Process",
         qualified_name="pyapacheatlas://democustomprocess",
-        inputs=[input01.to_json(minimum=True)],
-        outputs=[output01.to_json(minimum=True)],
+        inputs=[input01],
+        outputs=[output01],
         guid=-102
     )
 
     # Convert the individual entities into json before uploading.
     results = client.upload_entities(
-        batch=[output01.to_json(), input01.to_json(), process.to_json()]
+        batch=[output01, input01, process]
     )
 
     print(json.dumps(results, indent=2))

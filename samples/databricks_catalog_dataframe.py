@@ -19,7 +19,7 @@ oauth = ServicePrincipalAuthentication(
         client_secret=os.environ.get("CLIENT_SECRET", client_secret)
     )
 client = PurviewClient(
-    account_name = os.environ.get("PURVIEW_NAME", "purview_account_name"),
+    account_name = os.environ.get("PURVIEW_NAME", purview_account_name),
     authentication=oauth
 )
 guid = GuidTracker()
@@ -33,7 +33,7 @@ guid = GuidTracker()
 type_spark_df = EntityTypeDef(
   name="custom_spark_dataframe",
   attributeDefs=[
-    AtlasAttributeDef(name="format").to_json()
+    AtlasAttributeDef(name="format")
   ],
   superTypes = ["DataSet"],
   options = {"schemaElementAttribute":"columns"}
@@ -41,15 +41,15 @@ type_spark_df = EntityTypeDef(
 type_spark_columns = EntityTypeDef(
   name="custom_spark_dataframe_column",
   attributeDefs=[
-    AtlasAttributeDef(name="data_type").to_json()
+    AtlasAttributeDef(name="data_type")
   ],
   superTypes = ["DataSet"],
 )
 type_spark_job = EntityTypeDef(
   name="custom_spark_job_process",
   attributeDefs=[
-    AtlasAttributeDef(name="job_type",isOptional=False).to_json(),
-    AtlasAttributeDef(name="schedule",defaultValue="adHoc").to_json()
+    AtlasAttributeDef(name="job_type",isOptional=False),
+    AtlasAttributeDef(name="schedule",defaultValue="adHoc")
   ],
   superTypes = ["Process"]
 )
@@ -74,9 +74,8 @@ spark_column_to_df_relationship = RelationshipTypeDef(
 )
 
 typedef_results = client.upload_typedefs(
-  {"entityDefs":[type_spark_df.to_json(), type_spark_columns.to_json(), type_spark_job.to_json() ],
-   "relationshipDefs":[spark_column_to_df_relationship.to_json()]
-  }, 
+  entityDefs = [type_spark_df, type_spark_columns, type_spark_job ],
+  relationshipDefs = [spark_column_to_df_relationship],
   force_update=True)
 print(typedef_results)
 
@@ -118,7 +117,7 @@ process = AtlasProcess(
   typeName="custom_spark_job_process",
   guid=guid.get_guid(),
   attributes = {"job_type":"notebook"},
-  inputs = [atlas_input_df.to_json(minimum=True)],
+  inputs = [atlas_input_df],
   outputs = [] # No outputs for this demo, but otherwise, repeat what you did you the input dataframe.
 )
 
@@ -141,7 +140,7 @@ for column in df.schema:
 # COMMAND ----------
 
 # Prepare all the entities as a batch to be uploaded.
-batch = [process.to_json(), atlas_input_df.to_json()] + [c.to_json() for c in atlas_input_df_columns]
+batch = [process, atlas_input_df] + atlas_input_df_columns
 
 # COMMAND ----------
 

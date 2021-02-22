@@ -54,13 +54,13 @@ auth = ServicePrincipalAuthentication(
 
 # Create a client to connect to your service.
 client = PurviewClient(
-    account_name = "Your-Purivew-Account-Name",
+    account_name = "Your-Purview-Account-Name",
     authentication = auth
 )
 ```
 
 For users wanting to use the `AtlasClient` and Purview, the Atlas Endpoint for
-Purview is `https://{your_purivew_name}.catalog.purview.azure.com/api/atlas/v2`.
+Purview is `https://{your_purview_name}.catalog.purview.azure.com/api/atlas/v2`.
 The PurviewClient abstracts away having to know the endpoint url and is
 the better way to use this package with Purview.
 
@@ -69,7 +69,7 @@ the better way to use this package with Purview.
 You can also create your own entities by hand with the helper `AtlasEntity` class.  Convert it with `to_json` to prepare it for upload.
 
 ```
-from pyapacheatalas.core import AtlasEntity
+from pyapacheatlas.core import AtlasEntity
 
 # Get All Type Defs
 all_type_defs = client.get_all_typedefs()
