@@ -9,7 +9,7 @@ from pyapacheatlas.core.typedef import EntityTypeDef
 if __name__ == "__main__":
     """
     This sample provides shows how to create custom type definitions and
-    how to creates entities using the custom type.
+    how to creates entities using a custom type.
     """
     
     oauth = ServicePrincipalAuthentication(
@@ -25,9 +25,9 @@ if __name__ == "__main__":
     edef = EntityTypeDef(
         name="pyapacheatlas_custom_type",
         attributeDefs=[
-            AtlasAttributeDef("column1", typeName="string").to_json(),
-            AtlasAttributeDef("column2", typeName="int").to_json(),
-            AtlasAttributeDef("column3", typeName="array<string>").to_json(),
+            AtlasAttributeDef("column1", typeName="string"),
+            AtlasAttributeDef("column2", typeName="int"),
+            AtlasAttributeDef("column3", typeName="array<string>", cardinality="SET"),
         ],
         superTypes=["DataSet"]
     )

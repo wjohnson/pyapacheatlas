@@ -37,7 +37,7 @@ if __name__ == "__main__":
         name="pyapacheatlas_demo_column",
         superTypes=["DataSet"],
         attributeDefs=[
-            AtlasAttributeDef("data_type", typeName="string").to_json()
+            AtlasAttributeDef("data_type", typeName="string", isOptional=False)
         ]
     )
 
@@ -98,9 +98,6 @@ if __name__ == "__main__":
             "data_type": "string",
             "description": "This is the first column."
         },
-        relationshipAttributes={
-            "table": table_entity.to_json(minimum=True)
-        },
         guid=gt.get_guid()
     )
     column02 = AtlasEntity(
@@ -111,12 +108,14 @@ if __name__ == "__main__":
             "data_type": "int",
             "description": "This is the second column."
         },
-        relationshipAttributes={
-            "table": table_entity.to_json(minimum=True)
-        },
         guid=gt.get_guid()
     )
+    
+    # Add the "table" relationship attribute to your column entities
+    column01.addRelationship(table=table_entity)
+    column02.addRelationship(table=table_entity)
 
+    
     upload_results = client.upload_entities(
         batch=[table_entity, column01, column02]
     )
