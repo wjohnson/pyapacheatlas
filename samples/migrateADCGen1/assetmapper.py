@@ -1,4 +1,7 @@
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
+import argparse
+from collections import Counter
+
 import json
 
 from pyapacheatlas.core import AtlasEntity
@@ -19,62 +22,83 @@ class AssetFactory():
 
 class AssetMapper(ABC):
 
-    def __init__(self, asset):
+    def __init__(self, asset, typeName="DataSet"):
+        self.typeName = typeName
         self.asset = asset["content"]
+        self.annotations = asset["content"].get("annotations", {})
+        self.friendlyName = self.annotations.get("friendlyName", None) or self.asset.get("properties", {}).get("name", None)
+        # This needs to be improved to get the real term ids
+        self.term_tags = [t.get("properties", {}).get("termId", "") for t in self.annotations.get("termTags", [])]
+        self.experts = [e.get("properties", {}).get("expert", {}).get("objectId", "") for e in self.annotations.get("experts", [])]
+        self.tags = []
+        self.columnTermTags = []
+        for ct in self.annotations.get("columnTermTags", []):
+            props = ct.get("properties", {})
+            columnName = props.get("columnName", "")
+            termId = props.get("termId", "")
+            self.columnTermTags.append( (columnName, termId) )
 
-    @property
-    def annotations(self):
-        # Relevant Annotations
-        ## columnDescriptions
-        ## termTags
-        ## tags
-        ## schema.properties.columns
-        ## friendlyName 
-        return self.asset["annotations"]
+    @abstractmethod
+    def qualified_name(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def column_entities(self):
+        # Need to take into account...
+        # columnTermTags
+        raise NotImplementedError
+
+    def relationship(self):
+        # term_tags
+        relationships = []
+        for term in self.term_tags:
+            out = {
+                "typeName": "AtlasGlossarySemanticAssignment",
+                "attributes": {},
+                "end1": {
+                    "typeName": "AtlasGlossaryTerm",
+                    "uniqueAttributes": {
+                        "qualifiedName": term
+                    }
+                },
+                "end2": {
+                    "typeName": self.typeName,
+                    "uniqueAttributes": {
+                        "qualifiedName": self.qualified_name()
+                    }
+                }
+            }
+            relationships.append(out)
+        
+        return relationships
     
-    @property
-    def tags(self):
-        return self.annotations.get("tags", [])
-    
-    @property
-    def properties(self):
-        return self.asset["properties"]
-    
-    @property
-    def name(self):
-        return self.properties["name"]
+
+    def entity(self):
+        # Need to take into account...
+        # experts
+        # friendlyName
+        expert_object = None
+        if len(self.experts) > 0:
+            expert_object = {
+                "Expert": [{"id": aadObjectid} for aadObjectid in self.experts],
+                "Owner": []
+            }
+
+        output = AtlasEntity(
+            name= self.friendlyName or self.qualified_name(),
+            typeName=typeName,
+            qualified_name=self.qualified_name(),
+            guid=None,
+            contacts = expert_object
+        )
+        return output
+
 
 class SqlServerTableMapper(AssetMapper):
-    # columnDescriptions
-    def _define_column_descriptions(self):
-        # Check if columnDescriptions is defined
-        # Get schema
-        # Create objects
-        # Apply description
-        return None
-    # documentation
-    # termTags
-    def entities(self):
-        output = []
-        server = AtlasEntity()
-        database = AtlasEntity()
-        schema = AtlasEntity()
-        table = AtlasEntity(
-            name= self.name,
-            typeName="azure_sql_table",
-            qualified_name=self.qualified_name(),
-            guid=None
-        )
-        columns = []
-        for col in self.schema:
-            columns.append(
-                AtlasEntity()
-            )
-        return 
-    # schema
-    # tags
-    # friendlyName
-    # descriptions
+    
+    def entity(self, typeName="azure_sql_table"):
+        return super.entity(typeName="azure_sql_table")
+    
     def __init__(self, asset):
         super().__init__(asset)
         _address = self.properties["dsl"]["address"]
@@ -95,17 +119,41 @@ class SqlServerTableMapper(AssetMapper):
         return output
 
 if __name__ == "__main__":
-    with open("./test4.json", 'r') as fp:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--assets")
+    parser.add_argument("--analysis", action="store_true")
+    args, _ = parser.parse_known_args()
+
+    with open(args.assets, 'r') as fp:
         data = json.load(fp)
+
+    if args.analysis:
+        output = dict()
+        for d in data:
+            content = d.get("content", {})
+            ds = content.get("properties", {}).get("dataSource", {})
+            sourceType = ds.get("sourceType","SourceNotFound")
+            objectType = ds.get("objectType","TypeNotFound")
+            key = sourceType + "|" + objectType
+
+            freq = output.get(key, Counter())
+
+            annotation_keys = Counter(list(content.get("annotations", {}).keys()))
+
+            output[key] = freq + annotation_keys
+        # Out of loop
+        output = {k: dict(v) for k,v in output.items()}
+
+
+    else:
+        output = []
+        for d in data:
+            try:
+                _temp = AssetFactory.map_asset(d)
+                output.append(_temp)
+            except ValueError as e:
+                print(e)
+                pass
     
-    output = []
-    for d in data:
-        try:
-            _temp = AssetFactory.map_asset(d)
-            output.append(_temp)
-        except ValueError as e:
-            print(e)
-            pass
-    
-    print([o.annotations.keys() for o in output])
-        
+    print(json.dumps(output,indent=2))
+            

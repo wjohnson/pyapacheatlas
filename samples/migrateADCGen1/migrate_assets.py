@@ -1,13 +1,15 @@
+import argparse
 import configparser
 import csv
 import json
-import time
 import os
+import time
 
 import requests
 
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core.client import PurviewClient
+
 
 class SearchURI():
 
@@ -18,27 +20,26 @@ class SearchURI():
         self.search_terms = search_terms
         self.start_page = start_page
         self.count = count
-    
+
     @property
     def uri(self):
         output_uri = (
-            f"https://api.azuredatacatalog.com/catalogs/{self.catalog_name}"+
-            f"/search/search?api-version={self.api_version}&"+
-            f"searchTerms={self.search_terms}&startPage={self.start_page}&"+
+            f"https://api.azuredatacatalog.com/catalogs/{self.catalog_name}" +
+            f"/search/search?api-version={self.api_version}&" +
+            f"searchTerms={self.search_terms}&startPage={self.start_page}&" +
             f"count={self.count}&view=DataSource"
         )
         return output_uri
-    
+
     def add_page(self):
         self.start_page = self.start_page + 1
 
 
-def download_gen1_assets(config, search_terms = "*", count=100, max_iter = 1000):
+def download_gen1_assets(config, search_terms="*", count=100, max_iter=1000):
     catalog_name = config["ADCGen1Client"]["CATALOG_NAME"]
     glossary_name = config["ADCGen1Client"]["GLOSSARY_NAME"]
     api_version = "2016-03-30"
     start_page = 1
-
 
     auth = ServicePrincipalAuthentication(
         tenant_id=config["ADCGen1Client"]["TENANT_ID"],
@@ -74,8 +75,13 @@ def download_gen1_assets(config, search_terms = "*", count=100, max_iter = 1000)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config", default="./samples/migrateADCGen1/config.ini")
+    args, _ = parser.parse_known_args()
+
     config = configparser.ConfigParser()
-    config.read("./samples/migrateADCGen1/config.ini")
+    config.read(args.config)
 
     # Configure your Purview Authentication
     # oauth = ServicePrincipalAuthentication(
@@ -90,5 +96,5 @@ if __name__ == "__main__":
 
     # Download the Gen 1 Terms to a json document
     results = download_gen1_assets(config, count=1)
-    
+
     print(json.dumps(results, indent=2))
