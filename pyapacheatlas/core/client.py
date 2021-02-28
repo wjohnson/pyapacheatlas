@@ -171,6 +171,71 @@ class AtlasClient():
 
         return results
 
+    def partial_update_entity(self, guid=None, typeName=None, qualifiedName=None, attributes={}):
+        """
+        Partially update an entity without having to construct the entire object
+        and its subsequent required attributes. Using guid, you can update a
+        single attribute. Using typeName and qualifiedName, you can update
+        multiple attributes.
+
+        :param guid:
+            The guid for the entity you want to update. Not used if using
+            typeName and qualifiedName.
+        :type guid: str
+        :param qualifiedName:
+            The qualified name of the entity you want to update. Must provide
+            typeName if using qualifiedName. Ignored if using guid parameter.
+        :type qualifiedName: str
+        :param str typeName:
+            The type name of the entity you want to update. Must provide
+            qualifiedName if using typeName. Ignored if using guid parameter.
+        :return: The results of your entity update.
+        :rtype: dict
+        """
+
+        if guid and len(attributes) == 1:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/guid/{guid}"
+            attribute_name = list(attributes.keys())[0]
+            attribute_value = attributes[attribute_name]
+            putEntity = requests.put(
+                atlas_endpoint,
+                json=attribute_value,
+                params={"name": attribute_name},
+                headers=self.authentication.get_authentication_headers()
+            )
+        # TODO: Multiple attributes could be supported for guid by looking up
+        # the qualified name and type and then re-running the command with
+        # those parameters.
+        elif guid:
+            raise ValueError(
+                "When using guid, attributes can only contain one key and value.")
+        elif typeName and qualifiedName:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/uniqueAttribute/type/{typeName}"
+            # You have to get the entire existing entity and update its attributes
+            get_response = self.get_entity(
+                qualifiedName=qualifiedName, typeName=typeName)
+            entity = get_response["entities"][0]
+            entity["attributes"].update(attributes)
+            # Construct it as an AtlasEntityWithInfo
+            entityInfo = {"entity": entity,
+                          "referredEntities": get_response["referredEntities"]}
+
+            putEntity = requests.put(
+                atlas_endpoint,
+                json=entityInfo,
+                params={"attr:qualifiedName": qualifiedName},
+                headers=self.authentication.get_authentication_headers()
+            )
+        else:
+            raise ValueError(
+                "The provided combination of arguments is not supported. Either provide a guid or type name and qualified name")
+
+        results = self._handle_response(putEntity)
+
+        return results
+
     def get_entity_classification(self, guid, classificationName):
         """
         Retrieve a specific entity from the given entity's guid.
@@ -1018,7 +1083,7 @@ class AtlasClient():
 
             offset = offset + return_count
             search_params["offset"] = offset
-            
+
             for sub_result in return_values:
                 try:
                     yield sub_result
@@ -1060,7 +1125,8 @@ class AtlasClient():
             # {"filter": {"typeName": "DataSet", "includeSubTypes": True} }
             search_params.update({"filter": search_filter})
 
-        search_generator = self._search_generator(search_params, starting_offset=starting_offset)
+        search_generator = self._search_generator(
+            search_params, starting_offset=starting_offset)
 
         return search_generator
 
@@ -1083,14 +1149,16 @@ class AtlasClient():
         :rtype: dict(str, dict)
         """
         direction = direction.strip().upper()
-        assert direction in ("BOTH", "INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: BOTH, INPUT, OUTPUT".format(direction)
+        assert direction in (
+            "BOTH", "INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: BOTH, INPUT, OUTPUT".format(direction)
 
         atlas_endpoint = self.endpoint_url + \
             f"/lineage/{guid}"
 
         getLineageRequest = requests.get(
             atlas_endpoint,
-            params={"depth": depth, "width": width, "direction": direction, "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
+            params={"depth": depth, "width": width, "direction": direction,
+                    "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
             headers=self.authentication.get_authentication_headers()
         )
         results = self._handle_response(getLineageRequest)
@@ -1133,7 +1201,8 @@ class PurviewClient(AtlasClient):
         :rtype: dict(str, dict)
         """
         direction = direction.strip().upper()
-        assert direction in ("INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: INPUT, OUTPUT".format(direction)
+        assert direction in (
+            "INPUT", "OUTPUT"), "Invalid direction '{}'.  Valid options are: INPUT, OUTPUT".format(direction)
 
         atlas_endpoint = self.endpoint_url + \
             f"/lineage/{guid}/next"
@@ -1141,7 +1210,8 @@ class PurviewClient(AtlasClient):
         # TODO: Implement paging with offset and limit
         getLineageRequest = requests.get(
             atlas_endpoint,
-            params={"direction": direction, "getDerivedLineage": getDerivedLineage, "offset": offset, "limit": limit},
+            params={"direction": direction, "getDerivedLineage": getDerivedLineage,
+                    "offset": offset, "limit": limit},
             headers=self.authentication.get_authentication_headers()
         )
         results = self._handle_response(getLineageRequest)
