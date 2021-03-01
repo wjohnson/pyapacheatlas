@@ -1,26 +1,9 @@
 from abc import ABC, abstractmethod
 import argparse
 from collections import Counter
-
 import json
 
 from pyapacheatlas.core import AtlasEntity
-from pyapacheatlas.core.util import GuidTracker
-
-
-class AssetFactory():
-    @staticmethod
-    def map_asset(asset, termMap):
-        dataSource = asset.get("content", {}).get(
-            "properties", {}).get("dataSource", {})
-        sourceType = dataSource.get("sourceType", "").lower()
-        objectType = dataSource.get("objectType", "").lower()
-        if sourceType == "" or objectType == "":
-            raise ValueError(f"DataSource not supported: {dataSource}")
-        if sourceType == "sql server" and objectType == "table":
-            return SqlServerTableMapper(asset, termMap)
-        else:
-            raise ValueError(f"DataSource not supported: {dataSource}")
 
 
 class AssetMapper(ABC):
@@ -217,77 +200,32 @@ class AssetMapper(ABC):
         return output
 
 
-class SqlServerTableMapper(AssetMapper):
-
-    def __init__(self, asset, terms, typeName="azure_sql_table", columnTypeName="azure_sql_column"):
-        super().__init__(asset, terms, typeName, columnTypeName)
-        _address = self.asset["properties"]["dsl"]["address"]
-        self.server = _address["server"]
-        self.database = _address["database"]
-        self.schema = _address["schema"]
-        self.table = _address["object"]
-
-    def entity(self, guid):
-        return super().entity(guid)
-
-    def qualified_name(self, level="table"):
-        output = f"mssql://{self.server}"
-        if level in ["database", "schema", "table"]:
-            output = output + "/" + self.database
-        if level in ["schema", "table"]:
-            output = output + "/" + self.schema
-        if level in ["table"]:
-            output = output + "/" + self.table
-
-        return output
-
-    def column_qualified_name_pattern(self, columnName):
-        return self.qualified_name() + "#" + columnName
-
-
 if __name__ == "__main__":
+    """
+    This is used for analysis of a given set of assets.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--assets")
-    parser.add_argument("--terms")
-    parser.add_argument("--analysis", action="store_true")
     args, _ = parser.parse_known_args()
-
-    with open(args.terms, 'r') as fp:
-        terms = json.load(fp)
-        termMapping = {t["id"]: t["name"]+"@Glossary" for t in terms}
 
     with open(args.assets, 'r') as fp:
         data = json.load(fp)
 
-    gt = GuidTracker()
+    output = dict()
+    for d in data:
+        content = d.get("content", {})
+        ds = content.get("properties", {}).get("dataSource", {})
+        sourceType = ds.get("sourceType", "SourceNotFound")
+        objectType = ds.get("objectType", "TypeNotFound")
+        key = sourceType + "|" + objectType
 
-    if args.analysis:
-        output = dict()
-        for d in data:
-            content = d.get("content", {})
-            ds = content.get("properties", {}).get("dataSource", {})
-            sourceType = ds.get("sourceType", "SourceNotFound")
-            objectType = ds.get("objectType", "TypeNotFound")
-            key = sourceType + "|" + objectType
+        freq = output.get(key, Counter())
 
-            freq = output.get(key, Counter())
+        annotation_keys = Counter(
+            list(content.get("annotations", {}).keys()))
 
-            annotation_keys = Counter(
-                list(content.get("annotations", {}).keys()))
+        output[key] = freq + annotation_keys
+    # Out of loop
+    output = {k: dict(v) for k, v in output.items()}
 
-            output[key] = freq + annotation_keys
-        # Out of loop
-        output = {k: dict(v) for k, v in output.items()}
-
-    else:
-        output = []
-        for d in data:
-            try:
-                _temp = AssetFactory.map_asset(d, termMapping)
-                output.append(_temp)
-            except ValueError as e:
-                print(e)
-                pass
-
-        test = output[0]
-        print(output)
+    print(output)

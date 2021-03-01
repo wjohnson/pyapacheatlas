@@ -7,9 +7,11 @@ import time
 
 import requests
 
+from mappers import AssetFactory
+
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core.client import PurviewClient
-
+from pyapacheatlas.core.util import GuidTracker
 
 class SearchURI():
 
@@ -50,11 +52,7 @@ def download_gen1_assets(config, search_terms="*", count=100, max_iter=1000):
     # Need to update the resource we're authenticating against
     auth.data.update({"resource": "https://api.azuredatacatalog.com"})
 
-    # This endpoint provides you with all glossary terms in ADC Gen1
-
     search_uri = SearchURI(catalog_name, api_version)
-
-    #search_uri = f"https://api.azuredatacatalog.com/catalogs/{catalog_name}/search/search?api-version={api_version}&searchTerms={search_terms}&startPage={start_page}&count={count}&view=DataSource"
 
     output = []
     total_iter = 0
@@ -75,13 +73,31 @@ def download_gen1_assets(config, search_terms="*", count=100, max_iter=1000):
 
 
 if __name__ == "__main__":
+    """
+    The defaults assume that you are running this from samples/migrateADCGen1.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", default="./samples/migrateADCGen1/config.ini")
+        "--config", default="./config.ini")
+    parser.add_argument("--assets")
+    parser.add_argument("--terms")
     args, _ = parser.parse_known_args()
+
+    gt = GuidTracker()
 
     config = configparser.ConfigParser()
     config.read(args.config)
+
+    with open(args.terms, 'r') as fp:
+        terms = json.load(fp)
+        termMapping = {t["id"]: t["name"]+"@Glossary" for t in terms}
+
+    adc_assets = []
+    if args.assets:
+        with open(args.assets, 'r') as fp:
+            adc_assets = json.load(fp)
+    else:
+        adc_assets = download_gen1_assets(config, count=1)
 
     # Configure your Purview Authentication
     # oauth = ServicePrincipalAuthentication(
@@ -94,7 +110,15 @@ if __name__ == "__main__":
     #     authentication=oauth
     # )
 
-    # Download the Gen 1 Terms to a json document
-    results = download_gen1_assets(config, count=1)
+    mappers = []
+    for asset in adc_assets:
+        try:
+            mapper = AssetFactory.map_asset(asset, termMapping)
+            mappers.append(mapper)
+        except ValueError as e:
+            print(e)
+        
+    print(f"Started with {len(adc_assets)} and ended up with {len(mappers)} processed.")
 
-    print(json.dumps(results, indent=2))
+    for mapper in mappers:
+        print(mapper.qualified_name())
