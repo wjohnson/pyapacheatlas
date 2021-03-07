@@ -40,9 +40,10 @@ class AtlasEntity():
         if "description" in kwargs:
             self.attributes.update({"description": kwargs["description"]})
         self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
-        self.classifications = kwargs.get("classifications", [])
+        self.classifications = kwargs.get("classifications", None)
         # This isn't implemented in Apache Atlas, so being cautious
         if "contacts" in kwargs:
+            # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
             self.contacts = kwargs.get("contacts", {})
 
     def __eq__(self, other):
@@ -155,7 +156,7 @@ class AtlasEntity():
         :return: The json representation of this atlas entity.
         :rtype: dict
         """
-        if minimum:
+        if minimum and self.guid is not None:
             output = {
                 "typeName": self.typeName,
                 "guid": self.guid,
@@ -169,7 +170,7 @@ class AtlasEntity():
                 "relationshipAttributes": self.relationshipAttributes
             }
             # Add ins for optional top level attributes
-            if len(self.classifications) > 0:
+            if self.classifications:
                 output.update({"classifications": self.classifications})
             if hasattr(self, 'contacts'):
                 output.update({"contacts": self.contacts})
@@ -202,7 +203,8 @@ class AtlasEntity():
             {k: v for k, v in other.attributes.items()
                 if k in _new_keys_in_other})
         # TODO: Handle duplicate classifications
-        self.classifications.extend(other.classifications)
+        if other.classifications:
+            self.classifications = (self.classifications or []).extend(self.classifications)
 
 
 class AtlasProcess(AtlasEntity):
