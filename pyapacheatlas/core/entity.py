@@ -147,12 +147,21 @@ class AtlasEntity():
 
     def to_json(self, minimum=False):
         """
-        Convert this atlas entity to a dict / json.
+        Convert this atlas entity to a dict / json. Returns typename, guid,
+        and qualified name if guid is not none. If guid is None then this will
+        return typename, uniqueAttributes with a sub object of qualified name.
+
+        By specifying a guid, this method assumes you will be uploading the
+        entity (and want or at least willing to accept changes to the entity).
+        By NOT specifying a guid, this assumes you will be using the entity as
+        a reference used by another one in the upload (e.g. creating a process
+        entity that uses an existing entity as an input or output).
 
         :param bool minimum: If True, returns only the
-            type name, qualified name, and guid of the entity.  Useful
-            for being referenced in other entities like process inputs
-            and outputs.
+            type name, qualified name, and guid of the entity (when guid is
+            defined). If True and guid is None, returns typeName,
+            uniqueAttributes and qualifiedName. If False, return the full entity
+            and its attributes and relationship attributes.
         :return: The json representation of this atlas entity.
         :rtype: dict
         """
@@ -161,6 +170,13 @@ class AtlasEntity():
                 "typeName": self.typeName,
                 "guid": self.guid,
                 "qualifiedName": self.attributes["qualifiedName"]
+            }
+        elif minimum and self.guid is None:
+            output = {
+                "typeName": self.typeName,
+                "uniqueAttributes": {
+                    "qualifiedName": self.qualifiedName
+                }
             }
         else:
             output = {

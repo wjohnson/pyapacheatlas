@@ -20,24 +20,23 @@ client = PurviewClient(
 def test_set_relationship_different_ways():
 
     ae = AtlasEntity("rel01","hive_table", "tests://rel01", guid=-1)
-    c1 = AtlasEntity("rel01#01", "hive_column", "tests://rel01#c", guid=-2, attributes={"type":"str"})
-    c2 = AtlasEntity("rel01#02", "hive_column", "tests://rel02#c", guid=-3, attributes={"type":"str"})
-    c3 = AtlasEntity("rel01#03", "hive_column", "tests://rel03#c", guid=-4, attributes={"type":"str"})
-    c4 = AtlasEntity("rel01#04", "hive_column", "tests://rel04#c", guid=-5, attributes={"type":"str"})
+    c1 = AtlasEntity("rel01#01", "hive_column", "tests://rel01#01", guid=-2, attributes={"type":"str"})
+    c2 = AtlasEntity("rel01#02", "hive_column", "tests://rel01#02", guid=-3, attributes={"type":"str"})
+    c3 = AtlasEntity("rel01#03", "hive_column", "tests://rel01#03", guid=-4, attributes={"type":"str"})
+    c4 = AtlasEntity("rel01#04", "hive_column", "tests://rel01#04", guid=-5, attributes={"type":"str"})
 
     # Add c1 as the only relationship
-    ae.addRelationship(columns=[c1.to_json(minimum=True)])
+    ae.addRelationship(columns=[c1.to_json(minimum=True), c2.to_json(minimum=True)])
 
-    c2.relationshipAttributes.update({"table": ae.to_json(minimum=True) })
     c3.addRelationship(table = ae)
 
     assignments = client.upload_entities([ae, c1, c2, c3, c4])["guidAssignments"]
     try:
         live_table = client.get_entity(guid=assignments["-1"])["entities"][0]
         
-        # Should have two attributes because one is from the table having the
-        # relationship defined as an array of columns and the second two from
-        # the column's having the table relationshipAttribute defined on them.
+        # Should have three attributes because two are from the table having the
+        # relationship defined as an array of columns and the third is from
+        # the column having the table relationshipAttribute defined on them.
         assert(len(live_table["relationshipAttributes"]["columns"]) == 3)
 
         relationship = {
@@ -57,6 +56,7 @@ def test_set_relationship_different_ways():
         relation_upload = client.upload_relationship(relationship)
         # Check that we have one more relationship
         # There are caching issues here :-(
+        time.sleep(10)
         live_table_post_relationship = client.get_entity(guid=assignments["-1"])["entities"][0]
         assert(len(live_table["relationshipAttributes"]["columns"]) == 4)
 
