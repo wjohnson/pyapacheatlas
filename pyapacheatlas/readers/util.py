@@ -11,7 +11,10 @@ def string_to_classification(string, sep=";"):
     if string is None:
         return []
     # TODO: How do we bring in attributes if they're required?
-    results = [{"typeName": s.strip(), "attributes": {}}
+    # Defaulting to NOT propagate the classification downstream.
+    # Advanced users may decide to parse the classifications and update the
+    # propagation themselves.
+    results = [{"typeName": s.strip(), "attributes": {}, "propagate": False}
                for s in string.split(sep) if s.strip() != ""]
     return results
 

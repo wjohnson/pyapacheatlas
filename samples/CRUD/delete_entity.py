@@ -34,7 +34,6 @@ if __name__ == "__main__":
     )
 
     for entity in entities.get("entities"):
-        response = PurviewClient.delete_entity(guid=entity["guid"])
-        guid = response["guid"]
+        guid = entity["guid"]
         delete_response = client.delete_entity(guid=guid)
         print(json.dumps(delete_response, indent=2))

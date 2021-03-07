@@ -3,7 +3,7 @@ import os
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read("./samples/migrateADC/config.ini")
+    config.read("./samples/migratePurview/config.ini")
 
     folders = [
         config["Default"]["RootFolder"], config["Default"]["EntitiesFolder"],
