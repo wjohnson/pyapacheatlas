@@ -177,23 +177,25 @@ class AssetMapper(ABC):
         # experts
         # friendlyName
         # description
-        expert_object = None
-        # KNOWN ISSUE: This will cause us to overwrite existing experts and
-        # owners. No way around this because Atlas doesn't support updates to
-        # complex types.
-        if len(self.experts) > 0:
-            expert_object = {
-                "Expert": [{"id": aadObjectid} for aadObjectid in self.experts],
-                "Owner": []
-            }
-
         output = AtlasEntity(
             name=self.friendlyName or self.qualified_name(),
             typeName=self.typeName,
             qualified_name=self.qualified_name(),
             guid=guid,
-            contacts=expert_object
         )
+        
+        expert_object = None
+        # KNOWN ISSUE: This will cause us to overwrite existing experts and
+        # owners. No way around this because Atlas doesn't support updates to
+        # complex types.
+        
+        if len(self.experts) > 0:
+            expert_object = {
+                "Expert": [{"id": aadObjectid} for aadObjectid in self.experts],
+                "Owner": []
+            }
+            output.contacts = expert_object
+
         if self.description:
             output.attributes.update({"description": self.description})
 
