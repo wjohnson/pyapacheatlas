@@ -178,3 +178,35 @@ def test_entityDefs_warns_with_extra_params():
     # Assert that a UserWarning occurs when adding an extra attribute
     pytest.warns(UserWarning, reader.parse_entity_defs,
                  **{"json_rows": inputData})
+
+def test_bulk_entity_with_experts_owners():
+    rc =ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"typeName": "demoType", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "experts": "a;b;", "owners":""
+         },
+        {"typeName": "demoType", "name": "entityNameGHI",
+         "qualifiedName": "qualifiedNameofEntityNameGHI", "classifications": None,
+         "experts": "a;b;", "owners":"c;d"
+         },
+        {"typeName": "demoType", "name": "entityNameJKL",
+         "qualifiedName": "qualifiedNameofEntityNameJKL", "classifications": None
+         }
+    ]
+
+    results = reader.parse_bulk_entities(json_rows)
+
+    assert("contacts" in results["entities"][0])
+    exp_only = results["entities"][0]["contacts"]
+    both = results["entities"][1]["contacts"]
+    no_contacts = results["entities"][2]
+
+    assert(len(exp_only["Owner"]) == 0)
+    assert(len(exp_only["Expert"]) == 2)
+    assert(len(both["Owner"]) == 2)
+    assert(len(both["Expert"]) == 2)
+    assert("contacts" not in no_contacts)
+    

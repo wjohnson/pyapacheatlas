@@ -142,7 +142,7 @@ class Reader(LineageMixIn):
         # For each row,
         # Extract the
         # Extract any additional attributes
-        req_attribs = ["typeName", "name", "qualifiedName", "classifications"]
+        req_attribs = ["typeName", "name", "qualifiedName", "classifications", "owners", "experts"]
         existing_entities = OrderedDict()
 
         for row in json_rows:
@@ -170,6 +170,15 @@ class Reader(LineageMixIn):
                 ),
                 relationshipAttributes=_attributes["relationshipAttributes"]
             )
+            if "experts" in row or "owners" in row and len( row.get("experts", []) + row.get("owners", []) ) > 0:
+                experts = []
+                owners = []
+                if len(row.get("experts", []) or [])>0:
+                    experts = [{"id":e} for e in row.get("experts", "").split(self.config.value_separator) if e != '']
+                if len(row.get("owners", []) or [])>0:
+                    owners = [{"id":o} for o in row.get("owners", "").split(self.config.value_separator) if o != '']
+                entity.contacts = {"Expert": experts, "Owner": owners }
+
             existing_entities.update({row["qualifiedName"]: entity})
 
         output = {"entities": [e.to_json()
