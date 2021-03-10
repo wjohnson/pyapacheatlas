@@ -1,11 +1,8 @@
 import sys
 sys.path.append("./")
 
-from mappers.hive import HiveTableMapper
 from mappers.hive import HiveDatabaseMapper
-import sys
-sys.path.append("./")
-
+from mappers.hive import HiveTableMapper
 
 CORE_TERMS = {"TERMID123": "term123@Glossary"}
 
@@ -68,3 +65,7 @@ def test_hive_column_qualified_name():
 def test_hive_db_qualified_name():
     assert(hive_db.qualified_name() ==
            "db@MyServer")
+
+def test_hive_db_has_clusterName_attrib():
+    e = hive_db.entity(-1)
+    assert(e.attributes.get("clusterName", None) == "MyServer")

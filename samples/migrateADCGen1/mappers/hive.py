@@ -29,3 +29,8 @@ class HiveDatabaseMapper(AssetMapper):
 
     def column_qualified_name_pattern(self, columnName):
         return "BADDATA"
+    
+    def entity(self, guid):
+        local_entity = super().entity(guid)
+        local_entity.attributes.update({"clusterName": self.server})
+        return local_entity
