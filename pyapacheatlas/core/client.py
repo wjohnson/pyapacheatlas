@@ -530,6 +530,136 @@ class AtlasClient():
 
         return results
 
+    def assignTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
+        """
+        Assign a single term to many entities. Provide either a term guid
+        (if you know) it or provide the term name and glossary name. If
+        term name is provided, term guid is ignored.
+
+        :param entities: The list of entities that should have the term assigned.
+        :type entities: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
+        :param str termGuid: The guid for the term. Ignored if using termName.
+        :param str termName: The name of the term. Optional if using termGuid.
+        :param str glossary_name:
+            The name of the glossary. Defaults to Glossary. Ignored if using termGuid.
+
+        :return: A dictionary indicating success or failure.
+        :rtype: dict
+        """
+        results = None
+
+        # Massage the data into dicts
+        # Assumes the AtlasEntity does not have guid defined
+        json_entities = [
+            e.to_json(minimum=True)
+            if isinstance(e, AtlasEntity)
+            else e
+            for e in entities
+        ]
+
+        # Term Name will supercede term guid.
+        if termName:
+            _discoveredTerm = self.get_glossary_term(
+                name=termName, glossary_name=glossary_name)
+            termGuid = _discoveredTerm["guid"]
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/terms/{termGuid}/assignedEntities"
+
+        postAssignment = requests.post(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers(),
+            data=json_entities
+        )
+
+        try:
+            postAssignment.raise_for_status()
+        except requests.RequestException:
+            raise Exception(postAssignment.text)
+
+        results = {"message": f"Successfully assigned term to entities."}
+        return results
+
+    def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
+        """
+        Remove a single term from many entities.
+
+        :param entities: The list of entities that should have the term assigned.
+        :type entities: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
+        :param str termGuid: The guid for the term. Ignored if using termName.
+        :param str termName: The name of the term. Optional if using termGuid.
+        :param str glossary_name:
+            The name of the glossary. Defaults to Glossary. Ignored if using termGuid.
+
+        :return: A dictionary indicating success or failure.
+        :rtype: dict
+        """
+        results = None
+
+        # Massage the data into dicts
+        # Assumes the AtlasEntity does not have guid defined
+        json_entities = [
+            e.to_json(minimum=True)
+            if isinstance(e, AtlasEntity)
+            else e
+            for e in entities
+        ]
+
+        if termName:
+            _discoveredTerm = self.get_glossary_term(
+                name=termName, glossary_name=glossary_name)
+            termGuid = _discoveredTerm["guid"]
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/terms/{termGuid}/assignedEntities"
+
+        deleteAssignment = requests.delete(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers(),
+            data=json_entities
+        )
+
+        try:
+            deleteAssignment.raise_for_status()
+        except requests.RequestException:
+            raise Exception(deleteAssignment.text)
+
+        results = {
+            "message": f"Successfully deleted assigned term from entities."}
+        return results
+
+    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC"):
+        """
+        Page through the assigned entities for the given term
+
+        :param str termGuid: The guid for the term. Ignored if using termName.
+        :param str termName: The name of the term. Optional if using termGuid.
+        :param str glossary_name:
+            The name of the glossary. Defaults to Glossary. Ignored if using termGuid.
+
+        :return: A list of Atlas relationships between the given term and entities.
+        :rtype: list(dict)
+        """
+        results = None
+
+        if termName:
+            _discoveredTerm = self.get_glossary_term(
+                name=termName, glossary_name=glossary_name)
+            termGuid = _discoveredTerm["guid"]
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/terms/{termGuid}/assignedEntities"
+
+        # TODO: Implement paging
+        getAssignments = requests.get(
+            atlas_endpoint,
+            params={"limit": limit, "offset": offset, "sort": sort},
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getAssignments)
+        return results
+
     def _get_typedefs_header(self):
         """
         Get the array of AtlasTypeDefHeader that contains category, guid,
