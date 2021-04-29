@@ -1,4 +1,5 @@
 from functools import wraps
+import re
 import warnings
 
 
@@ -115,11 +116,11 @@ def _find_relationship_guids(entity):
 def batch_dependent_entities(entities, batch_size=1000):
     """
     Take a list of entities and organize them to batches of max `batch_size`.
-    
+
     This algorithm handles uploading multiple entities that are dependent on
     each other. For example, if A depends on B and B depends on C then the
     three entities will guaranteed be in the same batch. 
-    
+
     Dependencies can be specified in either direction. For example a table
     may not have any relationship attribute dependencies. However, several
     columns may point to the given table. This will be handled by this
@@ -146,6 +147,16 @@ def batch_dependent_entities(entities, batch_size=1000):
         entity_id = entity["guid"]
         original_index[entity_id] = idx
         entity_pointsTo = _find_relationship_guids(entity)
+        # Does the related entity match the negative
+        # number guid pattern? NO? Remove it from index
+        # This will still error out on upload but not mess
+        # with sorting / marking it as a dependency within
+        # the upload
+        for related_entity in entity_pointsTo:
+            if not re.match(r"-\d*$", str(related_entity)):
+                entity_pointsTo.pop(
+                    entity_pointsTo.index(related_entity)
+                )
         # Do you have pointers
         # No
         if len(entity_pointsTo) == 0:
@@ -198,6 +209,13 @@ def batch_dependent_entities(entities, batch_size=1000):
             largest_candidate_size = 0
             largest_candidate_set = set()
 
+            # To reduce the number of updates to the index
+            # Iterate over all of the candidate sets
+            # Identify the index position of the largest candidate set
+            ## Hopefully saving a few thousands updates in the worst case?
+            # Build up one master set that will be the new group
+            # (from the current entity) and assigned to the largest
+            # candidate set's index position.
             for candidate_index in candidate_sets:
                 candidate_set = sets[candidate_index]
                 if len(candidate_set) > largest_candidate_size:
@@ -207,22 +225,32 @@ def batch_dependent_entities(entities, batch_size=1000):
 
                 combo_entity_set = combo_entity_set.union(candidate_set)
 
-            # Update the index for these entities
+            # Update the index for the entities that are NOT in
+            # the largest candidate set
             entities_to_update = combo_entity_set.difference(
                 largest_candidate_set)
             for entity_id in entities_to_update:
                 index[entity_id] = largest_candidate_index
 
-            largest_candidate_index_in_candidate_sets = candidate_sets.index(largest_candidate_index)
+            # Now that the combined entities are pointing to the updated
+            # / largest set, I can remove the actual sets that my
+            # remaining candidate sets point to.
+            # I do NOT want to delete the largest set so I have to remove
+            # it from candidate_sets first
+            largest_candidate_index_in_candidate_sets = candidate_sets.index(
+                largest_candidate_index)
             candidate_sets.pop(largest_candidate_index_in_candidate_sets)
 
+            # Update the set that was deemed to be the largest of the
+            # candidates with the even LARGER combination of entities
             sets[largest_candidate_index] = combo_entity_set
 
+            # Now I can remove all of the "physical" sets that were
+            # referenced in our candidate_sets (excluding  the largest one)
+            # because all of the entities in those sets are now under the
+            # largest candidate set
             for removed_candidate_index in candidate_sets:
                 sets[removed_candidate_index] = None
-    print("Printing idx, original index, index, sets")
-    #print(idx, original_index, index, sets, sep="\n")
-    print("Finished out")
 
     # Sort the list from smallest to largest
     ordered_sets = sorted([s for s in sets if s is not None],
@@ -266,13 +294,17 @@ def batch_dependent_entities(entities, batch_size=1000):
             ordered_sets.pop(set_to_delete)
 
     output_batches = []
+    # I've been working with pointers and guids at this point now I have to
+    # actually output the entities as lists of lists
+    # For every batch that has been maximized to the batch_size, take the
+    # pointer and use it to find the actual entity in the original index
+    # which gives a pointer to the index of the entities list that was
+    # originally passed in
     for inner_batch in maximized_batches:
         sub_output_batch = []
         for entity_index_pointer in inner_batch:
             pointer = original_index[entity_index_pointer]
             sub_output_batch.append(entities[pointer])
         output_batches.append(sub_output_batch)
-    
-    print([len(x) for x in output_batches])
 
     return output_batches

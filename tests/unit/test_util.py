@@ -47,3 +47,18 @@ def test_batches_entities_dependent():
     # One group should have only three
     # All others are independent 
     assert(len(results) == 3)
+
+def test_batches_entities_with_real_guid():
+    gt = GuidTracker()
+    a = AtlasEntity("A", "DataSet", "A", guid=gt.get_guid())
+    b = AtlasEntity("B", "DataSet", "B", guid=gt.get_guid())
+    b.addRelationship(table=a)
+    
+    c = AtlasEntity("C", "DataSet", "C", guid=gt.get_guid())
+    d = AtlasEntity("D", "DataSet", "D", guid=gt.get_guid())
+    c.addRelationship(tester={"guid":"abc-123"})
+
+    entities = [x.to_json() for x in [a, b, c, d]]
+    results = batch_dependent_entities(entities, batch_size=2)
+
+    assert(len(results) == 2)

@@ -1184,7 +1184,7 @@ class AtlasClient():
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
                 postBulkEntities = requests.post(
                     atlas_endpoint,
-                    json=payload,
+                    json=batch,
                     headers=self.authentication.get_authentication_headers()
                 )
                 temp_results = self._handle_response(postBulkEntities)
