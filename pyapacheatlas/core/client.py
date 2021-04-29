@@ -7,8 +7,10 @@ import warnings
 
 from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
-from .util import AtlasException, PurviewLimitation, PurviewOnly
+from .util import AtlasException, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
+
+logging.basicConfig(level=logging.DEBUG)
 
 class AtlasClient():
     """
@@ -1154,7 +1156,7 @@ class AtlasClient():
 
         return payload
 
-    def upload_entities(self, batch):
+    def upload_entities(self, batch, batch_size=None):
         """
         Upload entities to your Atlas backed Data Catalog.
 
@@ -1164,6 +1166,7 @@ class AtlasClient():
         :type batch:
             Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`,
             list(dict), list(:class:`~pyapacheatlas.core.entity.AtlasEntity`) )
+        :param int batch_size: The number of entities you want to send in bulk
         :return: The results of your bulk entity upload.
         :rtype: dict
         """
@@ -1172,14 +1175,29 @@ class AtlasClient():
         atlas_endpoint = self.endpoint_url + "/entity/bulk"
 
         payload = AtlasClient._prepare_entity_upload(batch)
+        
+        results = []
+        if batch_size and len(payload["entities"]) > batch_size:
+            batches = [{"entities":x} for x in batch_dependent_entities(payload["entities"], batch_size=batch_size)]
+            for batch_id, batch in enumerate(batches):
+                batch_size = len(batch["entities"])
+                logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
+                postBulkEntities = requests.post(
+                    atlas_endpoint,
+                    json=payload,
+                    headers=self.authentication.get_authentication_headers()
+                )
+                temp_results = self._handle_response(postBulkEntities)
+                results.append(temp_results)
+        
+        else:
+            postBulkEntities = requests.post(
+                atlas_endpoint,
+                json=payload,
+                headers=self.authentication.get_authentication_headers()
+            )
 
-        postBulkEntities = requests.post(
-            atlas_endpoint,
-            json=payload,
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        results = self._handle_response(postBulkEntities)
+            results = self._handle_response(postBulkEntities)
 
         return results
 
