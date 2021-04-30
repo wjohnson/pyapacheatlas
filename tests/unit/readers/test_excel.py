@@ -345,3 +345,30 @@ def test_excel_update_lineage():
         assert(len(results) == 1)
     finally:
         remove_workbook(temp_filepath)
+
+def test_excel_classification_defs():
+    temp_filepath = "./temp_test_excel_classificationDefs.xlsx"
+    ec = ExcelConfiguration()
+    reader = ExcelReader(ec)
+
+    headers = ExcelReader.TEMPLATE_HEADERS["ClassificationDefs"]
+
+    # Same as main test
+    json_rows = [
+        [
+        "testClassification", None, "This is my classification"
+        "testClassification2", "test;test2", "This is my classification2"
+        ]
+    ]
+
+    setup_workbook_custom_sheet(
+        temp_filepath, "ClassificationDefs", headers, json_rows)
+
+    results = reader.parse_classification_defs(temp_filepath)
+
+    try:
+        assert(len(results) == 1)
+        assert("classificationDefs" in results)
+        assert(len(results["classificationDefs"]) == 1)
+    finally:
+        remove_workbook(temp_filepath)

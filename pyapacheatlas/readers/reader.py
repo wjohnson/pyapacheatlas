@@ -55,6 +55,9 @@ class Reader(LineageMixIn):
             "valuesMaxCount", "cardinality", "includeInNotification",
             "indexType", "isIndexable"
         ],
+        "ClassificationDefs": [
+            "classificationName", "entityTypes", "description"
+        ],
         "BulkEntities": [
             "typeName", "name", "qualifiedName", "classifications"
         ],
