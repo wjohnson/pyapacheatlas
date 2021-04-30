@@ -9,9 +9,6 @@ from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
 from .util import AtlasException, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
-
-logging.basicConfig(level=logging.DEBUG)
-
 class AtlasClient():
     """
     Provides communication between your application and the Apache Atlas
