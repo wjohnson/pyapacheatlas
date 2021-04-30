@@ -10,6 +10,7 @@ from openpyxl import load_workbook
 from pyapacheatlas.readers.excel import ExcelConfiguration, ExcelReader
 from pyapacheatlas.scaffolding.column_lineage import column_lineage_scaffold
 
+
 def test_verify_template_sheets():
     # Setup
     temp_path = "./temp_verfiysheets.xlsx"
@@ -18,7 +19,7 @@ def test_verify_template_sheets():
     # Expected
     expected_sheets = set(["ColumnsLineage", "TablesLineage",
                            "EntityDefs", "BulkEntities",
-                           "UpdateLineage"
+                           "UpdateLineage", "ClassificationDefs"
                            ])
 
     wb = load_workbook(temp_path)
@@ -93,6 +94,51 @@ def test_excel_typeDefs_entityTypes():
     assert("entityDefs" in results)
     assert(len(results["entityDefs"]) == 1)
     assert(results["entityDefs"][0]["attributeDefs"][0]["name"] == "attrib1")
+
+    remove_workbook(temp_filepath)
+
+
+def test_excel_typeDefs_entityTypes_superTypes():
+    temp_filepath = "./temp_test_typeDefs_entityTypesWithSuperTypes.xlsx"
+    ec = ExcelConfiguration()
+    reader = ExcelReader(ec)
+    headers = ExcelReader.TEMPLATE_HEADERS["EntityDefs"] + ['Entity superTypes']
+    # "Entity TypeName", "name", "description",
+    # "isOptional", "isUnique", "defaultValue",
+    # "typeName", "displayName", "valuesMinCount",
+    # "valuesMaxCount", "cardinality", "includeInNotification",
+    # "indexType", "isIndexable"
+    json_rows = [
+        ["demoType", "attrib1", "Some desc",
+         "True", "False", None,
+         "string", None, None,
+         None, None, None,
+         None, None, "DataSet;Blah"
+         ],
+         ["demoType", "attrib2", "Some desc",
+         "True", "False", None,
+         "string", None, None,
+         None, None, None,
+         None, None, "Asset"
+         ],
+         ["demoType", "attrib3", "Some desc",
+         "True", "False", None,
+         "string", None, None,
+         None, None, None,
+         None, None, None
+         ]
+    ]
+
+    setup_workbook_custom_sheet(
+        temp_filepath, "EntityDefs", headers, json_rows)
+
+    results = reader.parse_entity_defs(temp_filepath)
+
+    assert("entityDefs" in results)
+    assert(len(results["entityDefs"]) == 1)
+    superTypes = results["entityDefs"][0]["superTypes"]
+    assert( len(superTypes) == 3 )
+    assert( set(superTypes) == set(["DataSet", "Blah", "Asset"]) )
 
     remove_workbook(temp_filepath)
 
@@ -275,17 +321,17 @@ def test_excel_column_lineage():
     setup_workbook(temp_filepath, "ColumnsLineage", max_cols_cl, json_rows_col)
 
     atlas_types = column_lineage_scaffold("demo")
-    
+
     table_entities = reader.parse_table_lineage(temp_filepath)
 
     # For column mappings, table_entities do not contain columnMapping
     assert(all(["columnMapping" not in e.attributes for e in table_entities]))
 
-    column_entities = reader.parse_column_lineage(temp_filepath, 
-        table_entities,
-        atlas_types, 
-        use_column_mapping= True
-    )
+    column_entities = reader.parse_column_lineage(temp_filepath,
+                                                  table_entities,
+                                                  atlas_types,
+                                                  use_column_mapping=True
+                                                  )
 
     try:
         table1 = None
@@ -295,31 +341,37 @@ def test_excel_column_lineage():
         table1_t00 = None
         table0_t00 = None
         col_lineage_process = None
-        table_lookup = {e.name:e for e in table_entities}
-        column_lookup = {e.name:e for e in column_entities}
-        
-        # We have five columns (t00 > t00) + ((tA + tB) > tcombo) 
+        table_lookup = {e.name: e for e in table_entities}
+        column_lookup = {e.name: e for e in column_entities}
+
+        # We have five columns (t00 > t00) + ((tA + tB) > tcombo)
         # and two processes
         assert(len(column_entities) == 7)
 
         # Because of column mappings is TRUE, table entities are modified
         assert("columnMapping" in table_lookup["proc01"].attributes)
-        resulting_col_map = json.loads(table_lookup["proc01"].attributes["columnMapping"])[0]
+        resulting_col_map = json.loads(
+            table_lookup["proc01"].attributes["columnMapping"])[0]
         expected_col_map = {
-            "DatasetMapping":{"Source":"table0", "Sink":"table1"},
-            "ColumnMapping":[
-                {"Source":"t00","Sink":"t00"},
-                {"Source":"tA","Sink":"tcombo"},
-                {"Source":"tB","Sink":"tcombo"}
+            "DatasetMapping": {"Source": "table0", "Sink": "table1"},
+            "ColumnMapping": [
+                {"Source": "t00", "Sink": "t00"},
+                {"Source": "tA", "Sink": "tcombo"},
+                {"Source": "tB", "Sink": "tcombo"}
             ]
         }
-        assert(resulting_col_map["DatasetMapping"] == expected_col_map["DatasetMapping"])
+        assert(resulting_col_map["DatasetMapping"]
+               == expected_col_map["DatasetMapping"])
         assert(len(resulting_col_map["ColumnMapping"]) == 3)
-        assert(resulting_col_map["ColumnMapping"][0] in expected_col_map["ColumnMapping"])
-        assert(resulting_col_map["ColumnMapping"][1] in expected_col_map["ColumnMapping"])
-        assert(resulting_col_map["ColumnMapping"][2] in expected_col_map["ColumnMapping"])
+        assert(resulting_col_map["ColumnMapping"][0]
+               in expected_col_map["ColumnMapping"])
+        assert(resulting_col_map["ColumnMapping"][1]
+               in expected_col_map["ColumnMapping"])
+        assert(resulting_col_map["ColumnMapping"][2]
+               in expected_col_map["ColumnMapping"])
     finally:
         remove_workbook(temp_filepath)
+
 
 def test_excel_update_lineage():
     temp_filepath = "./temp_test_excel_updateLineage.xlsx"
@@ -331,8 +383,8 @@ def test_excel_update_lineage():
     # Same as main test
     json_rows = [
         [
-        "demo_table", "demotarget", "demo_table2", "demosource",
-         "proc01", "procqual01", "Process2"
+            "demo_table", "demotarget", "demo_table2", "demosource",
+            "proc01", "procqual01", "Process2"
         ]
     ]
 
@@ -343,5 +395,33 @@ def test_excel_update_lineage():
 
     try:
         assert(len(results) == 1)
+    finally:
+        remove_workbook(temp_filepath)
+
+
+def test_excel_classification_defs():
+    temp_filepath = "./temp_test_excel_classificationDefs.xlsx"
+    ec = ExcelConfiguration()
+    reader = ExcelReader(ec)
+
+    headers = ExcelReader.TEMPLATE_HEADERS["ClassificationDefs"]
+
+    # Same as main test
+    json_rows = [
+        [
+            "testClassification", None, "This is my classification"
+            "testClassification2", "test;test2", "This is my classification2"
+        ]
+    ]
+
+    setup_workbook_custom_sheet(
+        temp_filepath, "ClassificationDefs", headers, json_rows)
+
+    results = reader.parse_classification_defs(temp_filepath)
+
+    try:
+        assert(len(results) == 1)
+        assert("classificationDefs" in results)
+        assert(len(results["classificationDefs"]) == 1)
     finally:
         remove_workbook(temp_filepath)

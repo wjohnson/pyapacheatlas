@@ -5,6 +5,7 @@ from ..core.util import GuidTracker
 from ..core import (
     AtlasAttributeDef,
     AtlasEntity,
+    ClassificationTypeDef,
     EntityTypeDef
 )
 
@@ -53,6 +54,9 @@ class Reader(LineageMixIn):
             "typeName", "displayName", "valuesMinCount",
             "valuesMaxCount", "cardinality", "includeInNotification",
             "indexType", "isIndexable"
+        ],
+        "ClassificationDefs": [
+            "classificationName", "entityTypes", "description"
         ],
         "BulkEntities": [
             "typeName", "name", "qualifiedName", "classifications"
@@ -188,7 +192,19 @@ class Reader(LineageMixIn):
     def parse_entity_defs(self, json_rows):
         """
         Create an AtlasTypeDef consisting of entityDefs for the
-        given json_rows.
+        given json_rows.  The columns `Entity TypeName` and `Entity superTypes`
+        are special and map to typeName and superTypes respectively.
+
+        Entity TypeName must be repeated for each row that has a relevant
+        attribute being defined on it. For example, if you plan on including
+        five attributes for type X, you would need to have five rows and
+        each row would have to fill in the Entity TypeName column.
+
+        superTypes can be specified all in one cell (default delimiter is `;`
+        and is controlled by the Reader's configuration) or across multiple
+        cells. If you specify DataSet in one row for type X and hive_table
+        for type X in a second row, it will result in a superType
+        of `[DataSet, hive_table]`.
 
         :param list(dict(str,str)) json_rows:
             A list of dicts containing at least `Entity TypeName` and `name`
@@ -198,8 +214,11 @@ class Reader(LineageMixIn):
         :rtype: dict(str, list(dict))
         """
         entities = dict()
+        entities_to_superTypes = dict()
         attribute_metadata_seen = set()
         output = {"entityDefs": []}
+
+        splitter = lambda attrib: [e for e in attrib.split(self.config.value_separator) if e]
         # Required attributes
         # Get all the attributes it's expecting official camel casing
         # with the exception of "Entity TypeName"
@@ -210,6 +229,24 @@ class Reader(LineageMixIn):
                 raise KeyError("Entity TypeName not found in {}".format(row))
 
             _ = row.pop("Entity TypeName")
+            
+            # If the user wants to add super types, they might be adding
+            # multiple on each row. They DON'T NEED TO but they might
+            entitySuperTypes = []
+            if "Entity superTypes" in row:
+                superTypes_string = row.pop("Entity superTypes")
+                # Might return a None or empty string
+                if superTypes_string:
+                    entitySuperTypes = splitter(superTypes_string)
+            
+            # Need to add this entity to the superTypes mapping if it doesn't
+            # already exist
+            if entityTypeName in entities_to_superTypes:
+                entities_to_superTypes[entityTypeName].extend(entitySuperTypes)
+            else:
+                entities_to_superTypes[entityTypeName] = entitySuperTypes
+            
+                
             # Update all seen attribute metadata
             columns_in_row = list(row.keys())
             attribute_metadata_seen = attribute_metadata_seen.union(
@@ -220,21 +257,27 @@ class Reader(LineageMixIn):
                 if row[column] is None:
                     _ = row.pop(column)
 
-            json_entity_def = AtlasAttributeDef(**row).to_json()
+            json_attribute_def = AtlasAttributeDef(**row).to_json()
 
             if entityTypeName not in entities:
                 entities[entityTypeName] = []
 
-            entities[entityTypeName].append(json_entity_def)
+            entities[entityTypeName].append( json_attribute_def )
 
         # Create the entitydefs
         for entityType in entities:
+            # Handle super types by de-duping, removing Nones / empty str and
+            # defaulting to ["DataSet"] if no user input super Types
+            all_super_types = [t for t in set(entities_to_superTypes[entityType]) if t]
+            if len(all_super_types) == 0:
+                all_super_types = ["DataSet"]
+
             local_entity_def = EntityTypeDef(
                 name=entityType,
                 attributeDefs=entities[entityType],
                 # Adding this as a default until I figure
                 # do this from the excel / json readers.
-                superTypes=["DataSet"]
+                superTypes=all_super_types
             ).to_json()
             output["entityDefs"].append(local_entity_def)
 
@@ -248,6 +291,47 @@ class Reader(LineageMixIn):
                 extra_metadata))
 
         return output
+
+    def parse_classification_defs(self, json_rows):
+        """
+        Create an AtlasTypeDef consisting of classificationDefs for the
+        given json_rows.
+
+        :param list(dict(str,str)) json_rows:
+            A list of dicts containing at least `classificationName`.
+        :return: An AtlasTypeDef with classificationDefs for the provided rows.
+        :rtype: dict(str, list(dict))
+        """
+        defs = []
+        for row in json_rows:
+            try:
+                classificationTypeName = row["classificationName"]
+            except KeyError:
+                raise KeyError("classificationName not found in {}".format(row))
+
+            _ = row.pop("classificationName")
+            # Update all seen attribute metadata
+            columns_in_row = list(row.keys())
+            # Remove any null cells, otherwise the TypeDef constructor
+            # doesn't use the defaults.
+            for column in columns_in_row:
+                if row[column] is None:
+                    _ = row.pop(column)
+            
+            splitter = lambda attrib: [e for e in attrib.split(self.config.value_separator) if e]
+
+            if "entityTypes" in row:
+                row["entityTypes"] = splitter(row["entityTypes"])
+            if "superTypes" in row:
+                row["superTypes"] = splitter(row["superTypes"])
+            if "subTypes" in row:
+                row["superTypes"] = splitter(row["subTypes"])
+
+            json_classification_def = ClassificationTypeDef(classificationTypeName, **row).to_json()
+
+            defs.append(json_classification_def)
+        
+        return {"classificationDefs": defs}
 
     @staticmethod
     def make_template():
