@@ -68,6 +68,9 @@ class Reader(LineageMixIn):
         ]
     }
 
+    def _splitField(self, attrib):
+        return [e for e in attrib.split(self.config.value_separator) if e]
+
     def __init__(self, configuration, guid=-1000):
         """
         Creates the base Reader with functionality that supports python dicts.
@@ -103,31 +106,43 @@ class Reader(LineageMixIn):
         :rtype: dict(str, dict(str,str))
         """
         output = {"attributes": {}, "relationshipAttributes": {}}
-        for k, v in row.items():
+        for column_name, cell_value in row.items():
             # Remove the required attributes so they're not double dipping.
-            if k in ignore:
+            if column_name in ignore:
                 continue
             # Remove any cell with a None / Null attribute
-            elif v is None:
+            elif cell_value is None:
                 continue
             # If the Attribute key starts with [Relationship]
             # Move it to the relation
-            elif k.startswith("[Relationship]"):
-                cleaned_key = k.replace("[Relationship]", "").strip()
-                # Assuming that we can find this in an existing entity
-                try:
-                    min_reference = existing_entities[v].to_json(minimum=True)
-                # LIMITATION: We must have already seen the relationship
-                # attribute to be certain it can be looked up.
-                except KeyError:
-                    raise KeyError(
-                        f"The entity {v} should be listed before {row['qualifiedName']}."
-                    )
+            elif column_name.startswith("[Relationship]"):
+                cleaned_key = column_name.replace("[Relationship]", "").strip()
+
+                if cleaned_key == "meanings":
+
+                     terms = self._splitField(cell_value)
+                     min_reference = [
+                         {"typeName": "AtlasGlossaryTerm",
+                          "uniqueAttributes": {
+                            "qualifiedName": "{}@Glossary".format(t)
+                            }
+                         } for t in terms
+                     ]
+                else:
+                    # Assuming that we can find this in an existing entity
+                    try:
+                        min_reference = existing_entities[cell_value].to_json(minimum=True)
+                    # LIMITATION: We must have already seen the relationship
+                    # attribute to be certain it can be looked up.
+                    except KeyError:
+                        raise KeyError(
+                            f"The entity {cell_value} should be listed before {row['qualifiedName']}."
+                        )
                 output["relationshipAttributes"].update(
                     {cleaned_key: min_reference}
                 )
             else:
-                output["attributes"].update({k: v})
+                output["attributes"].update({column_name: cell_value})
 
         return output
 
