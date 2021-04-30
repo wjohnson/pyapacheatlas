@@ -5,6 +5,7 @@ from ..core.util import GuidTracker
 from ..core import (
     AtlasAttributeDef,
     AtlasEntity,
+    ClassificationTypeDef,
     EntityTypeDef
 )
 
@@ -248,6 +249,47 @@ class Reader(LineageMixIn):
                 extra_metadata))
 
         return output
+
+    def parse_classification_defs(self, json_rows):
+        """
+        Create an AtlasTypeDef consisting of classificationDefs for the
+        given json_rows.
+
+        :param list(dict(str,str)) json_rows:
+            A list of dicts containing at least `classificationName`.
+        :return: An AtlasTypeDef with classificationDefs for the provided rows.
+        :rtype: dict(str, list(dict))
+        """
+        defs = []
+        for row in json_rows:
+            try:
+                classificationTypeName = row["classificationName"]
+            except KeyError:
+                raise KeyError("classificationName not found in {}".format(row))
+
+            _ = row.pop("classificationName")
+            # Update all seen attribute metadata
+            columns_in_row = list(row.keys())
+            # Remove any null cells, otherwise the TypeDef constructor
+            # doesn't use the defaults.
+            for column in columns_in_row:
+                if row[column] is None:
+                    _ = row.pop(column)
+            
+            splitter = lambda attrib: [e for e in attrib.split(self.config.value_separator) if e]
+
+            if "entityTypes" in row:
+                row["entityTypes"] = splitter(row["entityTypes"])
+            if "superTypes" in row:
+                row["superTypes"] = splitter(row["superTypes"])
+            if "subTypes" in row:
+                row["superTypes"] = splitter(row["subTypes"])
+
+            json_classification_def = ClassificationTypeDef(classificationTypeName, **row).to_json()
+
+            defs.append(json_classification_def)
+        
+        return {"classificationDefs": defs}
 
     @staticmethod
     def make_template():

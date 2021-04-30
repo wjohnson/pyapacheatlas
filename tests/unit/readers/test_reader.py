@@ -210,3 +210,26 @@ def test_bulk_entity_with_experts_owners():
     assert(len(both["Expert"]) == 2)
     assert("contacts" not in no_contacts)
     
+def test_parse_classification_defs():
+    rc =ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"classificationName": "testClassification", "entityTypes": None, "description": "This is my classification"},
+        {"classificationName": "testClassification2", "entityTypes": "", "description": "This is my classification2"},
+        {"classificationName": "testClassification3", "entityTypes": "DataSet;Process", "description": "This is my classification3"},
+        {"classificationName": "testClassification4", "entityTypes": "DataSet;", "description": "This is my classification4"}
+    ]
+
+    parsed = reader.parse_classification_defs(json_rows)
+
+    results = parsed["classificationDefs"]
+
+
+    assert(len(results) == 4)
+    assert("description" in results[0])
+    assert(results[0]["name"] == "testClassification")
+    assert(len(results[0]["entityTypes"]) == 0)
+    assert(len(results[1]["entityTypes"]) == 0)
+    assert(len(results[2]["entityTypes"]) == 2)
+    assert(len(results[3]["entityTypes"]) == 1)
