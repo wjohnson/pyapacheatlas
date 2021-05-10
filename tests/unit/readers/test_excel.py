@@ -252,6 +252,53 @@ def test_excel_bulkEntities_dynamicAttributes():
         remove_workbook(temp_filepath)
 
 
+def test_excel_bulkEntities_meanings_relationships():
+    temp_filepath = "./temp_test_excel_bulkEntitieswithMeanings.xlsx"
+    ec = ExcelConfiguration()
+    reader = ExcelReader(ec)
+
+    headers = ExcelReader.TEMPLATE_HEADERS["BulkEntities"] + \
+        ["[Relationship] meanings"]
+    # "typeName", "name",
+    # "qualifiedName", "classifications"
+    # "[Relationship] meanings"
+    json_rows = [
+        ["demoType", "entityNameABC",
+         "qualifiedNameofEntityNameABC", None,
+         None
+         ],
+        ["demoType", "entityNameGHI",
+         "qualifiedNameofEntityNameGHI", None,
+         "termA"
+         ],
+         ["demoType", "entityNameXYZ",
+         "qualifiedNameofEntityNameXYZ", None,
+         "term1;term2"
+         ]
+    ]
+
+    setup_workbook_custom_sheet(
+        temp_filepath, "BulkEntities", headers, json_rows)
+
+    results = reader.parse_bulk_entities(temp_filepath)
+
+    try:
+        abc = results["entities"][0]
+        ghi = results["entities"][1]
+        xyz = results["entities"][2]
+
+        assert("meanings" not in abc["relationshipAttributes"])
+        assert("meanings" in ghi["relationshipAttributes"])
+        ghi_terms = ghi["relationshipAttributes"]["meanings"]
+        xyz_terms = xyz["relationshipAttributes"]["meanings"]
+
+        assert(len(ghi_terms) == 1)
+        assert(len(xyz_terms) == 2)
+
+    finally:
+        remove_workbook(temp_filepath)
+
+
 def test_excel_table_lineage():
     temp_filepath = "./temp_test_excel_table_lineage.xlsx"
     ec = ExcelConfiguration()

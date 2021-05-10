@@ -87,6 +87,35 @@ def test_parse_bulk_entities_with_relationships():
     assert("table" not in col2["relationshipAttributes"])
 
 
+def test_parse_bulk_entities_with_terms():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "name",
+    # "qualifiedName", "classifications",
+    # "[Relationship] table"
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "[Relationship] meanings": "My Term;abc"
+         },
+         {"typeName": "demo_table", "name": "entityNameDEF",
+         "qualifiedName": "qualifiedNameofEntityNameDEF", "classifications": None,
+         "[Relationship] meanings": None
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    ae1 = results["entities"][0]
+    ae2 = results["entities"][1]
+    
+    assert("meanings" in ae1["relationshipAttributes"])
+    assert("meanings" not in ae2["relationshipAttributes"])
+    ae1_meanings = ae1["relationshipAttributes"]["meanings"]
+    
+    assert(len(ae1_meanings) == 2)
+    ae1_meanings_qns = set([e["uniqueAttributes"]["qualifiedName"] for e in ae1_meanings ])
+    assert(set(["My Term@Glossary", "abc@Glossary"]) == ae1_meanings_qns)
+
+
 def test_parse_entity_defs():
     rc = ReaderConfiguration()
     reader = Reader(rc)
