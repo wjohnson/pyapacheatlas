@@ -41,6 +41,7 @@ class ExcelConfiguration(ReaderConfiguration):
     def __init__(self, column_sheet="ColumnsLineage",
                  table_sheet="TablesLineage",
                  entityDef_sheet="EntityDefs", bulkEntity_sheet="BulkEntities",
+                 classificationDef_sheet="ClassificationDefs",
                  updateLineage_sheet="UpdateLineage",
                  **kwargs):
         super().__init__(**kwargs)
@@ -49,6 +50,7 @@ class ExcelConfiguration(ReaderConfiguration):
         self.column_sheet = column_sheet
         self.table_sheet = table_sheet
         self.entityDef_sheet = entityDef_sheet
+        self.classificationDef_sheet = classificationDef_sheet
         self.bulkEntity_sheet = bulkEntity_sheet
         self.updateLineage_sheet = updateLineage_sheet
 
@@ -321,6 +323,37 @@ class ExcelReader(Reader):
 
         return entities
 
+    def parse_classification_defs(self, filepath):
+        """
+        Read a given excel file that conforms to the excel atlas template and
+        parse the (default) ClassificationDefs tab into classifications.
+
+        :param str filepath:
+            The xlsx file that contains your table and columns.
+        :return:
+            A  entities representing the spreadsheet's
+            contents.
+        :rtype: list(dict)
+        """
+        wb = load_workbook(filepath)
+        # A user may omit the classificationDef_sheet by providing the config with None
+        sheetIsNotPresent = self.config.classificationDef_sheet not in wb.sheetnames
+        if self.config.classificationDef_sheet and sheetIsNotPresent:
+            raise KeyError("The sheet {} was not found".format(
+                self.config.classificationDef_sheet))
+
+        output = dict()
+
+        # Getting classificationDef if the user provided a name of the sheet
+        if self.config.classificationDef_sheet:
+            classificationDef_sheet = wb[self.config.classificationDef_sheet]
+            json_classificationdefs = ExcelReader._parse_spreadsheet(classificationDef_sheet)
+            classificationDefs_generated = super().parse_classification_defs(json_classificationdefs)
+            output.update(classificationDefs_generated)
+
+        wb.close()
+        return output
+
     @staticmethod
     def _update_sheet_headers(headers, worksheet):
         """
@@ -356,6 +389,7 @@ class ExcelReader(Reader):
         columnsSheet.title = "ColumnsLineage"
         tablesSheet = wb.create_sheet("TablesLineage")
         entityDefsSheet = wb.create_sheet("EntityDefs")
+        classificationDefsSheet = wb.create_sheet("ClassificationDefs")
         bulkEntitiesSheet = wb.create_sheet("BulkEntities")
         updateLineageSheet = wb.create_sheet("UpdateLineage")
 
@@ -367,6 +401,9 @@ class ExcelReader(Reader):
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["EntityDefs"], entityDefsSheet
+        )
+        ExcelReader._update_sheet_headers(
+            Reader.TEMPLATE_HEADERS["ClassificationDefs"], classificationDefsSheet
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["BulkEntities"], bulkEntitiesSheet

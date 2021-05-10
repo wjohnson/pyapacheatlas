@@ -87,6 +87,35 @@ def test_parse_bulk_entities_with_relationships():
     assert("table" not in col2["relationshipAttributes"])
 
 
+def test_parse_bulk_entities_with_terms():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "name",
+    # "qualifiedName", "classifications",
+    # "[Relationship] table"
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "[Relationship] meanings": "My Term;abc"
+         },
+         {"typeName": "demo_table", "name": "entityNameDEF",
+         "qualifiedName": "qualifiedNameofEntityNameDEF", "classifications": None,
+         "[Relationship] meanings": None
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    ae1 = results["entities"][0]
+    ae2 = results["entities"][1]
+    
+    assert("meanings" in ae1["relationshipAttributes"])
+    assert("meanings" not in ae2["relationshipAttributes"])
+    ae1_meanings = ae1["relationshipAttributes"]["meanings"]
+    
+    assert(len(ae1_meanings) == 2)
+    ae1_meanings_qns = set([e["uniqueAttributes"]["qualifiedName"] for e in ae1_meanings ])
+    assert(set(["My Term@Glossary", "abc@Glossary"]) == ae1_meanings_qns)
+
+
 def test_parse_entity_defs():
     rc = ReaderConfiguration()
     reader = Reader(rc)
@@ -178,3 +207,58 @@ def test_entityDefs_warns_with_extra_params():
     # Assert that a UserWarning occurs when adding an extra attribute
     pytest.warns(UserWarning, reader.parse_entity_defs,
                  **{"json_rows": inputData})
+
+def test_bulk_entity_with_experts_owners():
+    rc =ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"typeName": "demoType", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "experts": "a;b;", "owners":""
+         },
+        {"typeName": "demoType", "name": "entityNameGHI",
+         "qualifiedName": "qualifiedNameofEntityNameGHI", "classifications": None,
+         "experts": "a;b;", "owners":"c;d"
+         },
+        {"typeName": "demoType", "name": "entityNameJKL",
+         "qualifiedName": "qualifiedNameofEntityNameJKL", "classifications": None
+         }
+    ]
+
+    results = reader.parse_bulk_entities(json_rows)
+
+    assert("contacts" in results["entities"][0])
+    exp_only = results["entities"][0]["contacts"]
+    both = results["entities"][1]["contacts"]
+    no_contacts = results["entities"][2]
+
+    assert(len(exp_only["Owner"]) == 0)
+    assert(len(exp_only["Expert"]) == 2)
+    assert(len(both["Owner"]) == 2)
+    assert(len(both["Expert"]) == 2)
+    assert("contacts" not in no_contacts)
+    
+def test_parse_classification_defs():
+    rc =ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"classificationName": "testClassification", "entityTypes": None, "description": "This is my classification"},
+        {"classificationName": "testClassification2", "entityTypes": "", "description": "This is my classification2"},
+        {"classificationName": "testClassification3", "entityTypes": "DataSet;Process", "description": "This is my classification3"},
+        {"classificationName": "testClassification4", "entityTypes": "DataSet;", "description": "This is my classification4"}
+    ]
+
+    parsed = reader.parse_classification_defs(json_rows)
+
+    results = parsed["classificationDefs"]
+
+
+    assert(len(results) == 4)
+    assert("description" in results[0])
+    assert(results[0]["name"] == "testClassification")
+    assert(len(results[0]["entityTypes"]) == 0)
+    assert(len(results[1]["entityTypes"]) == 0)
+    assert(len(results[2]["entityTypes"]) == 2)
+    assert(len(results[3]["entityTypes"]) == 1)

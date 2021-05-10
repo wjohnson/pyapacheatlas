@@ -225,7 +225,7 @@ class ClassificationTypeDef(AtlasStructDef):
         self.subTypes = kwargs.get("subTypes", []) or []
 
     def __str__(self):
-        return self.name
+        return "<CLASSIFICATION: " + self.name + ">"
 
 
 class EntityTypeDef(AtlasStructDef):
