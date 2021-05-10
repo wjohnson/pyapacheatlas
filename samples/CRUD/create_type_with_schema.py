@@ -45,6 +45,9 @@ if __name__ == "__main__":
         name="pyapacheatlas_demo_table",
         superTypes=["DataSet"],
         relationshipAttributeDefs=[],
+        # This option "schemaElementsAttribute" is the secret to getting a
+        # particular relationship attribute's entities displayed in the 
+        # schema UI.
         options={"schemaElementsAttribute": "columns"}
     )
 
@@ -115,9 +118,16 @@ if __name__ == "__main__":
     column01.addRelationship(table=table_entity)
     column02.addRelationship(table=table_entity)
 
-    
+    # Do the upload and view the entities in the UI
     upload_results = client.upload_entities(
         batch=[table_entity, column01, column02]
     )
 
     print(json.dumps(upload_results, indent=2))
+
+    # To remove, delete the entity created and then the entity type.
+    # client.delete_entity(guid=["..."])
+    # delete_relationship = client.delete_type("pyapacheatlas_table_column_relationship")
+    # delete_results = client.delete_type("pyapacheatlas_demo_table")
+    # delete_results = client.delete_type("pyapacheatlas_demo_column")
+    # print(json.dumps(delete_results, indent=2))
