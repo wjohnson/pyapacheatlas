@@ -70,24 +70,23 @@ if __name__ == "__main__":
         # Iterate over the search results for each term
         # Discover all of the entities that are relevant by cutting the search
         # off at a specific relevance threshold (default is 3.0).
-        for batch in search_query:
-            for entity in batch:
-                if entity["entityType"] == "AtlasGlossaryTerm":
-                    continue
-                search_score = entity['@search.score']
-                lowest_seen_score = search_score if search_score < lowest_seen_score else lowest_seen_score
-                if search_score < threshold:
-                    break
-                search_reason = "No reason given"
-                if '@search.highlights' in entity:
-                    search_reason = entity['@search.highlights']
-                searchoutput = SearchOutput(
-                    search_score, entity['id'],
-                    entity['entityType'], term_guid, primary_display_text,
-                    search_reason
-                )
+        for entity in search_query:
+            if entity["entityType"] == "AtlasGlossaryTerm":
+                continue
+            search_score = entity['@search.score']
+            lowest_seen_score = search_score if search_score < lowest_seen_score else lowest_seen_score
+            if search_score < threshold:
+                break
+            search_reason = "No reason given"
+            if '@search.highlights' in entity:
+                search_reason = entity['@search.highlights']
+            searchoutput = SearchOutput(
+                search_score, entity['id'],
+                entity['entityType'], term_guid, primary_display_text,
+                search_reason
+            )
 
-                search_intermediate_results.append(searchoutput)
+            search_intermediate_results.append(searchoutput)
 
             if lowest_seen_score < threshold:
                 break

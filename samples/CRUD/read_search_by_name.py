@@ -49,11 +49,9 @@ if __name__ == "__main__":
     # search = client.search_entities("*", search_filter=filter_setup)
 
     # The response is a Python generator that allows you to page through the
-    # search results. For each page in the search results, you have a list
-    # of search entities that can be iterated over.
-    for page in search:
-        for entity in page:
-            # Important properties returned include...
-            # id (the guid of the entity), name, qualifedName, @search.score,
-            # and @search.highlights
-            print(json.dumps(entity, indent=2))
+    # search results without having to worry about paging or offsets.
+    for entity in search:
+        # Important properties returned include...
+        # id (the guid of the entity), name, qualifedName, @search.score,
+        # and @search.highlights
+        print(json.dumps(entity, indent=2))

@@ -14,14 +14,15 @@ def export_records(old_client, folder_path, list_of_types_to_consider):
         filter_setup = {"typeName": typename}
         results = old_client.search_entities("*", search_filter=filter_setup)
         # Iterate over the search results
-        for batch in results:
+        # TODO: Need to implement batching since the search is now single entities
+        for entity in results:
             print(f"\tWorking on batch: {counter}")
-            ids_ = [r["id"] for r in batch]
-            if len(ids_) > 0:
-                relevant_ids = old_client.get_entity(guid=ids_)
+            ids_ = entity["id"]
+            relevant_ids = old_client.get_entity(guid=ids_)
 
-                with open("{}/{}-{}.json".format(folder_path, typename, counter), 'w') as fp:
-                    json.dump(relevant_ids.get("entities"), fp)
+            with open("{}/{}-{}.json".format(folder_path, typename, counter), 'w') as fp:
+                json.dump(relevant_ids.get("entities"), fp)
+            
             counter = counter + 1
 
         print("Completed export")
