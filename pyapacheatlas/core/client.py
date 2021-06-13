@@ -1442,10 +1442,10 @@ class PurviewClient(AtlasClient):
         results = None
         if glossary_guid:
             atlas_endpoint = self.endpoint_url + \
-                f"/glossary/{glossary_guid}/terms/import"
+                f"/glossary/{glossary_guid}/terms/import?&includeTermHierarchy=True"
         elif glossary_name:
             atlas_endpoint = self.endpoint_url + \
-                f"/glossary/name/{glossary_name}/terms/import"
+                f"/glossary/name/{glossary_name}/terms/import?&includeTermHierarchy=True"
         else:
             raise ValueError(
                 "Either glossary_name or glossary_guid must be defined.")
