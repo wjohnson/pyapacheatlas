@@ -62,34 +62,34 @@ if __name__ == "__main__":
         name="Step01: Do something",
         qualified_name="process_xyz#step01",
         typeName="step_in_process",
-        guid=-1000,
+        guid="-1000",
         description="This is the first step in which we do something."
     )
     step02 = AtlasEntity(
         name="Step02: Modify the data",
         qualified_name="process_xyz#step02",
         typeName="step_in_process",
-        guid=-1001,
+        guid="-1001",
         description="This is the second step in which modify things."
     )
     step03 = AtlasEntity(
         name="Step03: Finalize the data",
         qualified_name="process_xyz#step03",
         typeName="step_in_process",
-        guid=-1002,
+        guid="-1002",
         description="This is the third step in which we finalize things."
     )
 
     input01 = AtlasEntity(
         name="demoinput01",
         qualified_name="demoinput01",
-        guid=-5000,
+        guid="-5000",
         typeName="DataSet"
     )
     output01 = AtlasEntity(
         name="demooutput01",
         qualified_name="demooutput01",
-        guid=-5001,
+        guid="-5001",
         typeName="DataSet"
     )
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         name="my_complex_workflow",
         qualified_name="process_xyz",
         typeName="process_with_steps",
-        guid=-1003,
+        guid="-1003",
         relationshipAttributes={
             "steps": [
                 step01.to_json(minimum=True),

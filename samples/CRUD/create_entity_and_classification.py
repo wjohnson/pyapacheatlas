@@ -30,13 +30,13 @@ if __name__ == "__main__":
         name="input01",
         typeName="DataSet",
         qualified_name="pyapacheatlas://demoinputclassification01",
-        guid=-100
+        guid="-100"
     )
     input02 = AtlasEntity(
         name="input02",
         typeName="DataSet",
         qualified_name="pyapacheatlas://demoinputclassification02",
-        guid=-101
+        guid="-101"
     )
 
     results = client.upload_entities(
