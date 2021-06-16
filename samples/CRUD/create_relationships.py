@@ -45,12 +45,12 @@ if __name__ == "__main__":
 
     # Creating the entities that will be used in uploads.
     # One table will be added
-    table = AtlasEntity("rel10","hive_table", "tests://rel10", guid=-1)
+    table = AtlasEntity("rel10","hive_table", "tests://rel10", guid="-1")
     # Four columns will be added
-    c1 = AtlasEntity("rel10#01", "hive_column", "tests://rel10#c", guid=-2, attributes={"type":"str"})
-    c2 = AtlasEntity("rel10#02", "hive_column", "tests://rel02#c", guid=-3, attributes={"type":"str"})
-    c3 = AtlasEntity("rel10#03", "hive_column", "tests://rel03#c", guid=-4, attributes={"type":"str"})
-    c4 = AtlasEntity("rel10#04", "hive_column", "tests://rel04#c", guid=-5, attributes={"type":"str"})
+    c1 = AtlasEntity("rel10#01", "hive_column", "tests://rel10#c", guid="-2", attributes={"type":"str"})
+    c2 = AtlasEntity("rel10#02", "hive_column", "tests://rel02#c", guid="-3", attributes={"type":"str"})
+    c3 = AtlasEntity("rel10#03", "hive_column", "tests://rel03#c", guid="-4", attributes={"type":"str"})
+    c4 = AtlasEntity("rel10#04", "hive_column", "tests://rel04#c", guid="-5", attributes={"type":"str"})
 
     # Add relationships to the columns from the table overwriting existing columns
     # Good if you want to overwrite existing schema or creating a brand new table
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     #     # and the types of each end.
     #     "typeName": "hive_table_columns",
     #     "attributes": {},
-    #     "guid": -100,
+    #     "guid": "-100",
     #     # Ends are either guid or guid + typeName 
     #     # (in case there are ambiguities?)
     #     # End1 is the hive_table

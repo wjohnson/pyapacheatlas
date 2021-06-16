@@ -39,13 +39,13 @@ if __name__ == "__main__":
         name="input01",
         typeName="DataSet",
         qualified_name="pyapacheatlas://demoinput01",
-        guid=-100
+        guid="-100"
     )
     output01 = AtlasEntity(
         name="output01",
         typeName="DataSet",
         qualified_name="pyapacheatlas://demooutput01",
-        guid=-101
+        guid="-101"
     )
 
     # The Atlas Process is the lineage component that links the two
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         qualified_name="pyapacheatlas://democustomprocess",
         inputs=[input01],
         outputs=[output01],
-        guid=-102
+        guid="-102"
     )
 
     # Convert the individual entities into json before uploading.

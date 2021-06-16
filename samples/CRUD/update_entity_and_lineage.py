@@ -40,14 +40,14 @@ if __name__ == "__main__":
     #     qualified_name="pyapacheatlas://democustomprocess",
     #     inputs=None, # Set to None so no update will occur
     #     outputs=None, # We will update this with .outputs below
-    #     guid=-101
+    #     guid="-101"
     # )
 
     # new_output = AtlasEntity(
     #     name="output03",
     #     typeName="DataSet",
     #     qualified_name="pyapacheatlas://demooutput03",
-    #     guid=-102
+    #     guid="-102"
     # )
 
     # # Completely overwrite the outputs
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         qualified_name="pyapacheatlas://democustomprocess",
         inputs=None,  # Set to None so no update will occur
         outputs=None,  # We will update this with .outputs below
-        guid=-104
+        guid="-104"
     )
 
     real_existing_process = client.get_entity(
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         name="output_added_later",
         typeName="DataSet",
         qualified_name="pyapacheatlas://demooutput04",
-        guid=-103
+        guid="-103"
     )
 
     # Add the existing and new output to the dummy process

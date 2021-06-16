@@ -51,7 +51,7 @@ if __name__ == "__main__":
         qualified_name="pyapacheatlas://instance_of_pyapacheatlas_create_type_def_sample",
         typeName="pyapacheatlas_create_type_def_sample",
         attributes={"column1": "abc", "column2": 123, "column3": ["a", "b"]},
-        guid=-100
+        guid="-100"
     )
 
     upload_results = client.upload_entities(actual_entity)
