@@ -322,11 +322,11 @@ def test_excel_table_lineage():
 
     try:
         assert(results[0].to_json(minimum=True) == {
-            "typeName": "demo_type", "guid": -1001, "qualifiedName": "table1"})
+            "typeName": "demo_type", "guid": "-1001", "qualifiedName": "table1"})
         assert(results[1].to_json(minimum=True) == {
-            "typeName": "demo_type2", "guid": -1002, "qualifiedName": "table0"})
+            "typeName": "demo_type2", "guid": "-1002", "qualifiedName": "table0"})
         assert(results[2].to_json(minimum=True) == {
-            "typeName": "proc_type", "guid": -1003, "qualifiedName": "proc01"})
+            "typeName": "proc_type", "guid": "-1003", "qualifiedName": "proc01"})
     finally:
         remove_workbook(temp_filepath)
 
