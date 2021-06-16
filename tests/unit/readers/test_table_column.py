@@ -65,11 +65,11 @@ def test_table_lineage():
     results = reader.parse_table_lineage(json_rows)
 
     assert(results[0].to_json(minimum=True) == {
-           "typeName": "demo_type", "guid": -1001, "qualifiedName": "table1"})
+           "typeName": "demo_type", "guid": "-1001", "qualifiedName": "table1"})
     assert(results[1].to_json(minimum=True) == {
-           "typeName": "demo_type2", "guid": -1002, "qualifiedName": "table0"})
+           "typeName": "demo_type2", "guid": "-1002", "qualifiedName": "table0"})
     assert(results[2].to_json(minimum=True) == {
-           "typeName": "proc_type", "guid": -1003, "qualifiedName": "proc01"})
+           "typeName": "proc_type", "guid": "-1003", "qualifiedName": "proc01"})
 
 
 def test_table_lineage_with_attributes():
@@ -110,7 +110,7 @@ def test_table_lineage_multiple_inputs():
 
     assert(len(results) == 4)
     assert(results[3].to_json(minimum=True) == {
-           "typeName": "proc_type", "guid": -1003, "qualifiedName": "proc01"})
+           "typeName": "proc_type", "guid": "-1003", "qualifiedName": "proc01"})
     process_inputs_qualified_names = [
         p["qualifiedName"] for p in results[3].inputs ]
     process_outputs_qualified_names = [

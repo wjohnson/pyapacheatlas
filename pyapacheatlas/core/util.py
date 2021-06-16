@@ -78,19 +78,19 @@ class GuidTracker():
         Retrieve the next unique guid and update the guid.
 
         :return: A "unique" integer guid for your atlas object.
-        :rtype: int
+        :rtype: str
         """
         self._guid = self._decide_next_guid()
-        return self._guid
+        return str(self._guid)
 
     def peek_next_guid(self):
         """
         Peek at the next guid without updating the guid.
 
         :return: The next guid you would receive.
-        :rtype: int
+        :rtype: str
         """
-        return self._decide_next_guid()
+        return str(self._decide_next_guid())
 
 
 def _find_relationship_guids(entity):
