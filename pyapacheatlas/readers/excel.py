@@ -43,6 +43,7 @@ class ExcelConfiguration(ReaderConfiguration):
                  entityDef_sheet="EntityDefs", bulkEntity_sheet="BulkEntities",
                  classificationDef_sheet="ClassificationDefs",
                  updateLineage_sheet="UpdateLineage",
+                 columnMapping_sheet="ColumnMapping",
                  **kwargs):
         super().__init__(**kwargs)
         # Required attributes:
@@ -53,6 +54,7 @@ class ExcelConfiguration(ReaderConfiguration):
         self.classificationDef_sheet = classificationDef_sheet
         self.bulkEntity_sheet = bulkEntity_sheet
         self.updateLineage_sheet = updateLineage_sheet
+        self.columnMapping_sheet = columnMapping_sheet
 
 
 class ExcelReader(Reader):
@@ -322,6 +324,37 @@ class ExcelReader(Reader):
         wb.close()
 
         return entities
+    
+    def parse_column_mapping(self, filepath):
+        """
+        Read a given excel file that conforms to the excel atlas template and
+        parse the (default) ColumnMapping tab into existing process entities. 
+
+        Assumes these process entities and any referenced entity exists.
+
+        :param str filepath:
+            The xlsx file that contains your table and columns.
+        :return:
+            A list of Atlas Process entities representing the spreadsheet's
+            contents.
+        :rtype: list(dict)
+        """
+        wb = load_workbook(filepath)
+
+        entities = []
+
+        if self.config.columnMapping_sheet not in wb.sheetnames:
+            raise KeyError("The sheet {} was not found".format(
+                self.config.columnMapping_sheet))
+
+        # Getting table entities
+        columnMapping_sheet = wb[self.config.columnMapping_sheet]
+        json_sheet = ExcelReader._parse_spreadsheet(columnMapping_sheet)
+        entities = super().parse_column_mapping(json_sheet)
+
+        wb.close()
+
+        return entities
 
     def parse_classification_defs(self, filepath):
         """
@@ -385,13 +418,14 @@ class ExcelReader(Reader):
             template Tables and Columns sheets.
         """
         wb = Workbook()
-        columnsSheet = wb.active
-        columnsSheet.title = "ColumnsLineage"
-        tablesSheet = wb.create_sheet("TablesLineage")
+        bulkEntitiesSheet = wb.active
+        bulkEntitiesSheet.title = "BulkEntities"
+        updateLineageSheet = wb.create_sheet("UpdateLineage")
+        columnMappingSheet = wb.create_sheet("ColumnMapping")
         entityDefsSheet = wb.create_sheet("EntityDefs")
         classificationDefsSheet = wb.create_sheet("ClassificationDefs")
-        bulkEntitiesSheet = wb.create_sheet("BulkEntities")
-        updateLineageSheet = wb.create_sheet("UpdateLineage")
+        tablesSheet = wb.create_sheet("TablesLineage")
+        columnsSheet = wb.create_sheet("ColumnsLineage")
 
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["ColumnsLineage"], columnsSheet
@@ -410,6 +444,9 @@ class ExcelReader(Reader):
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["UpdateLineage"], updateLineageSheet
+        )
+        ExcelReader._update_sheet_headers(
+            Reader.TEMPLATE_HEADERS["ColumnMapping"], columnMappingSheet
         )
 
         wb.save(filepath)

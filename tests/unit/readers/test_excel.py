@@ -19,7 +19,8 @@ def test_verify_template_sheets():
     # Expected
     expected_sheets = set(["ColumnsLineage", "TablesLineage",
                            "EntityDefs", "BulkEntities",
-                           "UpdateLineage", "ClassificationDefs"
+                           "UpdateLineage", "ClassificationDefs",
+                           "ColumnMapping"
                            ])
 
     wb = load_workbook(temp_path)
@@ -470,5 +471,33 @@ def test_excel_classification_defs():
         assert(len(results) == 1)
         assert("classificationDefs" in results)
         assert(len(results["classificationDefs"]) == 1)
+    finally:
+        remove_workbook(temp_filepath)
+
+def test_excel_column_mapping():
+    temp_filepath = "./temp_test_excel_columnMapping.xlsx"
+    ec = ExcelConfiguration()
+    reader = ExcelReader(ec)
+
+    headers = ExcelReader.TEMPLATE_HEADERS["ColumnMapping"]
+
+    # Same as main test
+    json_rows = [
+        ["abc://123", "A1", "def://456", "B1", "proc://abc", "customProcWithMapping","my proc name"],
+        ["abc://123", "A2", "def://456", "B2", "proc://abc", "customProcWithMapping","my proc name"],
+        ["pqr://777", "A1", "def://999", "B3", "proc://abc", "customProcWithMapping","my proc name"]
+    ]
+
+    setup_workbook_custom_sheet(
+        temp_filepath, "ColumnMapping", headers, json_rows)
+
+    results = reader.parse_column_mapping(temp_filepath)
+
+    try:
+        assert(len(results["entities"]) == 1)
+        proc = results["entities"][0]
+        colmap = json.loads(proc["attributes"]["columnMapping"])
+        assert(len(colmap) == 2)
+        
     finally:
         remove_workbook(temp_filepath)

@@ -65,6 +65,11 @@ class Reader(LineageMixIn):
             "Target typeName", "Target qualifiedName", "Source typeName",
             "Source qualifiedName", "Process name", "Process qualifiedName",
             "Process typeName"
+        ],
+        "ColumnMapping": [
+            "Source qualifiedName", "Source column", "Target qualifiedName", 
+            "Target column", "Process qualifiedName", "Process typeName",
+            "Process name"
         ]
     }
 
