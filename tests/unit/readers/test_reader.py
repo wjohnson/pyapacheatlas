@@ -1,3 +1,4 @@
+import json
 import warnings
 
 import pytest
@@ -262,3 +263,39 @@ def test_parse_classification_defs():
     assert(len(results[1]["entityTypes"]) == 0)
     assert(len(results[2]["entityTypes"]) == 2)
     assert(len(results[3]["entityTypes"]) == 1)
+
+def test_parse_column_mapping():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"Source qualifiedName": "abc://123", "Source column":"A1", "Target qualifiedName": "def://456", "Target column": "B1", "Process qualifiedName": "proc://abc", "Process typeName": "customProcWithMapping", "Process name":"my proc name"},
+        {"Source qualifiedName": "abc://123", "Source column":"A2", "Target qualifiedName": "def://456", "Target column": "B2", "Process qualifiedName": "proc://abc", "Process typeName": "customProcWithMapping", "Process name":"my proc name"},
+        {"Source qualifiedName": "pqr://777", "Source column":"C1", "Target qualifiedName": "def://999", "Target column": "B3", "Process qualifiedName": "proc://abc", "Process typeName": "customProcWithMapping", "Process name":"my proc name"}
+    ]
+
+    parsed = reader.parse_column_mapping(json_rows)
+
+    results = parsed["entities"]
+
+    assert(len(results) == 1)
+    assert(results[0]["attributes"]["name"] == "my proc name")
+    assert(results[0]["attributes"]["qualifiedName"] == "proc://abc")
+    columnMapping = json.loads(results[0]["attributes"]["columnMapping"])
+    assert(len(columnMapping) == 2)
+    firstMap = columnMapping[0]
+    firstMap_col_map = firstMap["ColumnMapping"]
+    firstMap_data_map = firstMap["DatasetMapping"]
+    firstMap_col_map_exp = [{"Source": "A1", "Sink": "B1"},{"Source": "A2", "Sink": "B2"}]
+    firstMap_data_map_exp = {"Source": "abc://123", "Sink": "def://456"}
+    assert(len(firstMap_col_map) == len(firstMap_col_map_exp))
+    assert(len([i for i in firstMap_col_map if i in firstMap_col_map_exp]))
+    assert(firstMap_data_map == firstMap_data_map_exp)
+    
+    secondMap = columnMapping[1]
+    secondMap_col_map = secondMap["ColumnMapping"]
+    secondMap_data_map = secondMap["DatasetMapping"]
+    secondMap_col_map_exp = [{"Source": "C1", "Sink": "B3"}]
+    secondMap_data_map_exp = {"Source": "pqr://777", "Sink": "def://999"}
+    assert(secondMap_col_map == secondMap_col_map_exp)
+    assert(secondMap_data_map == secondMap_data_map_exp)

@@ -557,3 +557,85 @@ class LineageMixIn():
             
             results = [v.to_json() for v in processes_seen.values()]
         return results
+
+    def parse_column_mapping(self, json_rows):
+        """
+        Take in ColumnMapping dictionaries and create the mutated Process
+        entities to be uploaded. All referenced entities should already exist
+        and be identified by their type and qualifiedName.
+
+        Creates process entities with only the columnMapping field filled in.
+
+        :param json_rows:
+            A list of dicts that contain the converted rows of your update
+            lineage spreadsheet.
+        :type json_rows: list(dict(str,str))
+        :return: An AtlasTypeDef with entityDefs for the provided rows.
+        :rtype: dict(str, list(dict))
+        """
+        results = []
+        sp = self.config.source_prefix
+        tp = self.config.target_prefix
+        pp = self.config.process_prefix
+
+        processes_seen = dict()
+        # {proc: {in-data|out-data:[{'Source':,'Sink':}]}}
+
+        for row in json_rows:
+            try:
+                target_col = row[f"{tp} column"]
+                target_qual_name = row[f"{tp} qualifiedName"]
+                source_col = row[f"{sp} column"]
+                source_qual_name = row[f"{sp} qualifiedName"]
+                process_name = row[f"{pp} name"]
+                process_type = row[f"{pp} typeName"]
+                process_qual_name = row[f"{pp} qualifiedName"]
+            except KeyError:
+                raise Exception(
+                    "This row does not contain all of the required fields (" +
+                    ', '.join([f"{tp} column", f"{tp} qualifiedName", f"{sp} column", f"{sp} column", f"{pp} name", f"{tp} typeName", f"{pp} qualifiedName"]) +'): ' +
+                    json.dumps(row)
+                )
+
+            dataset_key = f"{source_qual_name}|{target_qual_name}"
+            column_mapping = {"Source":source_col, "Sink":target_col}
+            if process_qual_name in processes_seen:
+                # Updating the entity
+                working_process = processes_seen[process_qual_name]
+                if dataset_key in working_process["mappings"]:
+                    working_process["mappings"][dataset_key].append(column_mapping)
+                else:
+                    working_process["mappings"][dataset_key] = [column_mapping]
+            else:
+                # Creating a new one
+                processes_seen[process_qual_name] = {
+                    "mappings":{dataset_key:[column_mapping]},
+                    "processType": process_type,
+                    "processName": process_name
+                }
+        
+        for proc_qn, proc in processes_seen.items():
+            columnMapping = []
+            for dataset in proc["mappings"]:
+                # Split apart the pipe delimited data
+                src_data, sink_data = dataset.split("|",1)
+                # Create the column mapping data structure
+                columnMapping.append(
+                    {
+                        "DatasetMapping":{"Source":src_data, "Sink":sink_data},
+                        "ColumnMapping":proc["mappings"][dataset]
+                    }
+                )
+
+            proc_entity = AtlasProcess(
+                name=proc["processName"],
+                typeName=proc["processType"],
+                qualified_name=proc_qn,
+                guid=self.guidTracker.get_guid(),
+                inputs = None,
+                outputs = None,
+                attributes = {"columnMapping": json.dumps(columnMapping)}
+            )
+            results.append(proc_entity.to_json())
+
+        return {"entities":results}
