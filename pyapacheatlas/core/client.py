@@ -4,6 +4,16 @@ import logging
 import re
 import requests
 import warnings
+import sys
+_AZ_IDENTITY_INSTALLED = False
+try:
+    import azure.identity
+    _AZ_IDENTITY_INSTALLED = True
+    from ..auth.azcredential import AzCredentialWrapper
+except ImportError:
+    pass
+
+from ..auth.base import AtlasAuthBase
 
 from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
@@ -1381,6 +1391,12 @@ class PurviewClient(AtlasClient):
 
     def __init__(self, account_name, authentication=None):
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
+        if authentication and not isinstance(authentication, AtlasAuthBase):
+            # Assuming this is Azure Identity related
+            if _AZ_IDENTITY_INSTALLED:
+                authentication = AzCredentialWrapper(authentication)
+            else:
+                raise Exception("You probably need to install azure-identity to use this authentication method.")
         super().__init__(endpoint_url, authentication)
 
     @PurviewOnly
