@@ -17,7 +17,7 @@ def test_verify_template_sheets():
     ExcelReader.make_template(temp_path)
 
     # Expected
-    expected_sheets = set(["ColumnsLineage", "TablesLineage",
+    expected_sheets = set(["FineGrainColumnLineage", "TablesLineage",
                            "EntityDefs", "BulkEntities",
                            "UpdateLineage", "ClassificationDefs",
                            "ColumnMapping"
@@ -332,12 +332,12 @@ def test_excel_table_lineage():
         remove_workbook(temp_filepath)
 
 
-def test_excel_column_lineage():
+def test_excel_finegrain_column_lineage():
     temp_filepath = "./temp_test_excel_column_lineage.xlsx"
     ec = ExcelConfiguration()
     reader = ExcelReader(ec)
     max_cols_tl = len(ExcelReader.TEMPLATE_HEADERS["TablesLineage"])
-    max_cols_cl = len(ExcelReader.TEMPLATE_HEADERS["ColumnsLineage"])
+    max_cols_cl = len(ExcelReader.TEMPLATE_HEADERS["FineGrainColumnLineage"])
 
     # "Target Table", "Target Type", "Target Classifications",
     # "Source Table", "Source Type", "Source Classifications",
@@ -366,7 +366,7 @@ def test_excel_column_lineage():
     ]
 
     setup_workbook(temp_filepath, "TablesLineage", max_cols_tl, json_rows)
-    setup_workbook(temp_filepath, "ColumnsLineage", max_cols_cl, json_rows_col)
+    setup_workbook(temp_filepath, "FineGrainColumnLineage", max_cols_cl, json_rows_col)
 
     atlas_types = column_lineage_scaffold("demo")
 
@@ -375,11 +375,12 @@ def test_excel_column_lineage():
     # For column mappings, table_entities do not contain columnMapping
     assert(all(["columnMapping" not in e.attributes for e in table_entities]))
 
-    column_entities = reader.parse_column_lineage(temp_filepath,
-                                                  table_entities,
-                                                  atlas_types,
-                                                  use_column_mapping=True
-                                                  )
+    column_entities = reader.parse_finegrain_column_lineage(
+        temp_filepath,
+        table_entities,
+        atlas_types,
+        use_column_mapping=True
+        )
 
     try:
         table1 = None
@@ -494,8 +495,8 @@ def test_excel_column_mapping():
     results = reader.parse_column_mapping(temp_filepath)
 
     try:
-        assert(len(results["entities"]) == 1)
-        proc = results["entities"][0]
+        assert(len(results) == 1)
+        proc = results[0]
         colmap = json.loads(proc["attributes"]["columnMapping"])
         assert(len(colmap) == 2)
         

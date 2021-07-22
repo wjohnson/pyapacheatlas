@@ -9,7 +9,7 @@ The Excel template provides a means to:
   * Supports adding glossary terms to entities.
   * Supports adding classifications to entities.
   * Supports creating relationships between entities (e.g. columns of a table).
-* Creating custom lineage between two existing entities.
+* Creating custom lineage between two existing entities and using the Azure Purview Column Mappings / Lineage feature.
 * Bulk upload of type definitions.
 * Bulk upload of classification definitions (Purview Classification rules are not currently supported).
 * Creating custom table and complex column level lineage in the [Hive Bridge style](https://atlas.apache.org/0.8.3/Bridge-Hive.html).
