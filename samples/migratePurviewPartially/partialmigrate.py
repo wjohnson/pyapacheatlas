@@ -16,6 +16,12 @@ def unique_file_name():
     batch_guid = str(uuid4())
     return when+batch_guid+'.json'
 
+def log_completed_updates(batch_path, guids_to_log):
+    batch_log_path = os.path.join(batch_path, unique_file_name())
+    with open(batch_log_path, 'w') as fp:
+        json.dump(guids_to_log, fp)
+    logging.info("Completed writing batch history at: " + batch_log_path)
+
 
 def does_this_asset_have_updates(asset):
     # If there is an updatedBy field and it's a ServiceAdmin, no update has occurred
@@ -59,6 +65,17 @@ def does_this_asset_have_updates(asset):
 
 if __name__ == "__main__":
     """
+    This sample provides a means of 'partially' migrating an Azure Purview
+    services changes to another Azure Purview service that has scanned
+    the same data sources. It supports overwriting Contacts (experts, owners),
+    descriptions, appending classifications, and appending glossary terms to
+    assets that exist in both services.
+
+    This sample is useful for those who have invested time in annotating
+    an existing Purview service but want to move those updates to a
+    different catalog. This sample should not be used on a regular basis
+    to move annotations, instead Stewards should have annotate the true
+    Purview service rather than maintaining multiple Purview services.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -86,7 +103,7 @@ if __name__ == "__main__":
         client_id=os.environ.get("AZURE_CLIENT_ID", ""),
         client_secret=os.environ.get("AZURE_CLIENT_SECRET", "")
     )
-    client = PurviewClient(
+    old_client = PurviewClient(
         account_name=os.environ.get("PURVIEW_NAME", ""),
         authentication=oauth
     )
@@ -95,13 +112,6 @@ if __name__ == "__main__":
         account_name=os.environ.get("NEW_PURVIEW_NAME", ""),
         authentication=oauth
     )
-
-    # print(json.dumps(client.get_glossary(),indent=2))
-    # exit()
-    # print(json.dumps(client.get_glossary_term("312572ce-cab6-4de3-bbc8-acd9551df1f8"),indent=2))
-    # exit()
-    # print(json.dumps(client.get_entity("bd53e412-0d08-442f-a8da-2286b97aac3a"),indent=2))
-    # exit()
 
     # TODO: Updates this to be either a folder or list of files
     search_path = args.search_folder
@@ -118,7 +128,7 @@ if __name__ == "__main__":
     if args.search:
         total_search_results = 0
         # Execute a search across all entities
-        search_generator = client.search_entities(
+        search_generator = old_client.search_entities(
             query=args.search, limit=100
         )
         batch_size = 100
@@ -159,32 +169,50 @@ if __name__ == "__main__":
             already_processed.extend(json.load(fp))
 
     # Reduce the set of to_be_processed by eliminating those seen already
-    logging.info(f"Reduced set size to be processed: {len(to_be_processed)}")
+    logging.info(f"Original number of searched entities to be processed: {len(to_be_processed)}")
     to_be_processed = list(set(to_be_processed).difference(already_processed))
-    logging.info(f"Reduced set size to be processed: {len(to_be_processed)}")
+    logging.info(f"Reduced set of entities to be processed: {len(to_be_processed)}")
 
     # Iterate over all of the entities to be processed in batches of 100
     search_results_offset = 0
     _stepsize = 100
     old_guids_processed_this_execution = []
 
+    # Wrapping this all in a try finally statement to be sure
+    # we can restart and not have too many redos
     try:
-        work_min = search_results_offset - 100
+        work_min = search_results_offset - _stepsize
 
         while search_results_offset < len(to_be_processed):
             logging.debug("Iterating at offset: " + str(search_results_offset))
             to_be_processed_batch = to_be_processed[search_results_offset:(
                 search_results_offset+_stepsize)]
 
-            get_results = client.get_entity(to_be_processed_batch)
+            get_results = old_client.get_entity(to_be_processed_batch)
             # Update the offset
             search_results_offset = search_results_offset + _stepsize
 
-            # TODO: Need to handle tabular schemas
             referred_entities = list(get_results["referredEntities"].values())
             direct_entities = get_results["entities"]
+            # Handling tabular schemas referenced
+            tabular_schema_columns = []
+            tabular_schema_guids = [
+                t["guid"] for t in referred_entities if t["typeName"] == "tabular_schema"]
+            tabular_schema_guids.extend([t["relationshipAttributes"]["tabular_schema"]["guid"] for t in direct_entities if t.get(
+                'relationshipAttributes', {}).get('tabular_schema', None)])
+            if tabular_schema_guids:
+                tabular_results = old_client.get_entity(tabular_schema_guids)
+                if "referredEntities" in tabular_results:
+                    tabular_schema_columns = list(
+                        tabular_results["referredEntities"].values())
 
-            for entity in referred_entities + direct_entities:
+            # Perform an update for every entity, could be more efficient in bulk
+            for entity in referred_entities + tabular_schema_columns + direct_entities:
+                if entity["guid"] in already_processed:
+                    logging.debug(
+                        "Skipping the entity due to already processed: "+entity["guid"])
+                    continue
+
                 partialEntity = does_this_asset_have_updates(entity)
                 if not partialEntity:
                     logging.debug(
@@ -200,20 +228,17 @@ if __name__ == "__main__":
                     typeName=partialEntity["typeName"],
                     qualifiedName=partialEntity["qualifiedName"]
                 )
+
                 newest_entity = new_entity_response["entities"][0]
-                # Drop fields that aren't valid for an upload
-                # for badKey in ["lastModifiedTS", "status", "createdBy", "updatedBy", "createTime", "updateTime", "verison"]:
-                #     if badKey in newest_entity:
-                #         newest_entity.pop(badKey)
                 newest_entity_original_guid = newest_entity["guid"]
                 # This needs to be a negative number for /entity/bulk upload
                 newest_entity["guid"] = "-1"
 
-                updates_to_newest_entity = {}
-
                 # Blank out the relationship attributes to avoid complexity of
                 # keeping references to the new guids
                 newest_entity["relationshipAttributes"] = {}
+                ## Alternatively, keep the attributes around, but simplify to just guid
+                # updates_to_newest_entity = {}
                 # for relAttrib, relValue in newest_entity["relationshipAttributes"].items():
                 #     if not relValue:
                 #         continue
@@ -223,7 +248,6 @@ if __name__ == "__main__":
                 #         updates_to_newest_entity[relAttrib] = {"guid": relValue["guid"]}
 
                 # newest_entity["relationshipAttributes"].update(updates_to_newest_entity)
-                # print(json.dumps(newest_entity,indent=2))
 
                 # contacts
                 # Have to do a whole update
@@ -280,9 +304,10 @@ if __name__ == "__main__":
                         )
                 old_guids_processed_this_execution.append(
                     partialEntity["guid"])
+            # Out of the inner for loop, still in while loop
+            log_completed_updates(batch_path, old_guids_processed_this_execution)
+            already_processed.extend(old_guids_processed_this_execution)
+            old_guids_processed_this_execution = []
     finally:
         # Always write out the batch so we know where we left off
-        batch_log_path = os.path.join(batch_path, unique_file_name())
-        with open(batch_log_path, 'w') as fp:
-            json.dump(old_guids_processed_this_execution, fp)
-        print("Completed writing batch history at: " + batch_log_path)
+        log_completed_updates(batch_path, old_guids_processed_this_execution)
