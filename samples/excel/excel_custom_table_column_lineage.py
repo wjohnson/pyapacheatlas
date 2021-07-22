@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     # Generate the atlas entities!
 
-    excel_results = excel_reader.parse_lineages(
+    excel_results = excel_reader.parse_table_finegrain_column_lineages(
         file_path,
         atlas_type_defs,
         use_column_mapping=True

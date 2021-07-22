@@ -38,7 +38,7 @@ class ExcelConfiguration(ReaderConfiguration):
         represents the transformation for a specific column.
     """
 
-    def __init__(self, column_sheet="ColumnsLineage",
+    def __init__(self, column_sheet="FineGrainColumnLineage",
                  table_sheet="TablesLineage",
                  entityDef_sheet="EntityDefs", bulkEntity_sheet="BulkEntities",
                  classificationDef_sheet="ClassificationDefs",
@@ -156,7 +156,7 @@ class ExcelReader(Reader):
         # TODO: Add in classificationDefs and relationshipDefs
         return output
 
-    def parse_column_lineage(self, filepath, atlas_entities, atlas_typedefs, use_column_mapping=False):
+    def parse_finegrain_column_lineage(self, filepath, atlas_entities, atlas_typedefs, use_column_mapping=False):
         """
         Read a given excel file that conforms to the excel atlas template and
         parse the columns into column lineages.
@@ -198,7 +198,7 @@ class ExcelReader(Reader):
         column_sheet = wb[self.config.column_sheet]
         json_columns = ExcelReader._parse_spreadsheet(column_sheet)
 
-        entities = super().parse_column_lineage(
+        entities = super().parse_finegrain_column_lineage(
             json_columns,
             atlas_entities,
             atlas_typedefs,
@@ -241,7 +241,7 @@ class ExcelReader(Reader):
 
         return entities
 
-    def parse_lineages(self, filepath, atlas_typedefs, use_column_mapping=False):
+    def parse_table_finegrain_column_lineages(self, filepath, atlas_typedefs, use_column_mapping=False):
         """
         Read a given excel file that conforms to the excel atlas template and
         parse the tables, processes, and columns into table and column
@@ -276,7 +276,7 @@ class ExcelReader(Reader):
         entities.extend(table_entities)
 
         # Modifies table_entities if use_column_mapping is True
-        column_entities = self.parse_column_lineage(
+        column_entities = self.parse_finegrain_column_lineage(
             filepath,
             table_entities,
             atlas_typedefs,
@@ -324,13 +324,15 @@ class ExcelReader(Reader):
         wb.close()
 
         return entities
-    
+
     def parse_column_mapping(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
         parse the (default) ColumnMapping tab into existing process entities. 
 
         Assumes these process entities and any referenced entity exists.
+        This will not update the inputs and outputs, it will update name
+        and columnMapping fields.
 
         :param str filepath:
             The xlsx file that contains your table and columns.
@@ -356,6 +358,38 @@ class ExcelReader(Reader):
 
         return entities
 
+    def parse_update_lineage_with_mappings(self, filepath):
+        """
+        Read a given excel file that conforms to the excel atlas template and
+        parse the (default) UpdateLineage and ColumnMapping tabs into existing process entities. 
+
+        Assumes these process entities and any referenced entity exists.
+
+        :param str filepath:
+            The xlsx file that contains your table and columns.
+        :return:
+            A list of Atlas Process entities representing the spreadsheet's
+            contents.
+        :rtype: list(dict)
+        """
+
+        lineage = self.parse_update_lineage(filepath)
+        mappings = self.parse_column_mapping(filepath)
+        seen_qualifiedNames = {}
+        for working_entity in lineage + mappings:
+            qn = working_entity["attributes"]["qualifiedName"]
+            if qn in seen_qualifiedNames:
+                # If we have seen an entity before check if
+                # the working entity contains a column mapping attribute
+                # if it does update the existing entity
+                if "columnMapping" in working_entity["attributes"]:
+                    seen_qualifiedNames[qn]["attributes"]["columnMapping"] = working_entity["attributes"]["columnMapping"]
+            else:
+                # If we haven't seen it just add the entity to the list
+                seen_qualifiedNames[qn] = working_entity
+
+        return list(seen_qualifiedNames.values())
+
     def parse_classification_defs(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
@@ -380,8 +414,10 @@ class ExcelReader(Reader):
         # Getting classificationDef if the user provided a name of the sheet
         if self.config.classificationDef_sheet:
             classificationDef_sheet = wb[self.config.classificationDef_sheet]
-            json_classificationdefs = ExcelReader._parse_spreadsheet(classificationDef_sheet)
-            classificationDefs_generated = super().parse_classification_defs(json_classificationdefs)
+            json_classificationdefs = ExcelReader._parse_spreadsheet(
+                classificationDef_sheet)
+            classificationDefs_generated = super(
+            ).parse_classification_defs(json_classificationdefs)
             output.update(classificationDefs_generated)
 
         wb.close()
@@ -425,10 +461,10 @@ class ExcelReader(Reader):
         entityDefsSheet = wb.create_sheet("EntityDefs")
         classificationDefsSheet = wb.create_sheet("ClassificationDefs")
         tablesSheet = wb.create_sheet("TablesLineage")
-        columnsSheet = wb.create_sheet("ColumnsLineage")
+        columnsSheet = wb.create_sheet("FineGrainColumnLineage")
 
         ExcelReader._update_sheet_headers(
-            Reader.TEMPLATE_HEADERS["ColumnsLineage"], columnsSheet
+            Reader.TEMPLATE_HEADERS["FineGrainColumnLineage"], columnsSheet
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["TablesLineage"], tablesSheet

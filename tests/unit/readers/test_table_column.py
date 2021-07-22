@@ -130,7 +130,7 @@ def test_column_lineage_entities():
     # Outputs -1003 as the last guid
     tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = reader.parse_column_lineage(
+    results = reader.parse_finegrain_column_lineage(
         json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
@@ -171,7 +171,7 @@ def test_column_lineage_entities_with_attributes():
     # Outputs -1003 as the last guid
     tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = reader.parse_column_lineage(
+    results = reader.parse_finegrain_column_lineage(
         json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
@@ -197,7 +197,7 @@ def test_column_lineage_entities_with_classifications():
     # Outputs -1003 as the last guid
     tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = reader.parse_column_lineage(
+    results = reader.parse_finegrain_column_lineage(
         json_columns, tables_and_processes, atlas_typedefs)
 
     # Two column entities
@@ -236,7 +236,7 @@ def test_column_lineage_entities_with_columnMapping():
     # Outputs -1003 as the last guid
     tables_and_processes = reader.parse_table_lineage(json_tables)
 
-    results = reader.parse_column_lineage(
+    results = reader.parse_finegrain_column_lineage(
         json_columns, tables_and_processes, atlas_typedefs, use_column_mapping=True)
 
     # Demonstrating column lineage
@@ -274,7 +274,7 @@ def test_column_lineage_entities_when_multi_tabled_inputs():
     ]
 
     table_entities = reader.parse_table_lineage(json_tables)
-    column_entities = reader.parse_column_lineage(
+    column_entities = reader.parse_finegrain_column_lineage(
         json_columns, table_entities, atlas_typedefs, use_column_mapping=True)
 
     # Three columns and one process entity

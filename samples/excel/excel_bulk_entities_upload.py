@@ -1,7 +1,6 @@
 import json
 import os
 
-import openpyxl
 from openpyxl import Workbook
 from openpyxl import load_workbook
 

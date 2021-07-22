@@ -276,7 +276,7 @@ def test_parse_column_mapping():
 
     parsed = reader.parse_column_mapping(json_rows)
 
-    results = parsed["entities"]
+    results = parsed
 
     assert(len(results) == 1)
     assert(results[0]["attributes"]["name"] == "my proc name")
