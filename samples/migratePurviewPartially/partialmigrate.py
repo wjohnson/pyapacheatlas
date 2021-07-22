@@ -320,3 +320,5 @@ if __name__ == "__main__":
     finally:
         # Always write out the batch so we know where we left off
         log_completed_updates(batch_path, old_guids_processed_this_execution)
+
+print("Completed successfully!")
