@@ -16,6 +16,7 @@ def unique_file_name():
     batch_guid = str(uuid4())
     return when+batch_guid+'.json'
 
+
 def log_completed_updates(batch_path, guids_to_log):
     batch_log_path = os.path.join(batch_path, unique_file_name())
     with open(batch_log_path, 'w') as fp:
@@ -169,9 +170,11 @@ if __name__ == "__main__":
             already_processed.extend(json.load(fp))
 
     # Reduce the set of to_be_processed by eliminating those seen already
-    logging.info(f"Original number of searched entities to be processed: {len(to_be_processed)}")
+    logging.info(
+        f"Original number of searched entities to be processed: {len(to_be_processed)}")
     to_be_processed = list(set(to_be_processed).difference(already_processed))
-    logging.info(f"Reduced set of entities to be processed: {len(to_be_processed)}")
+    logging.info(
+        f"Reduced set of entities to be processed: {len(to_be_processed)}")
 
     # Iterate over all of the entities to be processed in batches of 100
     search_results_offset = 0
@@ -229,6 +232,11 @@ if __name__ == "__main__":
                     qualifiedName=partialEntity["qualifiedName"]
                 )
 
+                if not new_entity_response:
+                    logging.warn(
+                        "Entity does not exist on target but contains changes: " + entity["guid"])
+                    old_guids_processed_this_execution.append(entity["guid"])
+                    continue
                 newest_entity = new_entity_response["entities"][0]
                 newest_entity_original_guid = newest_entity["guid"]
                 # This needs to be a negative number for /entity/bulk upload
@@ -237,7 +245,7 @@ if __name__ == "__main__":
                 # Blank out the relationship attributes to avoid complexity of
                 # keeping references to the new guids
                 newest_entity["relationshipAttributes"] = {}
-                ## Alternatively, keep the attributes around, but simplify to just guid
+                # Alternatively, keep the attributes around, but simplify to just guid
                 # updates_to_newest_entity = {}
                 # for relAttrib, relValue in newest_entity["relationshipAttributes"].items():
                 #     if not relValue:
@@ -305,7 +313,8 @@ if __name__ == "__main__":
                 old_guids_processed_this_execution.append(
                     partialEntity["guid"])
             # Out of the inner for loop, still in while loop
-            log_completed_updates(batch_path, old_guids_processed_this_execution)
+            log_completed_updates(
+                batch_path, old_guids_processed_this_execution)
             already_processed.extend(old_guids_processed_this_execution)
             old_guids_processed_this_execution = []
     finally:
