@@ -1,5 +1,7 @@
+import argparse
 from datetime import datetime
 import json
+import logging
 import os
 from uuid import uuid4
 
@@ -7,6 +9,12 @@ from uuid import uuid4
 # Connect to Atlas via a Service Principal
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import PurviewClient, AtlasEntity, AtlasProcess, AtlasClassification
+
+
+def unique_file_name():
+    when = (datetime.utcnow().isoformat()[:-3] + 'Z').replace(":", "-")
+    batch_guid = str(uuid4())
+    return when+batch_guid+'.json'
 
 
 def does_this_asset_have_updates(asset):
@@ -22,7 +30,8 @@ def does_this_asset_have_updates(asset):
     if "classifications" in asset:
         # There is no way to tell if a human added the classification or not
         # Have to take them all
-        updates["classifications"] = [AtlasClassification(c["typeName"]) for c in asset["classifications"]]
+        updates["classifications"] = [AtlasClassification(
+            c["typeName"]) for c in asset["classifications"]]
 
     if "relationshipAttributes" in asset and "meanings" in asset["relationshipAttributes"]:
         # We know that a human did this since Purview can't currently make
@@ -51,6 +60,25 @@ def does_this_asset_have_updates(asset):
 if __name__ == "__main__":
     """
     """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s", "--search", help="The search term to search. Leave blank if working on existing search results.")
+    parser.add_argument(
+        "--search-folder", help="The folder to store search results.", default="./searches")
+    parser.add_argument(
+        "--batch-folder", help="The folder to store batching results, used to avoid repeating same operations.", default="./batches")
+    parser.add_argument(
+        "-v", help="Set the logging level to INFO", action="store_true"
+    )
+    parser.add_argument(
+        "-vv", help="Set the logging level to DEBUG", action="store_true"
+    )
+    args, _ = parser.parse_known_args()
+
+    if args.vv:
+        logging.getLogger().setLevel(logging.DEBUG)
+    elif args.v:
+        logging.getLogger().setLevel(logging.INFO)
 
     # Authenticate against your Atlas server
     oauth = ServicePrincipalAuthentication(
@@ -75,11 +103,54 @@ if __name__ == "__main__":
     # print(json.dumps(client.get_entity("bd53e412-0d08-442f-a8da-2286b97aac3a"),indent=2))
     # exit()
 
-    batch_path = "./batches"
+    # TODO: Updates this to be either a folder or list of files
+    search_path = args.search_folder
+    batch_path = args.batch_folder
+    to_be_processed = []
     already_processed = []
+
     if not os.path.exists(batch_path):
         os.mkdir(batch_path)
+    if not os.path.exists(search_path):
+        os.mkdir(search_path)
 
+    # Drain the search engine for the passed in search term
+    if args.search:
+        total_search_results = 0
+        # Execute a search across all entities
+        search_generator = client.search_entities(
+            query=args.search, limit=100
+        )
+        batch_size = 100
+        search_batch = []
+        search_filename = unique_file_name()
+
+        for entity in search_generator:
+            search_batch.append(entity["id"])
+            total_search_results += 1
+            if len(search_batch) == batch_size:
+                with open(os.path.join(search_path, unique_file_name()), 'w') as search_fp:
+                    json.dump(search_batch, search_fp)
+                search_batch = []
+
+        # Dealing with the remainder of searches
+        if len(search_batch) > 0:
+            with open(os.path.join(search_path, unique_file_name()), 'w') as search_fp:
+                json.dump(search_batch, search_fp)
+            search_batch = []
+        logging.info("Total Search Results: "+str(total_search_results))
+
+    # Now into the main execution, where we want to actually pick up the work
+    # that needs to be done.
+    # Collect all the searches to be executed
+    for filename in os.listdir(search_path):
+        complete_path = os.path.join(search_path, filename)
+        if os.path.getsize(complete_path) == 0:
+            continue
+        with open(complete_path, 'r') as fp:
+            to_be_processed.extend(json.load(fp))
+
+    # Collect all the guids we've seen in the old client
     for filename in os.listdir(batch_path):
         complete_path = os.path.join(batch_path, filename)
         if os.path.getsize(complete_path) == 0:
@@ -87,29 +158,27 @@ if __name__ == "__main__":
         with open(complete_path, 'r') as fp:
             already_processed.extend(json.load(fp))
 
-    # Execute a search across all entities
-    search_generator = client.search_entities(
-        query="sql_sensitive_table", limit=100)
+    # Reduce the set of to_be_processed by eliminating those seen already
+    logging.info(f"Reduced set size to be processed: {len(to_be_processed)}")
+    to_be_processed = list(set(to_be_processed).difference(already_processed))
+    logging.info(f"Reduced set size to be processed: {len(to_be_processed)}")
 
-    # Collect a batch of 100 entities and process updates
-    search_results_queue = []
+    # Iterate over all of the entities to be processed in batches of 100
+    search_results_offset = 0
+    _stepsize = 100
     old_guids_processed_this_execution = []
+
     try:
-        for search_result in search_generator:
-            # Add the result to the queue
-            guid = search_result["id"]
-            if guid in already_processed:
-                continue
+        work_min = search_results_offset - 100
 
-            search_results_queue.append(guid)
-            # if len(search_results_queue) < 100:
-            #     continue
+        while search_results_offset < len(to_be_processed):
+            logging.debug("Iterating at offset: " + str(search_results_offset))
+            to_be_processed_batch = to_be_processed[search_results_offset:(
+                search_results_offset+_stepsize)]
 
-            # Thing that needs to get done each batch
-
-            # The search queue is at 100
-            # Get all of those entities and their referenced entities
-            get_results = client.get_entity(search_results_queue)
+            get_results = client.get_entity(to_be_processed_batch)
+            # Update the offset
+            search_results_offset = search_results_offset + _stepsize
 
             # TODO: Need to handle tabular schemas
             referred_entities = list(get_results["referredEntities"].values())
@@ -118,23 +187,32 @@ if __name__ == "__main__":
             for entity in referred_entities + direct_entities:
                 partialEntity = does_this_asset_have_updates(entity)
                 if not partialEntity:
+                    logging.debug(
+                        "Skipping the entity due to no changes: "+entity["guid"])
+                    old_guids_processed_this_execution.append(entity["guid"])
                     continue
 
-                # Inefficient
+                # Inefficient, this should be a larger call to get entity
+                # with all of the same types if possible
+                logging.debug(
+                    f"On destination client getting {partialEntity['qualifiedName']}")
                 new_entity_response = new_client.get_entity(
                     typeName=partialEntity["typeName"],
                     qualifiedName=partialEntity["qualifiedName"]
                 )
                 newest_entity = new_entity_response["entities"][0]
                 # Drop fields that aren't valid for an upload
-                for badKey in ["lastModifiedTS", "status", "createdBy", "updatedBy", "createTime", "updateTime", "verison"]:
-                    if badKey in newest_entity:
-                        newest_entity.pop(badKey)
+                # for badKey in ["lastModifiedTS", "status", "createdBy", "updatedBy", "createTime", "updateTime", "verison"]:
+                #     if badKey in newest_entity:
+                #         newest_entity.pop(badKey)
                 newest_entity_original_guid = newest_entity["guid"]
+                # This needs to be a negative number for /entity/bulk upload
                 newest_entity["guid"] = "-1"
 
                 updates_to_newest_entity = {}
 
+                # Blank out the relationship attributes to avoid complexity of
+                # keeping references to the new guids
                 newest_entity["relationshipAttributes"] = {}
                 # for relAttrib, relValue in newest_entity["relationshipAttributes"].items():
                 #     if not relValue:
@@ -150,15 +228,23 @@ if __name__ == "__main__":
                 # contacts
                 # Have to do a whole update
                 if "contacts" in partialEntity:
+                    logging.debug(f"{partialEntity['guid']} Found contacts")
                     newest_entity["contacts"] = partialEntity["contacts"]
                     # While we're here, update the description if necessary!
                     if "description" in partialEntity:
+                        logging.debug(
+                            f"{partialEntity['guid']} Found description too")
                         newest_entity["attributes"]["description"] = partialEntity["description"]
                     # All the fields are updated, do an upload!
+                    # This works because the referenced entities are omitted
                     payload = {"entities": [newest_entity]}
+                    # Inefficient, could be a much larger batch
                     upload_results = new_client.upload_entities(batch=payload)
 
                 elif "description" in partialEntity:
+                    logging.debug(
+                        f"{partialEntity['guid']} No contacts but there was a description")
+                    # If there are other attributes, you could add them here
                     new_client.partial_update_entity(
                         typeName=partialEntity["typeName"],
                         qualifiedName=partialEntity["qualifiedName"],
@@ -169,19 +255,25 @@ if __name__ == "__main__":
                 # One offs
                 # Classifications
                 if "classifications" in partialEntity:
-
-                    print(partialEntity["classifications"])
-
+                    logging.debug(
+                        f"{partialEntity['guid']} Found classifications")
                     new_client.classify_entity(
                         guid=newest_entity_original_guid,
                         classifications=partialEntity["classifications"],
                         # This makes this slower (a second API call) but could
-                        # be improved by looking at newest_entity
+                        # be improved by looking at newest_entity to determine
+                        # if the classifications already existed
                         force_update=True
                     )
                 # Terms
                 if "terms" in partialEntity:
+                    logging.debug(f"{partialEntity['guid']} Found terms")
                     for term in partialEntity["terms"]:
+                        logging.debug(
+                            f"{partialEntity['guid']} Adding term: "+term)
+                        # Inefficient, instead you could list all of the entities
+                        # getting this classification, but likely it's rare to
+                        # have a large batch of entities with the same term
                         new_client.assignTerm(
                             entities=[{"guid": newest_entity_original_guid}],
                             termName=term
@@ -190,7 +282,7 @@ if __name__ == "__main__":
                     partialEntity["guid"])
     finally:
         # Always write out the batch so we know where we left off
-        when = (datetime.utcnow().isoformat()[:-3] + 'Z').replace(":", "-")
-        batch_guid = str(uuid4())
-        with open(os.path.join(batch_path, when+batch_guid+'.json'), 'w') as fp:
+        batch_log_path = os.path.join(batch_path, unique_file_name())
+        with open(batch_log_path, 'w') as fp:
             json.dump(old_guids_processed_this_execution, fp)
+        print("Completed writing batch history at: " + batch_log_path)
