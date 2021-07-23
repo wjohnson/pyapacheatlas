@@ -26,19 +26,3 @@ class CosmosDatabaseCollections(AssetMapper):
 
     def column_qualified_name_pattern(self, columnName, **kwargs):
         return columnName
-
-# if __name__ == "__main__":
-#     oauth = ServicePrincipalAuthentication(
-#         tenant_id=os.environ.get("TENANT_ID", "72f988bf-86f1-41af-91ab-2d7cd011db47"),
-#         client_id=os.environ.get("CLIENT_ID", "0cd96de1-398d-4f4d-8dae-67a7b576a15f"),
-#         client_secret=os.environ.get("CLIENT_SECRET", "")
-#     )
-#     client = PurviewClient(
-#         account_name = os.environ.get("PURVIEW_NAME", "wjpurview001"),
-#         authentication=oauth
-#     )
-#     dbResponse = client.get_entity(guid="65ec0fd8-1de0-4164-97ec-3b88cb000fdb") 
-#     print(json.dumps(dbResponse, indent=2))
-
-#     collResponse = client.get_entity(guid="bd53e412-0d08-442f-a8da-2286b97aac3a") 
-#     print(json.dumps(collResponse, indent=2))

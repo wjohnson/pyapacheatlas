@@ -17,6 +17,10 @@ class ADLSGen1Directory(AssetMapper):
     def column_qualified_name_pattern(self, columnName, **kwargs):
         return columnName
     
+    # Override
+    def partial_column_updates(self):
+        return []
+    
 class ADLSGen1DataLake(AssetMapper):
 
     def __init__(self, asset, termMap, typeName='azure_datalake_gen1_path', columnTypeName='column'):
@@ -33,3 +37,7 @@ class ADLSGen1DataLake(AssetMapper):
 
     def column_qualified_name_pattern(self, columnName, **kwargs):
         return columnName
+    
+    # Override
+    def partial_column_updates(self):
+        return []

@@ -40,7 +40,7 @@ PURVIEW_ACCOUNT_NAME=xxx
 
 Execute the script by calling `python ./samples/migrateADCGen1/migrate_terms.py`.\
 
-# Asset Migration (Work in Process)
+# Asset Migration
 
 After you have scanned your assets with Azure Purview, you can use this utility
 to extract the following annotations from your ADC Gen 1.

@@ -9,6 +9,7 @@ class SqlServerTableMapper(AssetMapper):
         self.database = _address["database"]
         self.schema = _address["schema"]
         self.table = _address["object"]
+        self.friendlyName = _address["object"]
 
     def entity(self, guid):
         local_entity = super().entity(guid)
@@ -41,6 +42,7 @@ class SqlServerDatabaseMapper(AssetMapper):
         _address = self.asset["properties"]["dsl"]["address"]
         self.server = _address["server"]
         self.database = _address["database"]
+        self.friendlyName = _address["database"]
 
     def entity(self, guid):
         local_entity = super().entity(guid)

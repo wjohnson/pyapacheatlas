@@ -12,6 +12,7 @@ from mappers import AssetFactory
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core.client import PurviewClient
 from pyapacheatlas.core.util import GuidTracker
+from pyapacheatlas.core import AtlasException
 
 class SearchURI():
 
@@ -99,16 +100,16 @@ if __name__ == "__main__":
     else:
         adc_assets = download_gen1_assets(config, count=1)
 
-    # Configure your Purview Authentication
-    # oauth = ServicePrincipalAuthentication(
-    #     tenant_id=config["PurviewClient"]["TENANT_ID"],
-    #     client_id=config["PurviewClient"]["CLIENT_ID"],
-    #     client_secret=config["PurviewClient"]["CLIENT_SECRET"]
-    # )
-    # client = PurviewClient(
-    #     account_name=config["PurviewClient"]["PURVIEW_ACCOUNT_NAME"],
-    #     authentication=oauth
-    # )
+    
+    oauth = ServicePrincipalAuthentication(
+        tenant_id=config["PurviewClient"]["TENANT_ID"],
+        client_id=config["PurviewClient"]["CLIENT_ID"],
+        client_secret=config["PurviewClient"]["CLIENT_SECRET"]
+    )
+    client = PurviewClient(
+        account_name=config["PurviewClient"]["PURVIEW_ACCOUNT_NAME"],
+        authentication=oauth
+    )
 
     mappers = []
     for asset in adc_assets:
@@ -121,4 +122,40 @@ if __name__ == "__main__":
     print(f"Started with {len(adc_assets)} and ended up with {len(mappers)} processed.")
 
     for mapper in mappers:
-        print(mapper.qualified_name())
+        print(f"Working on: {mapper.qualified_name()}")
+        if mapper.experts:
+            mapper.experts = ["f2149281-20da-4c27-89c6-75597a1235b1"]  
+        # Handles
+        # experts
+        # friendlyName
+        # description      
+        try:
+            results = client.upload_entities([mapper.entity("-1")])
+            # Handles
+            ## glossary terms
+            for rel in mapper.glossary_entity_relationships():
+                try:
+                    client.upload_relationship(rel)
+                except AtlasException:
+                    print("\tSkipping table glossary relationship since it likely exists")
+            
+            # Handles glossary terms at the column level
+            for col_rel in mapper.glossary_column_relationships():
+                try:
+                    print(col_rel)
+                    client.upload_relationship(col_rel)
+                except:
+                    print("\tSkipping column glossary relationship since it likely exists")
+            
+            # Handles column level updates
+            for col_upd in mapper.partial_column_updates():
+                print(col_upd)
+                client.partial_update_entity(
+                    typeName=col_upd["typeName"],
+                    qualifiedName=col_upd["qualifiedName"],
+                    attributes = col_upd["attributes"]
+                )
+        except Exception as e:
+            print(f"FAILED DURING {mapper.qualified_name()}")
+            print(e)
+            print("CONTINUING TO PROCESS...")
