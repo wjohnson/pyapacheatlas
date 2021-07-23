@@ -38,4 +38,36 @@ CLIENT_SECRET=xxx
 PURVIEW_ACCOUNT_NAME=xxx
 ```
 
-Execute the script by calling `python ./samples/migrateADCGen1/migrate_terms.py`.
+Execute the script by calling `python ./samples/migrateADCGen1/migrate_terms.py`.\
+
+# Asset Migration
+
+After you have scanned your assets with Azure Purview, you can use this utility
+to extract the following annotations from your ADC Gen 1.
+
+* termTags
+* columnTermTags
+* descriptions
+* columnDescriptions
+* friendlyName: Replaces the "name" attribute.
+* experts: Known issue, this will overwrite any existing owners and experts
+
+Execute the script by navigating to the `./samples/migrateADCGen1` folder and
+calling `python migrate_assets.py --terms <path to terms file>`.\
+
+## Extending the AssetMapper and AssetFactory class
+
+When you add a new asset mapper type, add it in the `mappers` folder and update
+the `__init__.py` to include the objects in the main mappers package. In addition
+you should update the AssetFactory to include your new type.
+
+* `__init__` Provide typeName and columnTypeName (if asset type may ever have columnTermTags or columnDescriptions)
+* `qualified_name` Define how the Purview qualified name may be extract from the asset's content. Likely coming from the asset's `properties.dsl.address` object.
+* `column_qualified_name_pattern` Define how the Purview qualified name may be extracted for the column type relating to this asset.
+* `entity` Returns the AtlasEntity object. You should extend this to fill in any required attributes or relationship attributes.
+
+These methods likely do not have to be updated.
+* `partial_entity_updates` Base class only provides support for partial update with friendly name to name and description field. Can be extending by taking the super() function and extending the returned dictionary. Specifically the dict within the attributes field.
+* `partial_column_updates` Base class only provides support for columnDescriptions. Can be extended by taking the super() function and extending the list of returned dictionaries.
+* `glossary_entity_relationships` Likely you don't have to extend this. Returns the relationship objects between the given term and the asset.
+* `glossary_column_relationships` Likely you don't have to extend this. Returns the relationship objects between the given term and the columns for this asset.
