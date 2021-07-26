@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import csv
 import json
@@ -89,8 +90,13 @@ def convert_gen1_to_purview_terms(config):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--download-only", action="store_true", default=False)
+    parser.add_argument("--config", default="./samples/migrateADCGen1/config.ini")
+    args, _ = parser.parse_known_args()
+
     config = configparser.ConfigParser()
-    config.read("./samples/migrateADCGen1/config.ini")
+    config.read(args.config)
 
     # Configure your Purview Authentication
     oauth = ServicePrincipalAuthentication(
@@ -107,6 +113,9 @@ if __name__ == "__main__":
     print("Downloading ADC Gen 1 Terms...")
     download_gen1_terms(config)
     print("Successfully downloaded ADC Gen 1 Terms.")
+
+    if args.download_only:
+        exit()
 
     # Convert the json to a csv for import
     print("Converting ADC Gen 1 Terms to be CSV for Purview Upload...")

@@ -38,7 +38,7 @@ class Reader(LineageMixIn):
     The base Reader with functionality that supports python dicts.
     """
     TEMPLATE_HEADERS = {
-        "ColumnsLineage": [
+        "FineGrainColumnLineage": [
             "Target table", "Target column", "Target classifications",
             "Source table", "Source column", "Source classifications",
             "transformation"
