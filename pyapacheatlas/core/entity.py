@@ -398,54 +398,6 @@ class AtlasProcess(AtlasEntity):
         self.inputs = _deduped_inputs
         self.outputs = _deduped_outputs
 
-    def set_inputs(self, inputs):
-        """
-        Deprecated: Use AtlasEntity.inputs to set inputs.
-        Set the inputs to the process.  Inputs should be AtlasEntity minimum
-        json of `{qualifiedName:..., guid:..., typeName:...}`.
-
-        :param list(dict) inputs: The minimum json inputs.
-        """
-        warnings.warn("Set inputs using AtlasProcess.inputs = ...",
-                      category=DeprecationWarning, stacklevel=2)
-        self.attributes["inputs"] = inputs
-
-    def set_outputs(self, outputs):
-        """
-        Deprecated: Use AtlasEntity.outputs to set outputs.
-        Set the outputs to the process.  Outputs should be AtlasEntity minimum
-        json of `{qualifiedName:..., guid:..., typeName:...}`.
-
-        :param list(dict) outputs: The minimum json outputs.
-        """
-        warnings.warn("Set outputs using AtlasProcess.outputs = ...",
-                      category=DeprecationWarning, stacklevel=2)
-        self.attributes["outputs"] = outputs
-
-    def get_inputs(self):
-        """
-        Deprecated: Use AtlasEntity.inputs to get inputs.
-        Return the inputs to the process.
-
-        :return: The minimum json inputs.
-        :rtype: list(dict)
-        """
-        warnings.warn("Get inputs using AtlasProcess.inputs.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes.get("inputs")
-
-    def get_outputs(self):
-        """
-        Deprecated: Use AtlasEntity.outputs to set outputs.
-        Set the outputs to the process.
-
-        :return: The minimum json inputs.
-        :rtype: list(dict)
-        """
-        warnings.warn("Get outputs using AtlasProcess.outputs.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes.get("outputs")
-
 
 class AtlasClassification():
     """
