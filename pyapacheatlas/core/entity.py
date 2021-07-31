@@ -41,14 +41,15 @@ class AtlasEntity():
         super().__init__()
         self.attributes = kwargs.get("attributes", {})
         self.attributes.update({"name": None, "qualifiedName": None})
+        # Normally takes a dict of dicts
         self.businessAttributes = kwargs.get("businessAttributes", AtlasUnInit())
         self.classifications = kwargs.get("classifications", AtlasUnInit())
         # This isn't implemented in Apache Atlas, so being cautious
-        if "contacts" in kwargs:
-            # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
-            self.contacts = kwargs.get("contacts", {})
+        # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
+        self.contacts = kwargs.get("contacts", AtlasUnInit())
         self.createTime = kwargs.get("createTime", AtlasUnInit())
         self.createdBy = kwargs.get("createdBy", AtlasUnInit())
+        # Normally takes a dict of str
         self.customAttributes = kwargs.get("customAttributes", AtlasUnInit())
         self.guid = guid
         self.homeId = kwargs.get("homeId", AtlasUnInit())
@@ -130,12 +131,42 @@ class AtlasEntity():
         """
         self.attributes["qualifiedName"] = value
 
+    def addBusinessAttribute(self, **kwargs):
+        """
+        Add one or many businessAttributes to the entity. This will
+        also update an existing business attribute. You can pass in a parameter
+        name and a dict.
+
+        Kwargs:
+            :param kwarg: The name(s) of the business attribute(s) you're adding.
+            :type kwarg: dict
+        """
+        if not self.businessAttributes:
+            self.businessAttributes = {}
+        self.businessAttributes.update(kwargs)
+    
+    def addCustomAttribute(self, **kwargs):
+        """
+        Add one or many customAttributes to the entity. This will
+        also update an existing attribute. You can pass in a parameter name and
+        a string.
+
+        Kwargs:
+            :param kwarg: The name(s) of the custom attribute(s) you're adding.
+            :type kwarg: dict(str, str)
+        """
+        if not self.customAttributes:
+            self.customAttributes = {}
+        self.customAttributes.update(kwargs)
+    
     def addRelationship(self, **kwargs):
         """
-        Add one or many relationshipAttributes to the outputs. This will
-        also update an existing attribute. You can pass in a parameter name and
-        then either an Atlas Entity or a dict. The dict is a 
-        table = AtlasEntity(...) or
+        Add one or many relationshipAttributes to the entity. This will
+        also update an existing relationship attribute. You can pass in a parameter
+        name and then either an Atlas Entity, a dict representing an AtlasEntity,
+        or a list containing dicts of AtlasEntity pointers. For example, you might
+        pass in `addRelationship(table=AtlasEntity(...))` or
+        `addRelationship(column=[{'guid':'abc-123-def`}])`.
 
         Kwargs:
             :param kwarg: The name of the relationship attribute you're adding.
