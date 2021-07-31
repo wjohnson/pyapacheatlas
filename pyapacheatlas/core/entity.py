@@ -1,5 +1,10 @@
 import warnings
 
+class AtlasUnInit():
+    """
+    Represents a value that has not been initialized
+    and will not be included in json body.
+    """
 
 class AtlasEntity():
     """
@@ -31,21 +36,38 @@ class AtlasEntity():
 
     def __init__(self, name, typeName, qualified_name, guid=None, **kwargs):
         super().__init__()
-        self.typeName = typeName
-        self.guid = guid
         self.attributes = kwargs.get("attributes", {})
         self.attributes.update({"name": None, "qualifiedName": None})
-        self.name = name
-        self.qualifiedName = qualified_name
-        if "description" in kwargs:
-            self.attributes.update({"description": kwargs["description"]})
-        self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
-        self.classifications = kwargs.get("classifications", None)
+        self.businessAttributes = kwargs.get("businessAttributes", None)
+        self.classifications = kwargs.get("classifications", AtlasUnInit)
         # This isn't implemented in Apache Atlas, so being cautious
         if "contacts" in kwargs:
             # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
             self.contacts = kwargs.get("contacts", {})
-
+        self.createTime = kwargs.get("createTime", AtlasUnInit())
+        self.createdBy = kwargs.get("createdBy", AtlasUnInit())
+        self.customAttributes = kwargs.get("customAttributes", AtlasUnInit())
+        self.guid = guid
+        self.homeId = kwargs.get("homeId", AtlasUnInit())
+        self.isIncomplete = kwargs.get("isIncomplete", AtlasUnInit())
+        self.labels = kwargs.get("labels", AtlasUnInit())
+        self.lastModifiedTS = kwargs.get("lastModifiedTS", AtlasUnInit())
+        self.meanings = kwargs.get("meanings", AtlasUnInit())
+        self.provenanceType = kwargs.get("provenanceType", AtlasUnInit())
+        self.proxy = kwargs.get("proxy", AtlasUnInit())
+        self.relationshipAttributes = kwargs.get("relationshipAttributes", AtlasUnInit)
+        self.source = kwargs.get("source", AtlasUnInit())
+        self.sourceDetails = kwargs.get("sourceDetails", AtlasUnInit())
+        self.status = kwargs.get("status", AtlasUnInit())
+        self.typeName = typeName
+        self.updateTime = kwargs.get("updateTime", AtlasUnInit())
+        self.updatedBy = kwargs.get("updatedBy", AtlasUnInit())
+        self.version = kwargs.get("version", AtlasUnInit())
+        self.name = name
+        self.qualifiedName = qualified_name
+        if "description" in kwargs:
+            self.attributes.update({"description": kwargs["description"]})
+    
     def __eq__(self, other):
         return self.qualifiedName == other
 
@@ -121,30 +143,6 @@ class AtlasEntity():
             val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
             self.relationshipAttributes.update({k: val })
 
-    def get_name(self):
-        """
-        Deprecated in favor of .name property.
-        Retrieve the name of this entity.
-
-        :return: The name of the entity.
-        :rtype: str
-        """
-        warnings.warn("Get name using AtlasEntity.name.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes["name"]
-
-    def get_qualified_name(self):
-        """
-        Deprecated in favor of .qualifiedName.
-        Retrieve the qualified (unique) name of this entity.
-
-        :return: The qualified name of the entity.
-        :rtype: str
-        """
-        warnings.warn("Get qualified name using AtlasEntity.qualifiedName.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes["qualifiedName"]
-
     def to_json(self, minimum=False):
         """
         Convert this atlas entity to a dict / json. Returns typename, guid,
@@ -186,12 +184,11 @@ class AtlasEntity():
                 "relationshipAttributes": self.relationshipAttributes
             }
             # Add ins for optional top level attributes
-            if self.classifications:
-                output.update({"classifications": self.classifications})
-            if hasattr(self, 'contacts'):
-                output.update({"contacts": self.contacts})
-
-
+            for k, v in vars(self).items():
+                if isinstance(v, AtlasUnInit) or k == "name":
+                    continue
+                output[k] = v
+        
         return output
 
     def merge(self, other):
