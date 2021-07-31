@@ -43,3 +43,22 @@ def test_add_relationshipAttributes():
     req_keys = set(["guid", "qualifiedName", "typeName"])
     assert(all([(len(d) == 3 and set(d.keys()) == req_keys)
                 for d in ae.relationshipAttributes.values()]))
+
+def test_explicit_add_nulls():
+    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1, meanings=None, customAttributes=None)
+    assert(ae.meanings is None)
+    assert(ae.customAttributes is None)
+    assert(ae.relationshipAttributes is not None)
+
+
+def test_add_customAttribute():
+    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1)
+    ae.addCustomAttribute(custom1="blah")
+    assert(ae.customAttributes)
+    assert(ae.customAttributes == {"custom1":"blah"})
+
+def test_add_businessAttribute():
+    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1)
+    ae.addBusinessAttribute(biz1={"prop1":"abc"})
+    assert(ae.businessAttributes)
+    assert(ae.businessAttributes == {"biz1":{"prop1":"abc"}})

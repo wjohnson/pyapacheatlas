@@ -5,6 +5,9 @@ class AtlasUnInit():
     Represents a value that has not been initialized
     and will not be included in json body.
     """
+    def __bool__(self):
+        return False
+
 
 class AtlasEntity():
     """
@@ -38,8 +41,8 @@ class AtlasEntity():
         super().__init__()
         self.attributes = kwargs.get("attributes", {})
         self.attributes.update({"name": None, "qualifiedName": None})
-        self.businessAttributes = kwargs.get("businessAttributes", None)
-        self.classifications = kwargs.get("classifications", AtlasUnInit)
+        self.businessAttributes = kwargs.get("businessAttributes", AtlasUnInit())
+        self.classifications = kwargs.get("classifications", AtlasUnInit())
         # This isn't implemented in Apache Atlas, so being cautious
         if "contacts" in kwargs:
             # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
@@ -55,7 +58,7 @@ class AtlasEntity():
         self.meanings = kwargs.get("meanings", AtlasUnInit())
         self.provenanceType = kwargs.get("provenanceType", AtlasUnInit())
         self.proxy = kwargs.get("proxy", AtlasUnInit())
-        self.relationshipAttributes = kwargs.get("relationshipAttributes", AtlasUnInit)
+        self.relationshipAttributes = kwargs.get("relationshipAttributes", AtlasUnInit())
         self.source = kwargs.get("source", AtlasUnInit())
         self.sourceDetails = kwargs.get("sourceDetails", AtlasUnInit())
         self.status = kwargs.get("status", AtlasUnInit())
@@ -139,6 +142,8 @@ class AtlasEntity():
             :type kwarg:
                 Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
+        if not self.relationshipAttributes:
+            self.relationshipAttributes = {}
         for k,v in kwargs.items():
             val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
             self.relationshipAttributes.update({k: val })
@@ -180,12 +185,13 @@ class AtlasEntity():
             output = {
                 "typeName": self.typeName,
                 "guid": self.guid,
-                "attributes": self.attributes,
-                "relationshipAttributes": self.relationshipAttributes
+                "attributes": self.attributes
             }
             # Add ins for optional top level attributes
             for k, v in vars(self).items():
-                if isinstance(v, AtlasUnInit) or k == "name":
+                is_uninitialized = isinstance(v, AtlasUnInit)
+                is_asset_attribute = k in ["name", "qualifiedName"]
+                if is_uninitialized or is_asset_attribute:
                     continue
                 output[k] = v
         
