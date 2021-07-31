@@ -145,6 +145,41 @@ class AtlasEntity():
             self.businessAttributes = {}
         self.businessAttributes.update(kwargs)
     
+    def addClassification(self, *args):
+        """
+        Add one or many classifications to the entity. This will
+        also update an existing attribute. You can pass in a parameter name and
+        a string, an AtlasClassification, or a dictionary.
+
+        :param args:
+            The string, dictionary, or AtlasClassification passed as individual
+            arguments. You can unpack a list using something like `*my_list`.
+        :type args: Union(str, dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
+        """
+        classification_was_uninitialized = isinstance(self.classifications, AtlasUnInit)
+        classifications_to_add = []
+        if classification_was_uninitialized:
+            self.classifications = []
+        try:
+            for arg in args:
+                if isinstance(arg, dict):
+                    classifications_to_add.append(arg)
+                elif isinstance(arg, str):
+                    classifications_to_add.append(AtlasClassification(arg).to_json())
+                elif isinstance(arg, AtlasClassification):
+                    classifications_to_add.append(arg.to_json())
+                else:
+                    raise TypeError(
+                        f"The type {type(arg)} for value {arg} can't be converted to a classification dict."
+                    )
+            # Made it through all the args, add the classifications
+            self.classifications.extend(classifications_to_add)
+        except Exception as e:
+            if classification_was_uninitialized:
+                self.classifications = AtlasUnInit()
+            raise e
+
+    
     def addCustomAttribute(self, **kwargs):
         """
         Add one or many customAttributes to the entity. This will

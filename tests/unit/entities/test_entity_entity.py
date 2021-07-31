@@ -1,4 +1,5 @@
-from pyapacheatlas.core.entity import AtlasEntity
+from pyapacheatlas.core.entity import AtlasEntity, AtlasUnInit
+from pyapacheatlas.core import AtlasClassification
 
 
 def test_getters_setters():
@@ -50,6 +51,33 @@ def test_explicit_add_nulls():
     assert(ae.customAttributes is None)
     assert(ae.relationshipAttributes is not None)
 
+def test_add_classifications():
+    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1)
+    ae.addClassification("a","b", AtlasClassification("c"))
+    assert(ae.classifications)
+
+    expected = [AtlasClassification("a").to_json(), AtlasClassification("b").to_json(),
+    AtlasClassification("c").to_json()
+    ]
+    
+    assert(ae.classifications == expected)
+
+def test_add_classifications_transaction():
+    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1)
+    # Confirm that it will keep the initial state as uninitialized
+    try:
+        ae.addClassification("a","b", 123, AtlasClassification("c"))
+    except Exception as e:
+        pass
+    assert(isinstance(ae.classifications, AtlasUnInit))
+    
+    # Now confirm that it will keep the initial state
+    ae.addClassification("a")
+    try:
+        ae.addClassification(123)
+    except:
+        pass
+    assert(ae.classifications == [AtlasClassification("a").to_json()])
 
 def test_add_customAttribute():
     ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1)
