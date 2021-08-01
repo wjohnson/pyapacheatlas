@@ -284,18 +284,21 @@ class AtlasEntity():
         
         return output
     
-    @staticmethod
-    def from_json(entity_json):
+    @classmethod
+    def from_json(cls, entity_json):
         local_entity = entity_json.copy()
         guid = local_entity.pop("guid")
         typeName = local_entity.pop("typeName")
         name = local_entity["attributes"]["name"]
         qualified_name = local_entity["attributes"]["qualifiedName"]
-        ae = AtlasEntity(
+        ae = cls(
             name = name,
             typeName= typeName,
             qualified_name = qualified_name,
             guid = guid,
+            # This is necessary for AtlasProcess and shouldn't affect Entity
+            inputs = local_entity["attributes"].get("inputs"),
+            outputs = local_entity["attributes"].get("outputs"),
             **local_entity
         )
         return ae
