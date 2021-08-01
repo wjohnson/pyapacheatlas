@@ -54,6 +54,7 @@ class AtlasEntity():
         self.guid = guid
         self.homeId = kwargs.get("homeId", AtlasUnInit())
         self.isIncomplete = kwargs.get("isIncomplete", AtlasUnInit())
+        # Normally takes a list of strings
         self.labels = kwargs.get("labels", AtlasUnInit())
         self.lastModifiedTS = kwargs.get("lastModifiedTS", AtlasUnInit())
         self.meanings = kwargs.get("meanings", AtlasUnInit())
@@ -353,7 +354,10 @@ class AtlasProcess(AtlasEntity):
         """
         Set the inputs attribute for the process. If you pass in a dict list, it
         should be have keys: guid, typeName, qualifiedName. Passing in a list of
-        AtlasEntity, it will automatically convert the entities to dicts.
+        AtlasEntity, it will automatically convert the entities to dicts. If you
+        set it to None, this will result in no change to the Process inputs you
+        are targeting after upload. If you set it to an empty list `[]` you will
+        erase all the inputs.
 
         :param value: List of dicts or atlas entities to set as the inputs.
         :type value: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
@@ -379,7 +383,10 @@ class AtlasProcess(AtlasEntity):
         """
         Set the outputs attribute for the process. If you pass in a dict list, it
         should be have keys: guid, typeName, qualifiedName. Passing in a list of
-        AtlasEntity, it will automatically convert the entities to dicts.
+        AtlasEntity, it will automatically convert the entities to dicts. If you
+        set it to None, this will result in no change to the Process outputs you
+        are targeting after upload. If you set it to an empty list `[]` you will
+        erase all the outputs.
 
         :param value: List of dicts or atlas entities to set as the outputs.
         :type value: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
