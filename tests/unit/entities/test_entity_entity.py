@@ -89,3 +89,31 @@ def test_add_businessAttribute():
     ae.addBusinessAttribute(biz1={"prop1":"abc"})
     assert(ae.businessAttributes)
     assert(ae.businessAttributes == {"biz1":{"prop1":"abc"}})
+
+def test_entity_from_json():
+    input_entity = {
+      "typeName": "DataSet",
+      "attributes": {
+        "owner": None,
+        "replicatedTo": None,
+        "replicatedFrom": None,
+        "qualifiedName": "testEntity",
+        "name": "testEntity",
+        "description": None
+      },
+      "guid": "f3a2390d-f300-487e-8756-b27767e540f0",
+      "status": "ACTIVE",
+      "relationshipAttributes": {
+        "schema": [],
+        "inputToProcesses": [],
+        "children": [],
+        "attachedSchema": [],
+        "meanings": [],
+        "outputFromProcesses": []
+      }
+    }
+    ae = AtlasEntity.from_json(input_entity)
+
+    assert(ae.qualifiedName == input_entity["attributes"]["qualifiedName"])
+    assert(ae.name == input_entity["attributes"]["name"])
+    assert(ae.typeName == input_entity["typeName"])

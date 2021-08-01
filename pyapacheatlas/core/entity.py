@@ -283,6 +283,22 @@ class AtlasEntity():
                 output[k] = v
         
         return output
+    
+    @staticmethod
+    def from_json(entity_json):
+        local_entity = entity_json.copy()
+        guid = local_entity.pop("guid")
+        typeName = local_entity.pop("typeName")
+        name = local_entity["attributes"]["name"]
+        qualified_name = local_entity["attributes"]["qualifiedName"]
+        ae = AtlasEntity(
+            name = name,
+            typeName= typeName,
+            qualified_name = qualified_name,
+            guid = guid,
+            **local_entity
+        )
+        return ae
 
     def merge(self, other):
         """
