@@ -46,8 +46,7 @@ def test_add_relationshipAttributes():
                 for d in ae.relationshipAttributes.values()]))
 
 def test_explicit_add_nulls():
-    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1, meanings=None, customAttributes=None)
-    assert(ae.meanings is None)
+    ae = AtlasEntity(name="a", typeName="b", qualified_name="c", guid=-1, customAttributes=None)
     assert(ae.customAttributes is None)
     assert(ae.relationshipAttributes is not None)
 

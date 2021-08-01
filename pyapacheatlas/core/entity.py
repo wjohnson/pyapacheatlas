@@ -141,9 +141,15 @@ class AtlasEntity():
             :param kwarg: The name(s) of the business attribute(s) you're adding.
             :type kwarg: dict
         """
-        if not self.businessAttributes:
+        businessAttributes_was_uninitialized = isinstance(self.businessAttributes, AtlasUnInit)
+        if businessAttributes_was_uninitialized:
             self.businessAttributes = {}
-        self.businessAttributes.update(kwargs)
+        try:
+            self.businessAttributes.update(kwargs)
+        except Exception as e:
+            if businessAttributes_was_uninitialized:
+                self.businessAttributes = AtlasUnInit()
+            raise e
     
     def addClassification(self, *args):
         """
@@ -190,9 +196,15 @@ class AtlasEntity():
             :param kwarg: The name(s) of the custom attribute(s) you're adding.
             :type kwarg: dict(str, str)
         """
-        if not self.customAttributes:
+        customAttributes_was_uninitialized = isinstance(self.customAttributes, AtlasUnInit)
+        if customAttributes_was_uninitialized:
             self.customAttributes = {}
-        self.customAttributes.update(kwargs)
+        try:
+            self.customAttributes.update(kwargs)
+        except Exception as e:
+            if customAttributes_was_uninitialized:
+                self.customAttributes = AtlasUnInit()
+            raise e
     
     def addRelationship(self, **kwargs):
         """
@@ -208,11 +220,20 @@ class AtlasEntity():
             :type kwarg:
                 Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
-        if not self.relationshipAttributes:
+        relationshipAttributes_was_uninitialized = isinstance(self.customAttributes, AtlasUnInit)
+        relationships_to_add = {}
+        if relationshipAttributes_was_uninitialized:
             self.relationshipAttributes = {}
-        for k,v in kwargs.items():
-            val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
-            self.relationshipAttributes.update({k: val })
+        try:
+            for k,v in kwargs.items():
+                val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
+                relationships_to_add[k] = val
+            # Add all the relationships
+            self.relationshipAttributes.update(relationships_to_add)
+        except Exception as e:
+            if relationshipAttributes_was_uninitialized:
+                self.relationshipAttributes = AtlasUnInit()
+
 
     def to_json(self, minimum=False):
         """
