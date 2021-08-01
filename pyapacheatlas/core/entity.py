@@ -57,7 +57,6 @@ class AtlasEntity():
         # Normally takes a list of strings
         self.labels = kwargs.get("labels", AtlasUnInit())
         self.lastModifiedTS = kwargs.get("lastModifiedTS", AtlasUnInit())
-        self.meanings = kwargs.get("meanings", AtlasUnInit())
         self.provenanceType = kwargs.get("provenanceType", AtlasUnInit())
         self.proxy = kwargs.get("proxy", AtlasUnInit())
         self.relationshipAttributes = kwargs.get("relationshipAttributes", AtlasUnInit())
