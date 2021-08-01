@@ -52,3 +52,35 @@ def test_adding_later():
     # Should only have the minimum attributes necessary (3)
     assert(all (len(v) ==3 for v in p.attributes["inputs"]))
     assert(all (len(v) ==3 for v in p.attributes["outputs"]))
+
+def test_process_from_json():
+    input_proc = {
+      "typeName": "Process",
+      "attributes": {
+        "owner": None,
+        "replicatedTo": None,
+        "replicatedFrom": None,
+        "qualifiedName": "testEntity",
+        "name": "testEntity",
+        "description": None,
+        "inputs":[{"guid":"123"}],
+        "outputs":[{"guid":"456"}]
+      },
+      "guid": "f3a2390d-f300-487e-8756-b27767e540f0",
+      "status": "ACTIVE",
+      "relationshipAttributes": {
+        "schema": [],
+        "inputToProcesses": [],
+        "children": [],
+        "attachedSchema": [],
+        "meanings": [],
+        "outputFromProcesses": []
+      }
+    }
+    ap = AtlasProcess.from_json(input_proc)
+
+    assert(ap.qualifiedName == input_proc["attributes"]["qualifiedName"])
+    assert(ap.name == input_proc["attributes"]["name"])
+    assert(ap.typeName == input_proc["typeName"])
+    assert(ap.inputs == input_proc["attributes"]["inputs"])
+    assert(ap.outputs == input_proc["attributes"]["outputs"])

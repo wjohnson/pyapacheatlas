@@ -1,3 +1,4 @@
+from ..core.entity import AtlasUnInit
 
 def string_to_classification(string, sep=";"):
     """
@@ -9,7 +10,7 @@ def string_to_classification(string, sep=";"):
     :rtype: list(dict)
     """
     if string is None:
-        return []
+        return AtlasUnInit()
     # TODO: How do we bring in attributes if they're required?
     # Defaulting to NOT propagate the classification downstream.
     # Advanced users may decide to parse the classifications and update the

@@ -1,5 +1,13 @@
 import warnings
 
+class AtlasUnInit():
+    """
+    Represents a value that has not been initialized
+    and will not be included in json body.
+    """
+    def __bool__(self):
+        return False
+
 
 class AtlasEntity():
     """
@@ -31,21 +39,39 @@ class AtlasEntity():
 
     def __init__(self, name, typeName, qualified_name, guid=None, **kwargs):
         super().__init__()
-        self.typeName = typeName
-        self.guid = guid
         self.attributes = kwargs.get("attributes", {})
         self.attributes.update({"name": None, "qualifiedName": None})
+        # Normally takes a dict of dicts
+        self.businessAttributes = kwargs.get("businessAttributes", AtlasUnInit())
+        self.classifications = kwargs.get("classifications", AtlasUnInit())
+        # This isn't implemented in Apache Atlas, so being cautious
+        # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
+        self.contacts = kwargs.get("contacts", AtlasUnInit())
+        self.createTime = kwargs.get("createTime", AtlasUnInit())
+        self.createdBy = kwargs.get("createdBy", AtlasUnInit())
+        # Normally takes a dict of str
+        self.customAttributes = kwargs.get("customAttributes", AtlasUnInit())
+        self.guid = guid
+        self.homeId = kwargs.get("homeId", AtlasUnInit())
+        self.isIncomplete = kwargs.get("isIncomplete", AtlasUnInit())
+        # Normally takes a list of strings
+        self.labels = kwargs.get("labels", AtlasUnInit())
+        self.lastModifiedTS = kwargs.get("lastModifiedTS", AtlasUnInit())
+        self.provenanceType = kwargs.get("provenanceType", AtlasUnInit())
+        self.proxy = kwargs.get("proxy", AtlasUnInit())
+        self.relationshipAttributes = kwargs.get("relationshipAttributes", AtlasUnInit())
+        self.source = kwargs.get("source", AtlasUnInit())
+        self.sourceDetails = kwargs.get("sourceDetails", AtlasUnInit())
+        self.status = kwargs.get("status", AtlasUnInit())
+        self.typeName = typeName
+        self.updateTime = kwargs.get("updateTime", AtlasUnInit())
+        self.updatedBy = kwargs.get("updatedBy", AtlasUnInit())
+        self.version = kwargs.get("version", AtlasUnInit())
         self.name = name
         self.qualifiedName = qualified_name
         if "description" in kwargs:
             self.attributes.update({"description": kwargs["description"]})
-        self.relationshipAttributes = kwargs.get("relationshipAttributes", {})
-        self.classifications = kwargs.get("classifications", None)
-        # This isn't implemented in Apache Atlas, so being cautious
-        if "contacts" in kwargs:
-            # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
-            self.contacts = kwargs.get("contacts", {})
-
+    
     def __eq__(self, other):
         return self.qualifiedName == other
 
@@ -105,45 +131,109 @@ class AtlasEntity():
         """
         self.attributes["qualifiedName"] = value
 
+    def addBusinessAttribute(self, **kwargs):
+        """
+        Add one or many businessAttributes to the entity. This will
+        also update an existing business attribute. You can pass in a parameter
+        name and a dict.
+
+        Kwargs:
+            :param kwarg: The name(s) of the business attribute(s) you're adding.
+            :type kwarg: dict
+        """
+        businessAttributes_was_uninitialized = isinstance(self.businessAttributes, AtlasUnInit)
+        if businessAttributes_was_uninitialized:
+            self.businessAttributes = {}
+        try:
+            self.businessAttributes.update(kwargs)
+        except Exception as e:
+            if businessAttributes_was_uninitialized:
+                self.businessAttributes = AtlasUnInit()
+            raise e
+    
+    def addClassification(self, *args):
+        """
+        Add one or many classifications to the entity. This will
+        also update an existing attribute. You can pass in a parameter name and
+        a string, an AtlasClassification, or a dictionary.
+
+        :param args:
+            The string, dictionary, or AtlasClassification passed as individual
+            arguments. You can unpack a list using something like `*my_list`.
+        :type args: Union(str, dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
+        """
+        classification_was_uninitialized = isinstance(self.classifications, AtlasUnInit)
+        classifications_to_add = []
+        if classification_was_uninitialized:
+            self.classifications = []
+        try:
+            for arg in args:
+                if isinstance(arg, dict):
+                    classifications_to_add.append(arg)
+                elif isinstance(arg, str):
+                    classifications_to_add.append(AtlasClassification(arg).to_json())
+                elif isinstance(arg, AtlasClassification):
+                    classifications_to_add.append(arg.to_json())
+                else:
+                    raise TypeError(
+                        f"The type {type(arg)} for value {arg} can't be converted to a classification dict."
+                    )
+            # Made it through all the args, add the classifications
+            self.classifications.extend(classifications_to_add)
+        except Exception as e:
+            if classification_was_uninitialized:
+                self.classifications = AtlasUnInit()
+            raise e
+
+    
+    def addCustomAttribute(self, **kwargs):
+        """
+        Add one or many customAttributes to the entity. This will
+        also update an existing attribute. You can pass in a parameter name and
+        a string.
+
+        Kwargs:
+            :param kwarg: The name(s) of the custom attribute(s) you're adding.
+            :type kwarg: dict(str, str)
+        """
+        customAttributes_was_uninitialized = isinstance(self.customAttributes, AtlasUnInit)
+        if customAttributes_was_uninitialized:
+            self.customAttributes = {}
+        try:
+            self.customAttributes.update(kwargs)
+        except Exception as e:
+            if customAttributes_was_uninitialized:
+                self.customAttributes = AtlasUnInit()
+            raise e
+    
     def addRelationship(self, **kwargs):
         """
-        Add one or many relationshipAttributes to the outputs. This will
-        also update an existing attribute. You can pass in a parameter name and
-        then either an Atlas Entity or a dict. The dict is a 
-        table = AtlasEntity(...) or
+        Add one or many relationshipAttributes to the entity. This will
+        also update an existing relationship attribute. You can pass in a parameter
+        name and then either an Atlas Entity, a dict representing an AtlasEntity,
+        or a list containing dicts of AtlasEntity pointers. For example, you might
+        pass in `addRelationship(table=AtlasEntity(...))` or
+        `addRelationship(column=[{'guid':'abc-123-def`}])`.
 
         Kwargs:
             :param kwarg: The name of the relationship attribute you're adding.
             :type kwarg:
                 Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
-        for k,v in kwargs.items():
-            val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
-            self.relationshipAttributes.update({k: val })
+        relationshipAttributes_was_uninitialized = isinstance(self.customAttributes, AtlasUnInit)
+        relationships_to_add = {}
+        if relationshipAttributes_was_uninitialized:
+            self.relationshipAttributes = {}
+        try:
+            for k,v in kwargs.items():
+                val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
+                relationships_to_add[k] = val
+            # Add all the relationships
+            self.relationshipAttributes.update(relationships_to_add)
+        except Exception as e:
+            if relationshipAttributes_was_uninitialized:
+                self.relationshipAttributes = AtlasUnInit()
 
-    def get_name(self):
-        """
-        Deprecated in favor of .name property.
-        Retrieve the name of this entity.
-
-        :return: The name of the entity.
-        :rtype: str
-        """
-        warnings.warn("Get name using AtlasEntity.name.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes["name"]
-
-    def get_qualified_name(self):
-        """
-        Deprecated in favor of .qualifiedName.
-        Retrieve the qualified (unique) name of this entity.
-
-        :return: The qualified name of the entity.
-        :rtype: str
-        """
-        warnings.warn("Get qualified name using AtlasEntity.qualifiedName.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes["qualifiedName"]
 
     def to_json(self, minimum=False):
         """
@@ -182,17 +272,36 @@ class AtlasEntity():
             output = {
                 "typeName": self.typeName,
                 "guid": self.guid,
-                "attributes": self.attributes,
-                "relationshipAttributes": self.relationshipAttributes
+                "attributes": self.attributes
             }
             # Add ins for optional top level attributes
-            if self.classifications:
-                output.update({"classifications": self.classifications})
-            if hasattr(self, 'contacts'):
-                output.update({"contacts": self.contacts})
-
-
+            for k, v in vars(self).items():
+                is_uninitialized = isinstance(v, AtlasUnInit)
+                is_asset_attribute = k in ["name", "qualifiedName"]
+                if is_uninitialized or is_asset_attribute:
+                    continue
+                output[k] = v
+        
         return output
+    
+    @classmethod
+    def from_json(cls, entity_json):
+        local_entity = entity_json.copy()
+        guid = local_entity.pop("guid")
+        typeName = local_entity.pop("typeName")
+        name = local_entity["attributes"]["name"]
+        qualified_name = local_entity["attributes"]["qualifiedName"]
+        ae = cls(
+            name = name,
+            typeName= typeName,
+            qualified_name = qualified_name,
+            guid = guid,
+            # This is necessary for AtlasProcess and shouldn't affect Entity
+            inputs = local_entity["attributes"].get("inputs"),
+            outputs = local_entity["attributes"].get("outputs"),
+            **local_entity
+        )
+        return ae
 
     def merge(self, other):
         """
@@ -284,7 +393,10 @@ class AtlasProcess(AtlasEntity):
         """
         Set the inputs attribute for the process. If you pass in a dict list, it
         should be have keys: guid, typeName, qualifiedName. Passing in a list of
-        AtlasEntity, it will automatically convert the entities to dicts.
+        AtlasEntity, it will automatically convert the entities to dicts. If you
+        set it to None, this will result in no change to the Process inputs you
+        are targeting after upload. If you set it to an empty list `[]` you will
+        erase all the inputs.
 
         :param value: List of dicts or atlas entities to set as the inputs.
         :type value: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
@@ -310,7 +422,10 @@ class AtlasProcess(AtlasEntity):
         """
         Set the outputs attribute for the process. If you pass in a dict list, it
         should be have keys: guid, typeName, qualifiedName. Passing in a list of
-        AtlasEntity, it will automatically convert the entities to dicts.
+        AtlasEntity, it will automatically convert the entities to dicts. If you
+        set it to None, this will result in no change to the Process outputs you
+        are targeting after upload. If you set it to an empty list `[]` you will
+        erase all the outputs.
 
         :param value: List of dicts or atlas entities to set as the outputs.
         :type value: list(Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`))
@@ -363,54 +478,6 @@ class AtlasProcess(AtlasEntity):
             tuple(d.items()) for d in _combined_outputs)]
         self.inputs = _deduped_inputs
         self.outputs = _deduped_outputs
-
-    def set_inputs(self, inputs):
-        """
-        Deprecated: Use AtlasEntity.inputs to set inputs.
-        Set the inputs to the process.  Inputs should be AtlasEntity minimum
-        json of `{qualifiedName:..., guid:..., typeName:...}`.
-
-        :param list(dict) inputs: The minimum json inputs.
-        """
-        warnings.warn("Set inputs using AtlasProcess.inputs = ...",
-                      category=DeprecationWarning, stacklevel=2)
-        self.attributes["inputs"] = inputs
-
-    def set_outputs(self, outputs):
-        """
-        Deprecated: Use AtlasEntity.outputs to set outputs.
-        Set the outputs to the process.  Outputs should be AtlasEntity minimum
-        json of `{qualifiedName:..., guid:..., typeName:...}`.
-
-        :param list(dict) outputs: The minimum json outputs.
-        """
-        warnings.warn("Set outputs using AtlasProcess.outputs = ...",
-                      category=DeprecationWarning, stacklevel=2)
-        self.attributes["outputs"] = outputs
-
-    def get_inputs(self):
-        """
-        Deprecated: Use AtlasEntity.inputs to get inputs.
-        Return the inputs to the process.
-
-        :return: The minimum json inputs.
-        :rtype: list(dict)
-        """
-        warnings.warn("Get inputs using AtlasProcess.inputs.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes.get("inputs")
-
-    def get_outputs(self):
-        """
-        Deprecated: Use AtlasEntity.outputs to set outputs.
-        Set the outputs to the process.
-
-        :return: The minimum json inputs.
-        :rtype: list(dict)
-        """
-        warnings.warn("Get outputs using AtlasProcess.outputs.",
-                      category=DeprecationWarning, stacklevel=2)
-        return self.attributes.get("outputs")
 
 
 class AtlasClassification():
