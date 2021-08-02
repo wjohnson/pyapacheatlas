@@ -18,29 +18,29 @@ def fill_in_workbook(filepath, excel_config):
     bulkEntity_sheet = wb[excel_config.bulkEntity_sheet]
 
     # BULK Sheet SCHEMA
-    #"typeName", "name", "qualifiedName", "classifications"
+    #"typeName", "name", "qualifiedName"
     # Adding a couple columns to show the power of this sheet
     # [Relationship] table, type
     entities_to_load = [
-        ["DataSet", "exampledataset", "pyapacheatlas://dataset", None,
+        ["DataSet", "exampledataset", "pyapacheatlas://dataset",
             None, None],
-        ["hive_table", "hivetable01", "pyapacheatlas://hivetable01", None,
+        ["hive_table", "hivetable01", "pyapacheatlas://hivetable01",
             None, None],
-        ["hive_column", "columnA", "pyapacheatlas://hivetable01#colA", None,
+        ["hive_column", "columnA", "pyapacheatlas://hivetable01#colA",
             'pyapacheatlas://hivetable01', 'string'],
-        ["hive_column", "columnB", "pyapacheatlas://hivetable01#colB", None,
+        ["hive_column", "columnB", "pyapacheatlas://hivetable01#colB",
             'pyapacheatlas://hivetable01', 'long'],
-        ["hive_column", "columnC", "pyapacheatlas://hivetable01#colC", None,
+        ["hive_column", "columnC", "pyapacheatlas://hivetable01#colC",
             'pyapacheatlas://hivetable01', 'int']
     ]
 
     # Need to adjust the default header to include our extra attributes
-    bulkEntity_sheet['E1'] = '[Relationship] table'
-    bulkEntity_sheet['F1'] = 'type'
+    bulkEntity_sheet['D1'] = '[Relationship] table'
+    bulkEntity_sheet['E1'] = 'type'
 
     # Populate the excel template with samples above
     table_row_counter = 0
-    for row in bulkEntity_sheet.iter_rows(min_row=2, max_col=6,
+    for row in bulkEntity_sheet.iter_rows(min_row=2, max_col=5,
                                           max_row=len(entities_to_load) + 1):
         for idx, cell in enumerate(row):
             cell.value = entities_to_load[table_row_counter][idx]

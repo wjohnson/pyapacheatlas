@@ -4,6 +4,7 @@ from collections import OrderedDict
 from ..core.util import GuidTracker
 from ..core import (
     AtlasAttributeDef,
+    AtlasClassification,
     AtlasEntity,
     ClassificationTypeDef,
     EntityTypeDef
@@ -59,7 +60,7 @@ class Reader(LineageMixIn):
             "classificationName", "entityTypes", "description"
         ],
         "BulkEntities": [
-            "typeName", "name", "qualifiedName", "classifications"
+            "typeName", "name", "qualifiedName"
         ],
         "UpdateLineage": [
             "Target typeName", "Target qualifiedName", "Source typeName",
@@ -110,7 +111,7 @@ class Reader(LineageMixIn):
             A dictionary containing 'attributes' and 'relationshipAttributes'
         :rtype: dict(str, dict(str,str))
         """
-        output = {"attributes": {}, "relationshipAttributes": {}}
+        output = {"attributes": {}, "relationshipAttributes": {}, "root":{}}
         for column_name, cell_value in row.items():
             # Remove the required attributes so they're not double dipping.
             if column_name in ignore:
@@ -135,6 +136,7 @@ class Reader(LineageMixIn):
                      ]
                 else:
                     # Assuming that we can find this in an existing entity
+                    # TODO: Add support for guid:xxx or typeName/uniqueAttributes.qualifiedName
                     try:
                         min_reference = existing_entities[cell_value].to_json(minimum=True)
                     # LIMITATION: We must have already seen the relationship
@@ -146,6 +148,24 @@ class Reader(LineageMixIn):
                 output["relationshipAttributes"].update(
                     {cleaned_key: min_reference}
                 )
+            # TODO: Add support for Business, Custom
+            elif column_name.startswith("[root]"):
+                # This is a root level attribute
+                cleaned_key = column_name.replace("[root]", "").strip()
+                output_value = cell_value
+                if self.config.value_separator in cell_value:
+                    # There's a delimiter in here
+                    output_value = self._splitField(cell_value)
+
+                # This seems like a poor place to add business logic like this
+                if cleaned_key == "classifications":
+                    output_value = [output_value] if not isinstance(output_value, list) else output_value
+                    output_value = [AtlasClassification(c).to_json() for c in output_value]
+                elif cleaned_key == "labels" and not isinstance(output_value, list):
+                    output_value = [output_value]
+
+                output["root"].update( {cleaned_key: output_value} )
+
             else:
                 output["attributes"].update({column_name: cell_value})
 
@@ -153,21 +173,23 @@ class Reader(LineageMixIn):
 
     def parse_bulk_entities(self, json_rows):
         """
-        Create an AtlasTypeDef consisting of entities and their attributes
+        Create an AtlasEntityWithExtInfo consisting of entities and their attributes
         for the given json_rows.
 
-        :param list(dict(str,str)) json_rows:
-            A list of dicts containing at least `Entity TypeName` and `name`
-            that represents the metadata for a given entity type's attributeDefs.
-            Extra metadata will be ignored.
-        :return: An AtlasTypeDef with entityDefs for the provided rows.
+        :param list(dict(str,object)) json_rows:
+            A list of dicts containing at least `typeName`, `name`, and `qualifiedName`
+            that represents the entity to be uploaded.
+        :return: An AtlasEntityWithExtInfo with entities for the provided rows.
         :rtype: dict(str, list(dict))
         """
         # For each row,
         # Extract the
         # Extract any additional attributes
-        req_attribs = ["typeName", "name", "qualifiedName", "classifications", "owners", "experts"]
+        headers_that_arent_attribs = ["typeName", "name", "qualifiedName", "classifications", "owners", "experts"]
         existing_entities = OrderedDict()
+
+        # TODO: Remove this once deprecation is removed
+        classification_column_used = False
 
         for row in json_rows:
 
@@ -176,10 +198,10 @@ class Reader(LineageMixIn):
                 # An empty row snuck in somehow, skip it.
                 continue
 
-            _attributes = self._organize_attributes(
+            _extracted = self._organize_attributes(
                 row,
                 existing_entities,
-                req_attribs
+                headers_that_arent_attribs
             )
 
             entity = AtlasEntity(
@@ -187,13 +209,17 @@ class Reader(LineageMixIn):
                 typeName=row["typeName"],
                 qualified_name=row["qualifiedName"],
                 guid=self.guidTracker.get_guid(),
-                attributes=_attributes["attributes"],
-                classifications=reader_util.string_to_classification(
-                    row["classifications"],
-                    sep=self.config.value_separator
-                ),
-                relationshipAttributes=_attributes["relationshipAttributes"]
+                attributes=_extracted["attributes"],
+                relationshipAttributes=_extracted["relationshipAttributes"],
+                **_extracted["root"]
             )
+            # TODO: Remove at 1.0.0 launch
+            if "classifications" in row:
+                classification_column_used = True
+                entity.classifications = reader_util.string_to_classification(
+                    row["classifications"],
+                    sep=self.config.value_separator)
+
             if "experts" in row or "owners" in row and len( row.get("experts", []) + row.get("owners", []) ) > 0:
                 experts = []
                 owners = []
@@ -207,6 +233,10 @@ class Reader(LineageMixIn):
 
         output = {"entities": [e.to_json()
                                for e in list(existing_entities.values())]}
+        # TODO: Remove this once deprecation is removed
+        if classification_column_used:
+            warn("Using `classifications` as a field header is deprecated and will be unsupported in the future."+
+            " Please use `[root] classifications` instead.")
         return output
 
     def parse_entity_defs(self, json_rows):

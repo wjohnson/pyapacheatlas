@@ -14,16 +14,16 @@ def test_parse_bulk_entities():
     # "qualifiedName", "classifications"
     json_rows = [
         {"typeName": "demoType", "name": "entityNameABC",
-         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None
+         "qualifiedName": "qualifiedNameofEntityNameABC", "[root] classifications": None
          },
         {"typeName": "demoType", "name": "entityNameGHI",
-         "qualifiedName": "qualifiedNameofEntityNameGHI", "classifications": "PII;CLASS2"
+         "qualifiedName": "qualifiedNameofEntityNameGHI", "[root] classifications": "PII;CLASS2"
          },
         {"typeName": "demoType", "name": "entityNameJKL",
-         "qualifiedName": "qualifiedNameofEntityNameJKL", "classifications": "PII"
+         "qualifiedName": "qualifiedNameofEntityNameJKL", "[root] classifications": "PII"
          },
         {"typeName": "demoType", "name": "entityNameDynamic",
-         "qualifiedName": "qualifiedNameofEntityNameDynamic", "classifications": None,
+         "qualifiedName": "qualifiedNameofEntityNameDynamic", "[root] classifications": None,
          "dynamicAttrib1": "foo", "dynamicAttrib2": "bar"
          }
     ]
@@ -63,15 +63,15 @@ def test_parse_bulk_entities_with_relationships():
     # "[Relationship] table"
     json_rows = [
         {"typeName": "demo_table", "name": "entityNameABC",
-         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "qualifiedName": "qualifiedNameofEntityNameABC",
          "[Relationship] table": None
          },
         {"typeName": "demo_column", "name": "col1",
-         "qualifiedName": "col1qn", "classifications": None,
+         "qualifiedName": "col1qn",
          "[Relationship] table": "qualifiedNameofEntityNameABC"
          },
          {"typeName": "demo_column", "name": "col2",
-         "qualifiedName": "col2qn", "classifications": None,
+         "qualifiedName": "col2qn",
          "[Relationship] table": None
          }
     ]
@@ -96,26 +96,56 @@ def test_parse_bulk_entities_with_terms():
     # "[Relationship] table"
     json_rows = [
         {"typeName": "demo_table", "name": "entityNameABC",
-         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "qualifiedName": "qualifiedNameofEntityNameABC",
          "[Relationship] meanings": "My Term;abc"
          },
          {"typeName": "demo_table", "name": "entityNameDEF",
-         "qualifiedName": "qualifiedNameofEntityNameDEF", "classifications": None,
+         "qualifiedName": "qualifiedNameofEntityNameDEF",
          "[Relationship] meanings": None
          }
     ]
     results = reader.parse_bulk_entities(json_rows)
     ae1 = results["entities"][0]
     ae2 = results["entities"][1]
-    
+
     assert("meanings" in ae1["relationshipAttributes"])
     assert("meanings" not in ae2["relationshipAttributes"])
     ae1_meanings = ae1["relationshipAttributes"]["meanings"]
-    
+
     assert(len(ae1_meanings) == 2)
     ae1_meanings_qns = set([e["uniqueAttributes"]["qualifiedName"] for e in ae1_meanings ])
     assert(set(["My Term@Glossary", "abc@Glossary"]) == ae1_meanings_qns)
 
+def test_parse_bulk_entities_with_root_labels():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "name",
+    # "qualifiedName", "classifications",
+    # "[Relationship] table"
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC", "[root] classifications": None,
+         "[root] labels": "labelA"
+         },
+         {"typeName": "demo_table", "name": "entityNameDEF",
+         "qualifiedName": "qualifiedNameofEntityNameDEF", "[root] classifications": None,
+         "[root] labels": "labelA;labelB", "[root] status": "ACTIVE"
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    ae1 = results["entities"][0]
+    ae2 = results["entities"][1]
+    
+    assert("labels" in ae1 and "labels" in ae2)
+    assert(ae1["labels"] == ["labelA"])
+    assert(ae2["labels"] == ["labelA", "labelB"])
+    
+    assert(("status" not in ae1) and "status" in ae2)
+    assert(ae2["status"] == "ACTIVE")
+
+# TODO: classifications
+# TODO: busines attributes
+# TODO: custom attributes
 
 def test_parse_entity_defs():
     rc = ReaderConfiguration()
@@ -215,15 +245,15 @@ def test_bulk_entity_with_experts_owners():
 
     json_rows = [
         {"typeName": "demoType", "name": "entityNameABC",
-         "qualifiedName": "qualifiedNameofEntityNameABC", "classifications": None,
+         "qualifiedName": "qualifiedNameofEntityNameABC",
          "experts": "a;b;", "owners":""
          },
         {"typeName": "demoType", "name": "entityNameGHI",
-         "qualifiedName": "qualifiedNameofEntityNameGHI", "classifications": None,
+         "qualifiedName": "qualifiedNameofEntityNameGHI",
          "experts": "a;b;", "owners":"c;d"
          },
         {"typeName": "demoType", "name": "entityNameJKL",
-         "qualifiedName": "qualifiedNameofEntityNameJKL", "classifications": None
+         "qualifiedName": "qualifiedNameofEntityNameJKL",
          }
     ]
 
