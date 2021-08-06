@@ -174,7 +174,7 @@ def test_excel_bulkEntities_withClassifications():
     temp_filepath = "./temp_test_excel_bulkEntitiesWithClassifications.xlsx"
     ec = ExcelConfiguration()
     reader = ExcelReader(ec)
-    max_cols = len(ExcelReader.TEMPLATE_HEADERS["BulkEntities"])
+    headers = ExcelReader.TEMPLATE_HEADERS["BulkEntities"] + ["[root] classifications"]
     # "typeName", "name",
     # "qualifiedName", "classifications"
     json_rows = [
@@ -185,8 +185,9 @@ def test_excel_bulkEntities_withClassifications():
          "qualifiedNameofEntityNameGHI", "PII;CLASS2"
          ]
     ]
-
-    setup_workbook(temp_filepath, "BulkEntities", max_cols, json_rows)
+    setup_workbook_custom_sheet(
+        temp_filepath, "BulkEntities", headers, json_rows)
+    
 
     results = reader.parse_bulk_entities(temp_filepath)
 
@@ -216,15 +217,15 @@ def test_excel_bulkEntities_dynamicAttributes():
     headers = ExcelReader.TEMPLATE_HEADERS["BulkEntities"] + \
         ["attrib1", "attrib2"]
     # "typeName", "name",
-    # "qualifiedName", "classifications"
+    # "qualifiedName",
     # "attrib1", "attrib2"
     json_rows = [
         ["demoType", "entityNameABC",
-         "qualifiedNameofEntityNameABC", None,
+         "qualifiedNameofEntityNameABC",
          None, "abc"
          ],
         ["demoType", "entityNameGHI",
-         "qualifiedNameofEntityNameGHI", None,
+         "qualifiedNameofEntityNameGHI",
          "ghi", "abc2"
          ]
     ]
@@ -261,19 +262,19 @@ def test_excel_bulkEntities_meanings_relationships():
     headers = ExcelReader.TEMPLATE_HEADERS["BulkEntities"] + \
         ["[Relationship] meanings"]
     # "typeName", "name",
-    # "qualifiedName", "classifications"
+    # "qualifiedName",
     # "[Relationship] meanings"
     json_rows = [
         ["demoType", "entityNameABC",
-         "qualifiedNameofEntityNameABC", None,
+         "qualifiedNameofEntityNameABC",
          None
          ],
         ["demoType", "entityNameGHI",
-         "qualifiedNameofEntityNameGHI", None,
+         "qualifiedNameofEntityNameGHI",
          "termA"
          ],
          ["demoType", "entityNameXYZ",
-         "qualifiedNameofEntityNameXYZ", None,
+         "qualifiedNameofEntityNameXYZ",
          "term1;term2"
          ]
     ]
