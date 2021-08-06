@@ -226,7 +226,11 @@ class AtlasClient():
             # You have to get the entire existing entity and update its attributes
             get_response = self.get_entity(
                 qualifiedName=qualifiedName, typeName=typeName)
-            entity = get_response["entities"][0]
+            try:
+                entity = get_response["entities"][0]
+            except KeyError:
+                raise ValueError(
+                    f"The entity with qualifiedName {qualifiedName} and type {typeName} does not exist and cannot be updated.")
             entity["attributes"].update(attributes)
             # Construct it as an AtlasEntityWithInfo
             entityInfo = {"entity": entity,
