@@ -58,23 +58,23 @@ def fill_in_entity_workbook(filepath, excel_config):
     bulkEntity_sheet = wb[excel_config.bulkEntity_sheet]
 
     # BULK Sheet SCHEMA
-    #"typeName", "name", "qualifiedName", "classifications"
+    #"typeName", "name", "qualifiedName",
     # Adding a couple columns to show the power of this sheet
     # fizz, buzz
     entities_to_load = [
         ["pyapacheatlas_custom_type", "custom_type_entity",
-         "pyapacheatlas://example_from_custom_type", None,
+         "pyapacheatlas://example_from_custom_type",
          "abc", "123"
          ],
     ]
 
     # Need to adjust the default header to include our extra attributes
-    bulkEntity_sheet['E1'] = 'fizz'
-    bulkEntity_sheet['F1'] = 'buzz'
+    bulkEntity_sheet['D1'] = 'fizz'
+    bulkEntity_sheet['E1'] = 'buzz'
 
     # Populate the excel template with samples above
     table_row_counter = 0
-    for row in bulkEntity_sheet.iter_rows(min_row=2, max_col=6,
+    for row in bulkEntity_sheet.iter_rows(min_row=2, max_col=5,
                                           max_row=len(entities_to_load) + 1):
         for idx, cell in enumerate(row):
             cell.value = entities_to_load[table_row_counter][idx]
@@ -126,4 +126,4 @@ if __name__ == "__main__":
     print("\n")
     print(json.dumps(entity_results, indent=2))
 
-    print("Completed type and bulk upload successfully!\nSearch for exampledataset to see your results.")
+    print("Completed type and bulk upload successfully!\nSearch for 'custom_type_entity' to see your results.")
