@@ -117,7 +117,7 @@ class AtlasClient():
         results = {"message": f"successfully delete {name}"}
         return results
 
-    def get_entity(self, guid=None, qualifiedName=None, typeName=None):
+    def get_entity(self, guid=None, qualifiedName=None, typeName=None, ignoreRelationships=False, minExtInfo=False):
         """
         Retrieve one or many guids from your Atlas backed Data Catalog.
 
@@ -140,6 +140,10 @@ class AtlasClient():
         :param str typeName:
             The type name of the entity you want to find. Must provide
             qualifiedName if using typeName. Ignored if using guid parameter.
+        :param bool ignoreRelationships:
+            Exclude the relationship information from the response.
+        :param bool minExtInfo:
+            Exclude the extra information from the response.
         :return:
             An AtlasEntitiesWithExtInfo object which includes a list of
             entities and accessible with the "entities" key.
@@ -171,6 +175,43 @@ class AtlasClient():
             atlas_endpoint = self.endpoint_url + \
                 "/entity/bulk?guid={}".format(guid_str)
 
+        # Support the adding or removing of relationships and extra info
+        parameters.update({"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
+        getEntity = requests.get(
+            atlas_endpoint,
+            params=parameters,
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(getEntity)
+
+        return results
+
+    def get_single_entity(self, guid=None, ignoreRelationships=False, minExtInfo=False):
+        """
+        Retrieve one entity based on guid from your Atlas backed Data Catalog.
+
+        Returns a dictionary with keys "referredEntities" and "entity". You'll
+        want to grab the entity value which is a single dictionary.
+
+        :param str guid: The guid you want to retrieve.
+        :param bool ignoreRelationships:
+            Exclude the relationship information from the response.
+        :param bool minExtInfo:
+            Exclude the extra information from the response.
+        :return:
+            An AtlasEntityWithExtInfo object which includes "referredEntities"
+            and "entity" keys.
+        :rtype: dict(str, Union(list(dict),dict))
+        """
+        results = None
+        parameters = {}
+
+        atlas_endpoint = self.endpoint_url + \
+            "/entity/guid/{}".format(guid)
+
+        # Support the adding or removing of relationships and extra info
+        parameters.update({"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
@@ -298,8 +339,7 @@ class AtlasClient():
         Retrieve one or many entity headers from your Atlas backed Data Catalog.
 
         :param guid:
-            The guid or guids you want to retrieve. Not used if using typeName
-            and qualifiedName.
+            The guid or guids you want to retrieve.
         :type guid: Union(str, list(str))
         :return:
             An AtlasEntityHeader dict which includes the keys: guid, attributes
