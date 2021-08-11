@@ -31,6 +31,76 @@ def test_verify_template_sheets():
         wb.close()
         os.remove(temp_path)
 
+def test_verify_custom_template_sheets():
+    # Setup
+    temp_path = "./temp_customizesheetnames.xlsx"
+    ExcelReader.make_template(temp_path,
+    bulkEntity_sheet="alpha",
+    updateLineage_sheet="beta",
+    columnMapping_sheet="gamma",
+    entityDef_sheet="delta",
+    classificationDef_sheet="epsilon",
+    table_sheet="zeta",
+    column_sheet="eta"
+    )
+
+    # Expected
+    expected_sheets = set(["alpha", "beta",
+                           "gamma", "delta",
+                           "epsilon", "zeta",
+                           "eta"
+                           ])
+
+    wb = load_workbook(temp_path)
+    difference = set(wb.sheetnames).symmetric_difference(expected_sheets)
+    try:
+        assert(len(difference) == 0)
+    finally:
+        wb.close()
+        os.remove(temp_path)
+
+def test_custom_template_header_prefix():
+    # Setup
+    temp_path = "./test_custom_template_header_prefix.xlsx"
+    ExcelReader.make_template(temp_path,
+    source_prefix="alpha",
+    target_prefix="beta",
+    process_prefix="gamma",
+    column_transformation_name="delta"
+    )
+    try:
+
+        # Expected
+        FineGrainColumnLineageHeaders = ["beta table", "beta column", "beta classifications",
+                "alpha table", "alpha column", "alpha classifications",
+                "delta"]
+        TablesLineageHeaders = ["beta table", "beta type", "beta classifications",
+                "alpha table", "alpha type", "alpha classifications",
+                "gamma name", "gamma type"]
+        UpdateLineageHeaders = ["beta typeName", "beta qualifiedName", "alpha typeName",
+                "alpha qualifiedName", "gamma name", "gamma qualifiedName",
+                "gamma typeName"]
+        ColumnMappingHeaders = ["alpha qualifiedName", "alpha column", "beta qualifiedName", 
+                "beta column", "gamma qualifiedName", "gamma typeName",
+                "gamma name"]
+        
+        wb = load_workbook(temp_path)
+
+        FineGrainColumnLineageSheet = wb["FineGrainColumnLineage"]
+        assert([str(c.value).strip() for c in FineGrainColumnLineageSheet[1]] == FineGrainColumnLineageHeaders)
+        
+        TablesLineageSheet = wb["TablesLineage"]
+        assert([str(c.value).strip() for c in TablesLineageSheet[1]] == TablesLineageHeaders)
+
+        UpdateLineageSheet = wb["UpdateLineage"]
+        assert([str(c.value).strip() for c in UpdateLineageSheet[1]] == UpdateLineageHeaders)
+
+        ColumnMappingSheet = wb["ColumnMapping"]
+        assert([str(c.value).strip() for c in ColumnMappingSheet[1]] == ColumnMappingHeaders)
+        
+    finally:
+        wb.close()
+        os.remove(temp_path)
 
 def setup_workbook_custom_sheet(filepath, sheet_name, headers, json_rows):
     wb = Workbook()
