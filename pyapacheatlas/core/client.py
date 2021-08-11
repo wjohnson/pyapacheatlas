@@ -116,6 +116,63 @@ class AtlasClient():
 
         results = {"message": f"successfully delete {name}"}
         return results
+    
+    def delete_typedefs(self, **kwargs):
+        """
+        Delete one or many types. You can provide a parameters as listed in the
+        kwargs. You'll pass in a type definition that you want to delete.
+
+        That type def can be retrieved with `AtlasClient.get_typedef` or by
+        creating the typedef with, for example `EntityTypeDef("someType")` as
+        imported from :class:`~pyapacheatlas.core.typedef.EntityTypeDef`. You
+        do not need to include any attribute defs, even if they're required.
+        
+        Kwargs:
+            :param entityDefs: EntityDefs to delete.
+            :type entityDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param businessMetadataDefs: BusinessMetadataDefs to delete.
+            :type businessMetadataDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param classificationDefs: classificationDefs to delete.
+            :type classificationDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param enumDefs: enumDefs to delete.
+            :type enumDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param relationshipDefs: relationshipDefs to delete.
+            :type relationshipDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+            :param structDefs: structDefs to delete.
+            :type structDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
+
+        :return:
+            A dictionary indicating success. Failure will raise an AtlasException.
+        :rtype: dict
+        """
+        results = None
+        payload = {}
+        allowed_defs = [
+            "businessMetadataDefs", "classificationDefs", "entityDefs",
+            "enumDefs", "relationshipDefs", "structDefs"]
+        if len(set(kwargs.keys()).intersection(allowed_defs)) == 0:
+            raise TypeError(f"You must include one of these keyword arguments: {allowed_defs}")
+        
+        for defType in allowed_defs:
+            if defType in kwargs:
+                # Should be a list 
+                json_list = [t.to_json() if isinstance(t, BaseTypeDef) else t for t in kwargs[defType]]
+                payload[defType] = json_list
+
+        atlas_endpoint = self.endpoint_url + \
+            "/types/typedefs"
+        deleteType = requests.delete(
+            atlas_endpoint,
+            json=payload,
+            headers=self.authentication.get_authentication_headers())
+
+        try:
+            deleteType.raise_for_status()
+        except requests.RequestException:
+            raise Exception(deleteType.text)
+
+        results = {"message": f"Successfully deleted type(s)"}
+        return results
 
     def get_entity(self, guid=None, qualifiedName=None, typeName=None, ignoreRelationships=False, minExtInfo=False):
         """
