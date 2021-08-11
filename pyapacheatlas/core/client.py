@@ -92,6 +92,34 @@ class AtlasClient():
 
         return results
 
+    def delete_relationship(self, guid):
+        """
+        Delete a relationship based on the guid. This lets you remove
+        a connection between entities like removing a column from a
+        table or a term from an entity.
+
+        :param str guid:
+            The relationship guid for the relationship that you want to remove.
+        :return:
+            A dictionary indicating success. Failure will raise an AtlasException.
+        :rtype: dict
+        """
+        results = None
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/relationship/guid/{guid}"
+        deleteType = requests.delete(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers())
+
+        try:
+            deleteType.raise_for_status()
+        except requests.RequestException:
+            raise Exception(deleteType.text)
+
+        results = {"message": f"Successfully deleted relationship with guid {guid}"}
+        return results
+
     def delete_type(self, name):
         """
         Delete a type based on the given name.
