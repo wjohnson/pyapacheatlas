@@ -21,17 +21,21 @@ class ExcelConfiguration(ReaderConfiguration):
     a Process Name and Process Type.  The Process is related to the mechanism
     by which source becomes the target (e.g. a Stored Procedure or Query).
 
-    :param str column_sheet: Defaults to "Columns"
-    :param str table_sheet: Defaults to "Tables"
+    :param str bulkEntity_sheet: Defaults to "BulkEntities"
+    :param str updateLineage_sheet: Defaults to "UpdateLineage"
+    :param str columnMapping_sheet: Defaults to "ColumnMapping"
     :param str entityDef_sheet: Defaults to "EntityDefs"
-    :param str entity_source_prefix:
-        Defaults to "source" and represents the prefix of the columns
+    :param str classificationDef_sheet: Defaults to "ClassificationDefs"
+    :param str table_sheet: Defaults to "TablesLineage"
+    :param str column_sheet: Defaults to "FineGrainColumnLineage"
+    :param str source_prefix:
+        Defaults to "Source" and represents the prefix of the columns
         in Excel to be considered related to the source table or column.
-    :param str entity_target_prefix:
-        Defaults to "target" and represents the prefix of the columns
+    :param str target_prefix:
+        Defaults to "Target" and represents the prefix of the columns
         in Excel to be considered related to the target table or column.
-    :param str entity_process_prefix:
-        Defaults to "process" and represents the prefix of the columns
+    :param str process_prefix:
+        Defaults to "Process" and represents the prefix of the columns
         in Excel to be considered related to the table process.
     :param str column_transformation_name:
         Defaults to "transformation" and identifies the column that
@@ -446,28 +450,94 @@ class ExcelReader(Reader):
                 active_value)
 
     @staticmethod
-    def make_template(filepath):
+    def _replace_header_prefix(headers, prefix_mapping):
+        new_header = []
+        for column in headers:
+            first_token, *remainder = column.split(" ", 1)
+            if first_token in prefix_mapping:
+                new_header.append(prefix_mapping[first_token]+' '+''.join(remainder))
+            else:
+                new_header.append(column)
+        return new_header
+
+
+    @staticmethod
+    def make_template(filepath, **kwargs):
         """
         Generate an Excel template file and write it out to the given filepath.
 
         :param str filepath: The file path to store an XLSX file with the
             template Tables and Columns sheets.
+        :param str bulkEntity_sheet: Defaults to "BulkEntities"
+        :param str updateLineage_sheet: Defaults to "UpdateLineage"
+        :param str columnMapping_sheet: Defaults to "ColumnMapping"
+        :param str entityDef_sheet: Defaults to "EntityDefs"
+        :param str classificationDef_sheet: Defaults to "ClassificationDefs"
+        :param str table_sheet: Defaults to "TablesLineage"
+        :param str column_sheet: Defaults to "FineGrainColumnLineage"
+                
+        :param str source_prefix:
+            Defaults to "Source" and represents the prefix of the columns
+            in Excel to be considered related to the source table or column.
+        :param str target_prefix:
+            Defaults to "Target" and represents the prefix of the columns
+            in Excel to be considered related to the target table or column.
+        :param str process_prefix:
+            Defaults to "Process" and represents the prefix of the columns
+            in Excel to be considered related to the table process.
+        :param str column_transformation_name:
+            Defaults to "transformation" and identifies the column that
+            represents the transformation for a specific column.
         """
         wb = Workbook()
         bulkEntitiesSheet = wb.active
-        bulkEntitiesSheet.title = "BulkEntities"
-        updateLineageSheet = wb.create_sheet("UpdateLineage")
-        columnMappingSheet = wb.create_sheet("ColumnMapping")
-        entityDefsSheet = wb.create_sheet("EntityDefs")
-        classificationDefsSheet = wb.create_sheet("ClassificationDefs")
-        tablesSheet = wb.create_sheet("TablesLineage")
-        columnsSheet = wb.create_sheet("FineGrainColumnLineage")
+        bulkEntitiesSheet.title = kwargs.get("bulkEntity_sheet", "BulkEntities")
+        updateLineageSheet = wb.create_sheet(kwargs.get("updateLineage_sheet", "UpdateLineage"))
+        columnMappingSheet = wb.create_sheet(kwargs.get("columnMapping_sheet", "ColumnMapping"))
+        entityDefsSheet = wb.create_sheet(kwargs.get("entityDef_sheet", "EntityDefs"))
+        classificationDefsSheet = wb.create_sheet(kwargs.get("classificationDef_sheet", "ClassificationDefs"))
+        tablesSheet = wb.create_sheet(kwargs.get("table_sheet", "TablesLineage"))
+        columnsSheet = wb.create_sheet(kwargs.get("column_sheet", "FineGrainColumnLineage"))
+
+        # Supporting changing the default headers on select pages
+        header_changes = {}
+        if "source_prefix" in kwargs:
+            header_changes["Source"] = kwargs["source_prefix"]
+        if "target_prefix" in kwargs:
+            header_changes["Target"] = kwargs["target_prefix"]
+        if "process_prefix" in kwargs:
+            header_changes["Process"] = kwargs["process_prefix"]
+        if "column_transformation_name" in kwargs:
+            header_changes["transformation"] = kwargs["column_transformation_name"]
+        
+        if header_changes:
+            FineGrainColumnLineageHeaders = ExcelReader._replace_header_prefix(
+                Reader.TEMPLATE_HEADERS["FineGrainColumnLineage"],
+                header_changes
+            )
+            TablesLineageHeaders = ExcelReader._replace_header_prefix(
+                Reader.TEMPLATE_HEADERS["TablesLineage"],
+                header_changes
+            )
+            UpdateLineageHeaders = ExcelReader._replace_header_prefix(
+                Reader.TEMPLATE_HEADERS["UpdateLineage"],
+                header_changes
+            )
+            ColumnMappingHeaders = ExcelReader._replace_header_prefix(
+                Reader.TEMPLATE_HEADERS["ColumnMapping"],
+                header_changes
+            )
+        else:
+            FineGrainColumnLineageHeaders = Reader.TEMPLATE_HEADERS["FineGrainColumnLineage"]
+            TablesLineageHeaders = Reader.TEMPLATE_HEADERS["TablesLineage"]
+            UpdateLineageHeaders = Reader.TEMPLATE_HEADERS["UpdateLineage"]
+            ColumnMappingHeaders = Reader.TEMPLATE_HEADERS["ColumnMapping"]
 
         ExcelReader._update_sheet_headers(
-            Reader.TEMPLATE_HEADERS["FineGrainColumnLineage"], columnsSheet
+            FineGrainColumnLineageHeaders, columnsSheet
         )
         ExcelReader._update_sheet_headers(
-            Reader.TEMPLATE_HEADERS["TablesLineage"], tablesSheet
+            TablesLineageHeaders, tablesSheet
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["EntityDefs"], entityDefsSheet
@@ -479,10 +549,10 @@ class ExcelReader(Reader):
             Reader.TEMPLATE_HEADERS["BulkEntities"], bulkEntitiesSheet
         )
         ExcelReader._update_sheet_headers(
-            Reader.TEMPLATE_HEADERS["UpdateLineage"], updateLineageSheet
+            UpdateLineageHeaders, updateLineageSheet
         )
         ExcelReader._update_sheet_headers(
-            Reader.TEMPLATE_HEADERS["ColumnMapping"], columnMappingSheet
+            ColumnMappingHeaders, columnMappingSheet
         )
 
         wb.save(filepath)
