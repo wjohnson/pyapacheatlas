@@ -375,7 +375,7 @@ class Reader(LineageMixIn):
             if "superTypes" in row:
                 row["superTypes"] = splitter(row["superTypes"])
             if "subTypes" in row:
-                row["superTypes"] = splitter(row["subTypes"])
+                row["subTypes"] = splitter(row["subTypes"])
 
             json_classification_def = ClassificationTypeDef(classificationTypeName, **row).to_json()
 

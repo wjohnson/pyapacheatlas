@@ -294,6 +294,21 @@ def test_parse_classification_defs():
     assert(len(results[2]["entityTypes"]) == 2)
     assert(len(results[3]["entityTypes"]) == 1)
 
+def test_parse_classification_defs_with_super_sub_types():
+    rc =ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"classificationName": "test", "entityTypes": "DataSet", "superTypes": "a;b", "subTypes":"c;d"},
+    ]
+
+    parsed = reader.parse_classification_defs(json_rows)
+
+    results = parsed["classificationDefs"]
+
+    assert(results[0]["superTypes"] == ["a","b"])
+    assert(results[0]["subTypes"] == ["c","d"])
+
 def test_parse_column_mapping():
     rc = ReaderConfiguration()
     reader = Reader(rc)
