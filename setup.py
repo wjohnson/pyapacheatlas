@@ -65,7 +65,8 @@ def setup_package():
             "Operating System :: OS Independent",
         ],
         python_requires='>=3.6',
-        long_description=LONG_DESCRIPTION
+        long_description=LONG_DESCRIPTION,
+        options={'console_scripts':{"pyapacheatlas":"pyapacheatlas:main"}}
     )
 
 if __name__ == "__main__":
