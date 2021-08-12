@@ -9,6 +9,14 @@ pyapacheatlas.auth.base module
    :undoc-members:
    :show-inheritance:
 
+pyapacheatlas.auth.azcredential module
+------------------------------
+
+.. automodule:: pyapacheatlas.auth.azcredential
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyapacheatlas.auth.basic module
 -------------------------------
 
