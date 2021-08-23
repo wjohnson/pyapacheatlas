@@ -1688,3 +1688,62 @@ class PurviewClient(AtlasClient):
             fp.write(postResp.content)
 
         return None
+    
+    def upload_term(self, term, status="Draft", glossary_guid = None, glossary_name="Glossary", **kwargs):
+        """
+        Upload a single term to Azure Purview. Minimally, you can specify
+        the term alone and it will upload it to Purview! However, if you
+        plan on uploading many terms programmatically, you might look at
+        `PurviewClient.upload_terms` or `PurviewClient.import_terms`.
+
+        If you do intend on using this method for multiple terms consider
+        looking up the glossary_guid and any parent term guids in advance
+        otherwise, this method will call get_glossary multiple times making
+        it much slower to do many updates.
+
+        ```
+        glossary = client.get_glossary()
+        glossary_guid = glossary["guid"]
+        ```
+        """
+        if not glossary_guid:
+            logging.debug(f"Retreiving a Glossary based on name: {glossary_name}")
+            glossary_guid = self.get_glossary(name=glossary_name)["guid"]
+                
+        payload = {
+            "name":term,
+            "nickName":term,
+            "status": status,
+            "attributes": kwargs["attributes"] if "attributes" in kwargs else {},
+            "anchor": {"glossaryGuid": glossary_guid}
+        }
+
+        if "parent_formal_name" in kwargs:
+            logging.debug(f"Parent formal name provided, so concatenating term with parent")
+            parent_term = kwargs["parent_formal_name"]
+            payload["name"] = parent_term+ "_"+term
+            parent_term_guid = kwargs.get("parent_term_guid")
+            
+            if not parent_term_guid:
+                logging.debug(f"Retreiving the term {parent_term} because parent_term_guid was not provided")
+                parent_term_entity = self.get_glossary_term(
+                    name=parent_term, 
+                    glossary_guid=glossary_guid, 
+                    glossary_name=glossary_name)
+                parent_term_guid = parent_term_entity["termGuid"]
+            
+            payload["parentTerm"] = {"termGuid":parent_term_guid}
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/glossary/term"
+
+        postResp = requests.post(
+            atlas_endpoint,
+            json=payload,
+            params={"includeTermHierarchy":"true"},
+            headers=self.authentication.get_authentication_headers()
+        )
+
+        results = self._handle_response(postResp)
+        
+        return results
