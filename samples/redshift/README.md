@@ -1,4 +1,4 @@
-### Sample to Export Redshift Metadata and Create Custom entites in Purview
+### Sample to Export Redshift Metadata and Create Custom entities in Purview
 
 - Install and configure ODBC drivers for Redshift from [here](https://docs.aws.amazon.com/redshift/latest/mgmt/configure-odbc-connection.html)
 
