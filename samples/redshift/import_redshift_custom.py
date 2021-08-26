@@ -15,20 +15,18 @@ from pyapacheatlas.core import (
     RelationshipTypeDef
 )
 from pyapacheatlas.core.util import GuidTracker
-DB_ENTITY_NAME ="aws_redshift_db"
-SCHEMA_ENTITY_NAME ="aws_redshift_schema"
-TABLE_ENTITY_NAME ="aws_redshift_table"
-COLUMN_ENTITY_NAME ="aws_redshift_column"
-DB_SCHEMA_RELATIONSHIP_NAME="aws_redshift_db_schema"
-SCHEMA_TABLE_RELATIONSHIP_NAME="aws_redshift_schema_table"
-TABLE_COLUMN_RELATIONSHIP_NAME="aws_redshift_table_column"
+DB_ENTITY_NAME ="custom_aws_redshift_db"
+SCHEMA_ENTITY_NAME ="custom_aws_redshift_schema"
+TABLE_ENTITY_NAME ="custom_aws_redshift_table"
+COLUMN_ENTITY_NAME ="custom_aws_redshift_column"
+DB_SCHEMA_RELATIONSHIP_NAME="custom_aws_redshift_db_schema"
+SCHEMA_TABLE_RELATIONSHIP_NAME="custom_aws_redshift_schema_table"
+TABLE_COLUMN_RELATIONSHIP_NAME="custom_aws_redshift_table_column"
 DB_COLUMN_NAME="table_catalog"
 SCHEMA_COLUMN_NAME="table_schema"
 TABLE_COLUMN_NAME="table_name"
 COLUMN_COLUMN_NAME="column_name"
 DATATYPE_COLUMN_NAME="data_type"
-REDSHIFT_JDBC_CONNNECTION="jdbc:redshift://<cluster-endpoint>:5439/dev"
-REDSHIFT_CONNECTION_STRING="Driver={Amazon Redshift (x64)}; Server=<your-cluster-endpoint>; Database=dev; UID=<your-username>; PWD=<your-password>"
 
 def createEntityDefinitions(client):
     # -- Add DB
@@ -221,7 +219,8 @@ def createEntities(client,redshiftMetaData):
                             "uniqueAttributes": {"qualifiedName": column["qualifiedName"]}
                         }
                     }
-                    uploadRelationship(client, relationship)    
+                    uploadRelationship(client, relationship) 
+                    print(column["name"])   
 
 def cleanup(client):
     search = client.search_entities("\"Amazon Redshift Database\"")
@@ -237,32 +236,32 @@ def cleanup(client):
     client.delete_type(name=TABLE_ENTITY_NAME)
     client.delete_type(name=COLUMN_ENTITY_NAME)
 
-def getRedshiftMetadata():
+def getRedshiftMetadata(redshiftConnectionString,redshiftJdbcConnection):
     query = "SELECT * FROM information_schema.columns WHERE table_schema != 'pg_catalog' AND table_schema != 'information_schema' AND table_schema != 'pg_internal'"
-    conn = pyodbc.connect(REDSHIFT_CONNECTION_STRING)
+    conn = pyodbc.connect(redshiftConnectionString)
     df = pd.read_sql_query(query, conn)
     jsonSchema = []
     df = df.sort_values(by=[DB_COLUMN_NAME,SCHEMA_COLUMN_NAME,TABLE_COLUMN_NAME,COLUMN_COLUMN_NAME], ascending=True)
     dbs = df.groupby([DB_COLUMN_NAME]).groups
     for db in dbs:
-        currentdb = { "name": db,"qualifiedName" : REDSHIFT_JDBC_CONNNECTION,"schemas" :[]}
+        currentdb = { "name": db,"qualifiedName" : redshiftJdbcConnection,"schemas" :[]}
         schemas = df[df[DB_COLUMN_NAME] == db].groupby([SCHEMA_COLUMN_NAME]).groups
         for schema in schemas:
             currentSchema = {"name": schema,
-                "qualifiedName" : REDSHIFT_JDBC_CONNNECTION + "/" + schema,
+                "qualifiedName" : redshiftJdbcConnection + "/" + schema,
                 "tables" :[]
             }
             tables = df[(df[DB_COLUMN_NAME] == db) & (df[SCHEMA_COLUMN_NAME] == schema)].groupby([TABLE_COLUMN_NAME]).groups
             for table in tables:
                 currentTable= {"name": table,
-                    "qualifiedName" : REDSHIFT_JDBC_CONNNECTION + "/" + schema + "/" + table,
+                    "qualifiedName" : redshiftJdbcConnection + "/" + schema + "/" + table,
                     "columns" :[]
                 }
                 columns = df[(df[DB_COLUMN_NAME] == db) & (df[SCHEMA_COLUMN_NAME] == schema) & 
                              (df[TABLE_COLUMN_NAME] == table)].groupby([COLUMN_COLUMN_NAME, DATATYPE_COLUMN_NAME]).groups
                 for column, datatype in columns:
                     currentColumn= {"name": column,
-                        "qualifiedName" : REDSHIFT_JDBC_CONNNECTION + "/" + schema + "/" + table + "/" + column,
+                        "qualifiedName" : redshiftJdbcConnection + "/" + schema + "/" + table + "/" + column,
                         "type" : datatype
                     }
                     currentTable["columns"].append(currentColumn)
@@ -293,7 +292,10 @@ if __name__ == "__main__":
         authentication=oauth
     )
     
-    redshiftMetadata = getRedshiftMetadata()
+    redshiftConnectionString = config["Redshift"]["REDSHIFT_CONNECTION_STRING"].strip("'")
+    redshiftJdbcConnection = config["Redshift"]["REDSHIFT_JDBC_CONNNECTION"].strip("'")
+
+    redshiftMetadata = getRedshiftMetadata(redshiftConnectionString,redshiftJdbcConnection)
     with open('redshift_metadata.json', 'w') as f:
        json.dump(redshiftMetadata, f)
 
@@ -303,6 +305,6 @@ if __name__ == "__main__":
 
     print(redshiftMetadata)
 
-    #cleanup(client)
+    # cleanup(client)
     
     
