@@ -344,3 +344,28 @@ def test_parse_column_mapping():
     secondMap_data_map_exp = {"Source": "pqr://777", "Sink": "def://999"}
     assert(secondMap_col_map == secondMap_col_map_exp)
     assert(secondMap_data_map == secondMap_data_map_exp)
+
+def test_parse_bulk_entities_with_custom_attributes():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "name",
+    # "qualifiedName",
+    # "[custom] foo", "bar"
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC",
+         "[custom] foo": "bar"
+         },
+         {"typeName": "demo_table", "name": "entityNameDEF",
+         "qualifiedName": "qualifiedNameofEntityNameDEF",
+         "[custom] foo": None
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    ae1 = results["entities"][0]
+    ae2 = results["entities"][1]
+
+    assert("foo" in ae1["customAttributes"])
+    assert(ae1["customAttributes"]["foo"] == "bar")
+
+    assert("customAttributes" not in ae2)
