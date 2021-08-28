@@ -1502,6 +1502,59 @@ class AtlasClient():
         )
         results = self._handle_response(getLineageRequest)
         return results
+    
+    @PurviewLimitation
+    def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
+        """
+        Delete the given labels for one entity. Provide a list of strings that
+        should be removed. You can either provide the guid of the entity or
+        the typeName and qualifiedName of the entity.
+
+        If you want to clear out an entity, you should consider
+        `update_entity_labels` instead
+
+        :param list(str) labels: The label(s) that should be removed.
+        :param str guid:
+            The guid of the entity to be updated. Optional if using typeName
+            and qualifiedName.
+        :param str typeName:
+            The type name of the entity to be updated. Must also use
+            qualifiedname with typeName. Not used if guid is provided.
+        :param str qualifiedName:
+            The qualified name of the entity to be updated. Must also use
+            typeName with qualifiedName. Not used if guid is provided.
+        """
+        
+        parameters = {}
+        if guid:
+            # Can't use handle response since it expects json
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/guid/{guid}/labels"
+        elif qualifiedName and typeName:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/uniqueAttribute/type/{typeName}/labels"
+            parameters.update({"attr:qualifiedName": qualifiedName})
+        else:
+            raise ValueError(
+                "Either guid or typeName and qualifiedName must be defined.")
+            
+        deleteResp = requests.delete(
+            atlas_endpoint,
+            params = parameters,
+            json = labels,
+            headers=self.authentication.get_authentication_headers())
+
+        # Can't use _handle_response since it expects json returned
+        try:
+            deleteResp.raise_for_status()
+        except requests.RequestException as e:
+            if "errorCode" in deleteResp:
+                raise AtlasException(deleteResp.text)
+            else:
+                raise requests.RequestException(deleteResp.text)
+
+        results = {"message": f"Successfully deleted labels for guid: {guid} | type:{typeName} qualifiedName:{qualifiedName}"}
+        return results
 
 
 class PurviewClient(AtlasClient):
