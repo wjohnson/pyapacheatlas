@@ -111,7 +111,7 @@ class Reader(LineageMixIn):
             A dictionary containing 'attributes' and 'relationshipAttributes'
         :rtype: dict(str, dict(str,str))
         """
-        output = {"attributes": {}, "relationshipAttributes": {}, "root":{}}
+        output = {"attributes": {}, "relationshipAttributes": {}, "root":{}, "custom":{}}
         for column_name, cell_value in row.items():
             # Remove the required attributes so they're not double dipping.
             if column_name in ignore:
@@ -148,7 +148,7 @@ class Reader(LineageMixIn):
                 output["relationshipAttributes"].update(
                     {cleaned_key: min_reference}
                 )
-            # TODO: Add support for Business, Custom
+            # TODO: Add support for Business
             elif column_name.startswith("[root]"):
                 # This is a root level attribute
                 cleaned_key = column_name.replace("[root]", "").strip()
@@ -166,6 +166,10 @@ class Reader(LineageMixIn):
 
                 output["root"].update( {cleaned_key: output_value} )
 
+            elif column_name.startswith("[custom]"):
+                cleaned_key = column_name.replace("[custom]", "").strip()
+                
+                output["custom"].update( {cleaned_key: cell_value})
             else:
                 output["attributes"].update({column_name: cell_value})
 
@@ -228,6 +232,9 @@ class Reader(LineageMixIn):
                 if len(row.get("owners", []) or [])>0:
                     owners = [{"id":o} for o in row.get("owners", "").split(self.config.value_separator) if o != '']
                 entity.contacts = {"Expert": experts, "Owner": owners }
+            
+            if _extracted["custom"]:
+                entity.customAttributes = _extracted["custom"]
 
             existing_entities.update({row["qualifiedName"]: entity})
 
