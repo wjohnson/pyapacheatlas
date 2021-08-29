@@ -515,8 +515,10 @@ class AtlasClient():
 
         # If we are using type category
         if type_category:
+            # business_Metadata has an underscore so before it can be used in
+            # the endpoint, it must be converted to businessMetadata.
             atlas_endpoint = atlas_endpoint + \
-                "{}def".format(type_category.value)
+                "{}def".format(type_category.value.replace("_", ""))
         elif guid or name:
             atlas_endpoint = atlas_endpoint + "typedef"
         else:
@@ -1111,7 +1113,7 @@ class AtlasClient():
         Massage the type upload. See rules in upload_typedefs.
         """
         payload = {}
-        required_keys = ["classificationDefs", "entityDefs",
+        required_keys = ["businessMetadataDefs","classificationDefs", "entityDefs",
                          "enumDefs", "relationshipDefs", "structDefs"]
 
         # If typedefs is defined as a dict and it contains at least one of the
@@ -1123,16 +1125,23 @@ class AtlasClient():
             # Assuming this is a single typedef
             key = None
             if isinstance(typedefs, BaseTypeDef):
-                key = typedefs.category.lower() + "Defs"
+                key = typedefs.category
                 val = [typedefs.to_json()]
             elif isinstance(typedefs, dict):
-                key = typedefs["category"].lower() + "Defs"
+                key = typedefs["category"]
                 val = [typedefs]
             else:
                 raise NotImplementedError(
                     "Uploading an object of type '{}' is not supported."
                     .format(type(typedefs))
                 )
+
+            # business_metadata must be converted to businessMetadataDefs
+            # but it's stored as BUSINESS_METADATA
+            key = key.lower()
+            if key == "business_metadata":
+                key = "businessMetadata"
+            key = key + "Defs"
             payload = {key: val}
         # Did we set any of the xDefs as arguments?
         elif len(set(kwargs.keys()).intersection(required_keys)) > 0:
@@ -1194,9 +1203,8 @@ class AtlasClient():
             :type relationshipDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
             :param structDefs: structDefs to upload.
             :type structDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
-
-        Returns:
-
+            :param businessMetadataDefs: businessMetadataDefs to upload.
+            :type businessMetadataDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
         """
         # Should this take a list of type defs and figure out the formatting
         # by itself?
