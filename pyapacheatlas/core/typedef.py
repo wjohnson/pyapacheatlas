@@ -10,6 +10,11 @@ class TypeCategory(Enum):
     ENUM = "enum"
     RELATIONSHIP = "relationship"
     STRUCT = "struct"
+    BUSINESSMETADATA = "business_Metadata"
+    # BusinessMetadata is used in BaseTypeDef where it is forced UPPER
+    # BusinessMetadata is used in AtlasClient.upload_typedefs
+    ## as part of the url (converted to businessMetadata)
+    ## as part of the payload (converted to businessMetadataDefs)
 
 
 class Cardinality(Enum):
