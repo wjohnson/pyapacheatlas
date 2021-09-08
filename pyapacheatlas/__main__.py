@@ -25,10 +25,14 @@ if __name__ == "__main__":
         print(__version__)
         exit(0)
     
+    template_config = {}
     if args.config:
         config = configparser.ConfigParser()
         config.read(args.config)
+        if args.config_section not in config:
+            raise RuntimeError(f"In your config.ini, please specify a {args.config_section} section or update your --config-section parameter.")
+        template_config = config[args.config_section]
 
     if args.make_template:
-        ExcelReader.make_template(args.make_template, **config[args.config_section])
+        ExcelReader.make_template(args.make_template, **template_config)
         print(f"Template successfully written to {args.make_template}")

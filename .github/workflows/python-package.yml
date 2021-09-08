@@ -78,18 +78,6 @@ jobs:
         echo ::set-output name=package_version::$TAG_VERSION
       id: vnum      
 
-    - name: Create Release
-      if: github.event_name == 'release' && github.event.action == 'created'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.vnum.package_version }}
-        release_name: Release ${{ steps.vnum.package_version }}
-        draft: false
-        prerelease: false
-
     - name: Publish to Test PyPI
       if: github.event_name == 'release' && github.event.action == 'created'
       uses: pypa/gh-action-pypi-publish@v1.4.1
