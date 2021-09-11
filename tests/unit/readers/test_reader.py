@@ -87,6 +87,41 @@ def test_parse_bulk_entities_with_relationships():
 
     assert("table" not in col2["relationshipAttributes"])
 
+def test_parse_bulk_entities_with_relationships_and_atlas_object_id():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC",
+         "[Relationship] table": None,
+         "[Relationship] columns": "AtlasObjectId(guid:abc-123-def);AtlasObjectId(typeName:DataSet qualifiedName:qnInList)"
+         },
+        {"typeName": "demo_column", "name": "col1",
+         "qualifiedName": "col1qn",
+         "[Relationship] table": "AtlasObjectId(typeName:DataSet qualifiedName:myqualifiedName)",
+         "[Relationship] columns": None
+         },
+         {"typeName": "demo_column", "name": "col2",
+         "qualifiedName": "col2qn",
+         "[Relationship] table": "AtlasObjectId(guid:ghi-456-jkl)",
+         "[Relationship] columns": None
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    table = results["entities"][0]
+    col1 = results["entities"][1]
+    col2 = results["entities"][2]
+
+    assert(len(table["relationshipAttributes"]["columns"]) == 2)
+    assert(table["relationshipAttributes"]["columns"][0] == {"guid":"abc-123-def"})
+    assert(table["relationshipAttributes"]["columns"][1] == {"typeName":"DataSet", "uniqueAttributes": {"qualifiedName":"qnInList"}})
+
+    col1_table = col1["relationshipAttributes"]["table"]
+    assert(col1_table["typeName"] == "DataSet" )
+    assert(col1_table["uniqueAttributes"] == {"qualifiedName": "myqualifiedName"} )
+
+    assert(col2["relationshipAttributes"]["table"] == {"guid":"ghi-456-jkl"})
 
 def test_parse_bulk_entities_with_terms():
     rc = ReaderConfiguration()
@@ -376,3 +411,28 @@ def test_parse_column_mapping():
     secondMap_data_map_exp = {"Source": "pqr://777", "Sink": "def://999"}
     assert(secondMap_col_map == secondMap_col_map_exp)
     assert(secondMap_data_map == secondMap_data_map_exp)
+
+def test_parse_bulk_entities_with_custom_attributes():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "name",
+    # "qualifiedName",
+    # "[custom] foo", "bar"
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC",
+         "[custom] foo": "bar"
+         },
+         {"typeName": "demo_table", "name": "entityNameDEF",
+         "qualifiedName": "qualifiedNameofEntityNameDEF",
+         "[custom] foo": None
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    ae1 = results["entities"][0]
+    ae2 = results["entities"][1]
+
+    assert("foo" in ae1["customAttributes"])
+    assert(ae1["customAttributes"]["foo"] == "bar")
+
+    assert("customAttributes" not in ae2)
