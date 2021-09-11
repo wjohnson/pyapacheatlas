@@ -31,8 +31,17 @@ class ServicePrincipalAuthentication(AtlasAuthBase):
             "grant_type": "client_credentials",
             "client_secret": client_secret
         }
+        self._graph_data = {
+            # This is the resource id for the data catalog
+            "resource": "https://graph.microsoft.com",
+            "client_id": client_id,
+            "grant_type": "client_credentials",
+            "client_secret": client_secret
+        }
         self.access_token = None
         self.expiration = datetime.now()
+        self.graph_access_token = None
+        self.graph_expiration = datetime.now()
 
     def _set_access_token(self):
         """
@@ -59,5 +68,33 @@ class ServicePrincipalAuthentication(AtlasAuthBase):
 
         return {
             "Authorization": "Bearer " + self.access_token,
+            "Content-Type": "application/json"
+        }
+
+    def _set_graph_access_token(self):
+        """
+        Sets the microsoft graph access token for your session.
+        """
+        authResponse = requests.post(self.ouath_url, data=self._graph_data)
+        if authResponse.status_code != 200:
+            authResponse.raise_for_status()
+
+        authJson = json.loads(authResponse.text)
+
+        self.graph_access_token = authJson["access_token"]
+        self.graph_expiration = datetime.fromtimestamp(int(authJson["expires_on"]))
+
+    def get_graph_authentication_headers(self):
+        """
+        Gets the current graph access token or refreshes the token if it
+        has expired.
+        :return: The authorization headers.
+        :rtype: dict(str, str)
+        """
+        if self.graph_expiration <= datetime.now():
+            self._set_graph_access_token()
+
+        return {
+            "Authorization": "Bearer " + self.graph_access_token,
             "Content-Type": "application/json"
         }

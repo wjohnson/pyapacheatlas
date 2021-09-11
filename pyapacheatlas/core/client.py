@@ -1688,3 +1688,24 @@ class PurviewClient(AtlasClient):
             fp.write(postResp.content)
 
         return None
+    
+    def ms_graph_upn_user_lookup(self, userPrincipalName, api_version="v1.0"):
+        """
+        Based on user principal name, look up the user in Azure Active directory.
+
+        :param str userPrincipalName:
+        :return:
+            The results of the microsoft graph user lookup.
+        :rtype: dict
+        """
+        graph_endpoint = f"https://graph.microsoft.com/{api_version}/users/{userPrincipalName}"
+
+        getEntity = requests.get(
+            graph_endpoint,
+            headers=self.authentication.get_graph_authentication_headers()
+        )
+
+        results = self._handle_response(getEntity)
+
+        return results
+        
