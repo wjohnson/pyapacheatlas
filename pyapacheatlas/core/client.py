@@ -16,6 +16,7 @@ except ImportError:
 from ..auth.base import AtlasAuthBase
 
 from .entity import AtlasClassification, AtlasEntity
+from .msgraph import MsGraphClient
 from .typedef import BaseTypeDef
 from .util import AtlasException, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
@@ -1527,6 +1528,7 @@ class PurviewClient(AtlasClient):
             else:
                 raise Exception("You probably need to install azure-identity to use this authentication method.")
         super().__init__(endpoint_url, authentication)
+        self.msgraph = MsGraphClient(authentication)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
@@ -1688,24 +1690,3 @@ class PurviewClient(AtlasClient):
             fp.write(postResp.content)
 
         return None
-    
-    def ms_graph_upn_user_lookup(self, userPrincipalName, api_version="v1.0"):
-        """
-        Based on user principal name, look up the user in Azure Active directory.
-
-        :param str userPrincipalName:
-        :return:
-            The results of the microsoft graph user lookup.
-        :rtype: dict
-        """
-        graph_endpoint = f"https://graph.microsoft.com/{api_version}/users/{userPrincipalName}"
-
-        getEntity = requests.get(
-            graph_endpoint,
-            headers=self.authentication.get_graph_authentication_headers()
-        )
-
-        results = self._handle_response(getEntity)
-
-        return results
-        
