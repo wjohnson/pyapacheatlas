@@ -124,14 +124,14 @@ if __name__ == "__main__":
 
     print("Beginning upload of terms to Purview.")
     # Call the import terms method to take the csv and upload it
-    results = client.import_terms(config["Default"]["PurviewImportPath"])
+    results = client.glossary.import_terms(config["Default"]["PurviewImportPath"])
 
     print("Initial Upload Status:")
     print(json.dumps(results, indent=2))
 
     print("Checking Status every Five Seconds until status != 'Running'")
     while(True):
-        ops_status = client.import_terms_status(results["id"])
+        ops_status = client.glossary.import_terms_status(results["id"])
         print(json.dumps(ops_status, indent=2))
         if ops_status["status"] != "RUNNING":
             break

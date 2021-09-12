@@ -17,10 +17,10 @@ from ..auth.base import AtlasAuthBase
 
 from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
-from .glossary import _CrossPlatformTerm
-from .util import AtlasException, batch_dependent_entities, PurviewLimitation, PurviewOnly
+from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
+from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
-class AtlasClient():
+class AtlasClient(AtlasBaseClient):
     """
     Provides communication between your application and the Apache Atlas
     server with your entities and type definitions.
@@ -38,6 +38,7 @@ class AtlasClient():
         super().__init__()
         self.authentication = authentication
         self.endpoint_url = endpoint_url
+        self.glossary = GlossaryClient(endpoint_url, authentication)
         self.is_purview = False
         self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
         if re.match(self._purview_url_pattern, self.endpoint_url):
@@ -542,6 +543,9 @@ class AtlasClient():
 
     def get_glossary(self, name="Glossary", guid=None, detailed=False):
         """
+        AtlasClient.get_glossary is being deprecated.
+        Please use AtlasClient.glossary.get_glossary instead.
+
         Retrieve the specified glossary by name or guid along with the term
         headers (AtlasRelatedTermHeader: including displayText and termGuid).
         Providing the glossary name only will result in a lookup of all
@@ -565,67 +569,16 @@ class AtlasClient():
 
         :rtype: list(dict)
         """
-        results = None
-
-        if guid:
-            logging.debug(f"Retreiving a Glossary based on guid: {guid}")
-            atlas_endpoint = self.endpoint_url + "/glossary/{}".format(guid)
-            if detailed:
-                atlas_endpoint = atlas_endpoint + "/detailed"
-            getResult = requests.get(
-                atlas_endpoint,
-                headers=self.authentication.get_authentication_headers()
-            )
-            results = self._handle_response(getResult)
-        else:
-            logging.debug(f"Retreiving a Glossary based on name: {name}")
-            all_glossaries = self._get_glossaries()
-            logging.debug(f"Iterating over {len(all_glossaries)} glossaries")
-            for glossary in all_glossaries:
-                if glossary["name"] == name:
-                    logging.debug(f"Found a glossary named '{name}'")
-                    if detailed:
-                        logging.debug(
-                            f"Recursively calling get_glossary with guid: {glossary['guid']}")
-                        results = self.get_glossary(
-                            guid=glossary["guid"], detailed=detailed)
-                    else:
-                        results = glossary
-            if results is None:
-                raise ValueError(
-                    f"Glossary with a name of {name} was not found.")
-
-        return results
-
-    def _get_glossaries(self, limit=-1, offset=0, sort_order="ASC"):
-        """
-        Retrieve all glossaries and the term headers.
-
-        :param int limit:
-            The maximum number of glossaries to pull back.  Does not affect the
-            number of term headers included in the results.
-        :param int offset: The number of glossaries to skip.
-        :param str sort_order: ASC for DESC sort for glossary name.
-        :return: The requested glossaries with the term headers.
-        :rtype: list(dict)
-        """
-        results = None
-        atlas_endpoint = self.endpoint_url + "/glossary"
-        logging.debug("Retreiving all glossaries from catalog")
-
-        # TODO: Implement paging with offset and limit
-        getResult = requests.get(
-            atlas_endpoint,
-            params={"limit": limit, "offset": offset, "sort": sort_order},
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        results = self._handle_response(getResult)
-
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("AtlasClient.get_glossary is being deprecated. Please use AtlasClient.glossary.get_glossary instead.")
+        results = self.glossary.get_glossary(name, guid, detailed)
         return results
 
     def get_glossary_term(self, guid=None, name=None, glossary_name="Glossary", glossary_guid=None):
         """
+        AtlasClient.get_glossary_term is being deprecated.
+        Please use AtlasClient.glossary.get_term instead.
+
         Retrieve a single glossary term based on its guid. Providing only the
         glossary_name will result in a lookup for the glossary guid. If you
         plan on looking up many terms, consider using the get_glossary method
@@ -646,32 +599,16 @@ class AtlasClient():
         :return: The requested glossary term as a dict.
         :rtype: dict
         """
-        results = None
-
-        if guid is None and name is None:
-            raise ValueError("Either guid or name and glossary must be set.")
-
-        if guid:
-            atlas_endpoint = self.endpoint_url + \
-                "/glossary/term/{}".format(guid)
-
-            getTerms = requests.get(
-                atlas_endpoint,
-                headers=self.authentication.get_authentication_headers()
-            )
-            results = self._handle_response(getTerms)
-        else:
-            terms_in_glossary = self.get_glossary(
-                name=glossary_name, guid=glossary_guid)
-            for term in terms_in_glossary["terms"]:
-                if term["displayText"] == name:
-                    _guid = term["termGuid"]
-                    results = self.get_glossary_term(guid=_guid)
-
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("AtlasClient.get_glossary_term is being deprecated. Please use AtlasClient.glossary.get_term instead.")
+        results = self.glossary.get_term(guid, name, glossary_name, glossary_guid)
         return results
 
     def assignTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
         """
+        AtlasClient.assignTerm is being deprecated.
+        Please use AtlasClient.glossary.assignTerm instead.
+
         Assign a single term to many entities. Provide either a term guid
         (if you know it) or provide the term name and glossary name. If
         term name is provided, term guid is ignored.
@@ -692,50 +629,16 @@ class AtlasClient():
         :return: A dictionary indicating success or failure.
         :rtype: dict
         """
-        results = None
-
-        # Massage the data into dicts
-        # Assumes the AtlasEntity does not have guid defined
-        json_entities = []
-        for e in entities:
-            if isinstance(e, AtlasEntity) and e.guid != None:
-                json_entities.append({"guid": e.guid})
-            elif isinstance(e, dict) and "guid" in e:
-                json_entities.append({"guid": e["guid"]})
-            else:
-                warnings.warn(
-                    f"{str(e)} does not contain a guid and will be skipped.",
-                    category=UserWarning, stacklevel=2)
-
-        if len(json_entities) == 0:
-            raise RuntimeError(
-                "No Atlas Entities or Dictionaries with Guid were provided.")
-
-        # Term Name will supercede term guid.
-        if termName:
-            _discoveredTerm = self.get_glossary_term(
-                name=termName, glossary_name=glossary_name)
-            termGuid = _discoveredTerm["guid"]
-
-        atlas_endpoint = self.endpoint_url + \
-            f"/glossary/terms/{termGuid}/assignedEntities"
-
-        postAssignment = requests.post(
-            atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
-            json=json_entities
-        )
-
-        try:
-            postAssignment.raise_for_status()
-        except requests.RequestException:
-            raise Exception(postAssignment.text)
-
-        results = {"message": f"Successfully assigned term to entities."}
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("AtlasClient.assignTerm is being deprecated. Please use AtlasClient.glossary.assignTerm instead.")
+        results = self.glossary.assignTerm(entities, termGuid, termName, glossary_name)
         return results
 
     def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
         """
+        AtlasClient.delete_assignedTerm is being deprecated.
+        Please use AtlasClient.glossary.delete_assignedTerm instead.
+
         Remove a single term from many entities. Provide either a term guid
         (if you know it) or provide the term name and glossary name. If
         term name is provided, term guid is ignored.
@@ -760,70 +663,16 @@ class AtlasClient():
         :return: A dictionary indicating success or failure.
         :rtype: dict
         """
-        results = None
-
-        # Need the term guid to build the payload
-        if termName:
-            _discoveredTerm = self.get_glossary_term(
-                name=termName, glossary_name=glossary_name)
-            termGuid = _discoveredTerm["guid"]
-
-        # Massage the data into dicts
-        # Assumes the AtlasEntity does not have guid defined
-        json_entities = []
-        for e in entities:
-            # Support AtlasEntity
-            if isinstance(e, AtlasEntity) and e.guid != None:
-                if "meanings" in e.relationshipAttributes:
-                    _temp_payload = [
-                        {"guid": e.guid,
-                            "relationshipGuid": ra["relationshipGuid"]}
-                        for ra in e.relationshipAttributes.get("meanings", [])
-                        if ra.get("guid", "") == termGuid
-                    ]
-                    json_entities.extend(_temp_payload)
-            # Support response from Atlas parsing
-            elif isinstance(e, dict) and "guid" in e and "relationshipAttributes" in e:
-                _temp_payload = [
-                    {"guid": e["guid"],
-                        "relationshipGuid": ra["relationshipGuid"]}
-                    for ra in e["relationshipAttributes"].get("meanings", [])
-                    if ra.get("guid", "") == termGuid
-                ]
-                json_entities.extend(_temp_payload)
-            # Support arbitrary dictionary
-            elif isinstance(e, dict) and "guid" in e and "relationshipGuid" in e:
-                json_entities.append(
-                    {"guid": e["guid"], "relationshipGuid": e["relationshipGuid"]})
-            else:
-                warnings.warn(
-                    f"{str(e)} does not contain a guid and will be skipped.",
-                    category=UserWarning, stacklevel=2)
-
-        if len(json_entities) == 0:
-            raise RuntimeError(
-                "No Atlas Entities or Dictionaries with Guid were provided.")
-
-        atlas_endpoint = self.endpoint_url + \
-            f"/glossary/terms/{termGuid}/assignedEntities"
-
-        deleteAssignment = requests.delete(
-            atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
-            json=json_entities
-        )
-
-        try:
-            deleteAssignment.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteAssignment.text)
-
-        results = {
-            "message": f"Successfully deleted assigned term from entities."}
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("AtlasClient.delete_assignedTerm is being deprecated. Please use AtlasClient.glossary.delete_assignedTerm instead.")
+        results = self.glossary.delete_assignedTerm(entities, termGuid, termName, glossary_name)
         return results
 
     def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC"):
         """
+        AtlasClient.get_termAssignedEntities is being deprecated.
+        Please use AtlasClient.glossary.get_termAssignedEntities instead.
+
         Page through the assigned entities for the given term.
 
         :param str termGuid: The guid for the term. Ignored if using termName.
@@ -834,24 +683,31 @@ class AtlasClient():
         :return: A list of Atlas relationships between the given term and entities.
         :rtype: list(dict)
         """
-        results = None
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("AtlasClient.get_termAssignedEntities is being deprecated. Please use AtlasClient.glossary.get_termAssignedEntities instead.")
+        results = self.glossary.get_termAssignedEntities(termGuid, termName, glossary_name, limit, offset, sort)
+        return results
+    
+    def upload_terms(self, batch, force_update=False):
+        """
+        AtlasClient.upload_terms is being deprecated.
+        Please use AtlasClient.glossary.upload_terms instead.
+        
+        Upload terms to your Atlas backed Data Catalog. Supports Purview Term
+        Templates by passing in an attributes field with the term template's
+        name as a field within attributes and an object of the required and
+        optional fields.
 
-        if termName:
-            _discoveredTerm = self.get_glossary_term(
-                name=termName, glossary_name=glossary_name)
-            termGuid = _discoveredTerm["guid"]
-
-        atlas_endpoint = self.endpoint_url + \
-            f"/glossary/terms/{termGuid}/assignedEntities"
-
-        # TODO: Implement paging with a generator
-        getAssignments = requests.get(
-            atlas_endpoint,
-            params={"limit": limit, "offset": offset, "sort": sort},
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        results = self._handle_response(getAssignments)
+        :param batch: A list of AtlasGlossaryTerm objects to be uploaded.
+        :type batch: list(dict)
+        :return:
+            A list of AtlasGlossaryTerm objects that are the results from
+            your upload.
+        :rtype: list(dict)
+        """
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("AtlasClient.upload_terms is being deprecated. Please use AtlasClient.glossary.upload_terms instead.")
+        results = self.glossary.upload_terms(batch, force_update)
         return results
 
     def _get_typedefs_header(self):
@@ -1373,34 +1229,6 @@ class AtlasClient():
 
         return results
 
-    def upload_terms(self, batch, force_update=False):
-        """
-        Upload terms to your Atlas backed Data Catalog. Supports Purview Term
-        Templates by passing in an attributes field with the term template's
-        name as a field within attributes and an object of the required and
-        optional fields.
-
-        :param batch: A list of AtlasGlossaryTerm objects to be uploaded.
-        :type batch: list(dict)
-        :return:
-            A list of AtlasGlossaryTerm objects that are the results from
-            your upload.
-        :rtype: list(dict)
-        """
-        # TODO Include a Do Not Overwrite call
-        results = None
-        atlas_endpoint = self.endpoint_url + "/glossary/terms"
-
-        postResp = requests.post(
-            atlas_endpoint,
-            json=batch,
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        results = self._handle_response(postResp)
-
-        return results
-
     def _search_generator(self, search_params, starting_offset=0):
         """
         Generator to page through the search query results.
@@ -1528,6 +1356,8 @@ class PurviewClient(AtlasClient):
             else:
                 raise Exception("You probably need to install azure-identity to use this authentication method.")
         super().__init__(endpoint_url, authentication)
+        
+        self.glossary = PurviewGlossaryClient(endpoint_url, authentication)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
@@ -1585,36 +1415,17 @@ class PurviewClient(AtlasClient):
             `import_terms_status` to get the status of the import operation.
         :rtype: dict
         """
-        results = None
-        if glossary_guid:
-            atlas_endpoint = self.endpoint_url + \
-                f"/glossary/{glossary_guid}/terms/import?&includeTermHierarchy=True"
-        elif glossary_name:
-            atlas_endpoint = self.endpoint_url + \
-                f"/glossary/name/{glossary_name}/terms/import?&includeTermHierarchy=True"
-        else:
-            raise ValueError(
-                "Either glossary_name or glossary_guid must be defined.")
-
-        headers = self.authentication.get_authentication_headers()
-        # Pop the default of application/json so that request can fill in the
-        # multipart/form-data; boundary=xxxx that is automatically generated
-        # when using the files argument.
-        headers.pop("Content-Type")
-
-        postResp = requests.post(
-            atlas_endpoint,
-            files={'file': ("file", open(csv_path, 'rb'))},
-            headers=headers
-        )
-
-        results = self._handle_response(postResp)
-
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("PurviewClient.import_terms is being deprecated. Please use PurviewClient.glossary.import_terms instead.")
+        results = self.glossary.import_terms(csv_path, glossary_name, glossary_guid)
         return results
 
     @PurviewOnly
     def import_terms_status(self, operation_guid):
         """
+        PurviewClient.import_terms_status is being deprecated.
+        Please use PurviewClient.glossary.import_terms_status instead.
+
         Get the operation status of a glossary term import activity. You get
         the operation_guid after executing the `import_terms` method and find
         the `id` field in the response dict/json.
@@ -1626,22 +1437,17 @@ class PurviewClient(AtlasClient):
             number of errors.
         :rtype: dict
         """
-        results = None
-        atlas_endpoint = self.endpoint_url + \
-            f"/glossary/terms/import/{operation_guid}"
-
-        postResp = requests.get(
-            atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        results = self._handle_response(postResp)
-
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("PurviewClient.import_terms_status is being deprecated. Please use PurviewClient.glossary.import_terms_status instead.")
+        results = self.glossary.import_terms_status(operation_guid)
         return results
 
     @PurviewOnly
     def export_terms(self, guids, csv_path, glossary_name="Glossary", glossary_guid=None):
         """
+        PurviewClient.export_terms is being deprecated.
+        Please use PurviewClient.glossary.export_terms instead.
+
         :param list(str) guids: List of guids that should be exported as csv.
         :param str csv_path: Path to CSV that will be imported.
         :param str glossary_name:
@@ -1656,42 +1462,16 @@ class PurviewClient(AtlasClient):
         :return: A csv file is written to the csv_path.
         :rtype: None
         """
-        if glossary_guid:
-            # Glossary guid is defined so we don't need to look up the guid
-            pass
-        elif glossary_name:
-            glossary = self.get_glossary(glossary_name)
-            glossary_guid = glossary["guid"]
-        else:
-            raise ValueError(
-                "Either glossary_name or glossary_guid must be defined.")
-
-        results = None
-        atlas_endpoint = self.endpoint_url + \
-            f"/glossary/{glossary_guid}/terms/export"
-
-        postResp = requests.post(
-            atlas_endpoint,
-            json=guids,
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        # Can't use handle response since it expects json
-        try:
-            postResp.raise_for_status()
-        except requests.RequestException as e:
-            if "errorCode" in postResp:
-                raise AtlasException(postResp.text)
-            else:
-                raise requests.RequestException(postResp.text)
-
-        with open(csv_path, 'wb') as fp:
-            fp.write(postResp.content)
-
-        return None
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("PurviewClient.export_terms is being deprecated. Please use PurviewClient.glossary.export_terms instead.")
+        results = self.glossary.export_terms(guids, csv_path, glossary_name, glossary_guid)
+        return results
     
     def upload_term(self, term, includeTermHierarchy=True, **kwargs):
         """
+        PurviewClient.upload_term is being deprecated.
+        Please use PurviewClient.glossary.upload_term instead.
+
         Upload a single term to Azure Purview. Minimally, you can specify
         the term alone and it will upload it to Purview! However, if you
         plan on uploading many terms programmatically, you might look at
@@ -1707,24 +1487,7 @@ class PurviewClient(AtlasClient):
         glossary_guid = glossary["guid"]
         ```
         """
-
-        payload = {}
-        atlas_endpoint = self.endpoint_url + "/glossary/term"
-
-        if isinstance(term, dict, ):
-            payload = term
-        elif isinstance(term, _CrossPlatformTerm):
-            payload = term.to_json()
-        else:
-            raise TypeError(f"The type {type(term)} is not supported. Please use a dict or PurviewGlossaryTerm")
-
-        postResp = requests.post(
-            atlas_endpoint,
-            json=payload,
-            params={"includeTermHierarchy":json.dumps(includeTermHierarchy)},
-            headers=self.authentication.get_authentication_headers()
-        )
-
-        results = self._handle_response(postResp)
-        
+        # TODO: Remove at 1.0.0 release
+        warnings.warn("PurviewClient.upload_term is being deprecated. Please use PurviewClient.glossary.upload_term instead.")
+        results = self.glossary.upload_term(term, includeTermHierarchy)
         return results

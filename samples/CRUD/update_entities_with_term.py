@@ -37,7 +37,7 @@ if __name__ == "__main__":
         authentication=oauth
     )
 
-    glossary = client.get_glossary()
+    glossary = client.glossary.get_glossary()
     try:
         terms = glossary["terms"]
     except KeyError:

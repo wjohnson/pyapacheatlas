@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # you are uploading to and that pointer is the guid of the
     # glossary. By default, Purview has one glossary named
     # "Glossary" and the below method will get it for us.
-    default_glossary = client.get_glossary()
+    default_glossary = client.glossary.get_glossary()
 
     # This is a single term with no hierarchy or term templates
     # you must provide a name, qualifiedName (with an @Glossary
@@ -76,6 +76,8 @@ if __name__ == "__main__":
     )
 
     # With the terms defined, you can upload them!
-    term_results = client.upload_term(term)
+    term_results = client.glossary.upload_term(term)
+    # Alternatively, you can upload multiple
+    # terms_results = client.glossary.upload_term([term, term2, term3])
 
     print(json.dumps(term_results, indent=2))
