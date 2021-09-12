@@ -300,9 +300,41 @@ def test_bulk_entity_with_experts_owners():
     no_contacts = results["entities"][2]
 
     assert(len(exp_only["Owner"]) == 0)
-    assert(len(exp_only["Expert"]) == 2)
-    assert(len(both["Owner"]) == 2)
-    assert(len(both["Expert"]) == 2)
+    assert(exp_only["Expert"] == [{"id":"a"}, {"id": "b"}])
+    assert(both["Owner"] == [{"id":"c"}, {"id": "d"}])
+    assert(both["Expert"] == [{"id":"a"}, {"id": "b"}])
+    assert("contacts" not in no_contacts)
+
+def test_bulk_entity_with_experts_owners_func():
+    rc =ReaderConfiguration()
+    reader = Reader(rc)
+
+    json_rows = [
+        {"typeName": "demoType", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC",
+         "experts": "a;b;", "owners":""
+         },
+        {"typeName": "demoType", "name": "entityNameGHI",
+         "qualifiedName": "qualifiedNameofEntityNameGHI",
+         "experts": "a;b;", "owners":"c;d"
+         },
+        {"typeName": "demoType", "name": "entityNameJKL",
+         "qualifiedName": "qualifiedNameofEntityNameJKL",
+         }
+    ]
+
+    dummy_func = (lambda x: x+"_abc")
+
+    results = reader.parse_bulk_entities(json_rows, contacts_func=dummy_func)
+
+    exp_only = results["entities"][0]["contacts"]
+    both = results["entities"][1]["contacts"]
+    no_contacts = results["entities"][2]
+
+    assert(len(exp_only["Owner"]) == 0)
+    assert(exp_only["Expert"] == [{"id":"a_abc"}, {"id": "b_abc"}])
+    assert(both["Owner"] == [{"id":"c_abc"}, {"id": "d_abc"}])
+    assert(both["Expert"] == [{"id":"a_abc"}, {"id": "b_abc"}])
     assert("contacts" not in no_contacts)
     
 def test_parse_classification_defs():

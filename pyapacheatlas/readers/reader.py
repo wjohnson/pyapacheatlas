@@ -209,8 +209,35 @@ class Reader(LineageMixIn):
                 output["attributes"].update({column_name: cell_value})
 
         return output
+    
+    def _organize_contacts(self, contacts, contacts_func, contacts_cache):
+        """
+        Convert the string with delimiters into a list of `{id: contact}`
+        after calling the contacts_func on the stripped contact string.
+        
+        :param str contacts: a splittable string.
+        :param function contacts_func:
+            A function that will be called on each contact.
+        :param dict contacts_cache:
+            Stores the contact and the results of the contacts_func.
+        """
+        contacts_enhanced = []
+        for contact in contacts.split(self.config.value_separator):
+            if contact == "":
+                continue
+            clean_contact = contact.strip()
+            output = contact.strip()
+            if clean_contact in contacts_cache:
+                output = contacts_cache[clean_contact]
+            else:
+                output = contacts_func(clean_contact)
+                contacts_cache[clean_contact] = output
+            # This format is specific to Azure Purview
+            contacts_enhanced.append({"id": output})
+        
+        return contacts_enhanced
 
-    def parse_bulk_entities(self, json_rows):
+    def parse_bulk_entities(self, json_rows, contacts_func=None):
         """
         Create an AtlasEntityWithExtInfo consisting of entities and their attributes
         for the given json_rows.
@@ -218,6 +245,14 @@ class Reader(LineageMixIn):
         :param list(dict(str,object)) json_rows:
             A list of dicts containing at least `typeName`, `name`, and `qualifiedName`
             that represents the entity to be uploaded.
+        :param function contacts_func:
+            For Azure Purview, a function to be called on each value
+            when you pass in an experts or owners header to json_rows.
+            Leaving it as None will return the exact value passed in
+            to the experts and owners section. 
+            It has a built in cache that will prevent redundant calls
+            to your function.
+        
         :return: An AtlasEntityWithExtInfo with entities for the provided rows.
         :rtype: dict(str, list(dict))
         """
@@ -259,13 +294,15 @@ class Reader(LineageMixIn):
                     row["classifications"],
                     sep=self.config.value_separator)
 
+            contacts_cache = {}
+            contacts_func = contacts_func or (lambda x: x)
             if "experts" in row or "owners" in row and len( row.get("experts", []) + row.get("owners", []) ) > 0:
                 experts = []
                 owners = []
-                if len(row.get("experts", []) or [])>0:
-                    experts = [{"id":e} for e in row.get("experts", "").split(self.config.value_separator) if e != '']
-                if len(row.get("owners", []) or [])>0:
-                    owners = [{"id":o} for o in row.get("owners", "").split(self.config.value_separator) if o != '']
+
+                experts = self._organize_contacts((row.get("experts") or ""), contacts_func, contacts_cache)
+                owners = self._organize_contacts((row.get("owners") or ""), contacts_func, contacts_cache)
+
                 entity.contacts = {"Expert": experts, "Owner": owners }
             
             if _extracted["custom"]:

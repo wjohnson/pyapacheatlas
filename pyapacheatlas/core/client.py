@@ -16,6 +16,7 @@ except ImportError:
 from ..auth.base import AtlasAuthBase
 
 from .entity import AtlasClassification, AtlasEntity
+from .msgraph import MsGraphClient
 from .typedef import BaseTypeDef
 from .util import AtlasException, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
@@ -1658,6 +1659,7 @@ class PurviewClient(AtlasClient):
             else:
                 raise Exception("You probably need to install azure-identity to use this authentication method.")
         super().__init__(endpoint_url, authentication)
+        self.msgraph = MsGraphClient(authentication)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):

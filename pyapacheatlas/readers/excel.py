@@ -96,18 +96,25 @@ class ExcelReader(Reader):
 
         return output
 
-    def parse_bulk_entities(self, filepath):
+    def parse_bulk_entities(self, filepath, contacts_func = None):
         """
         Generate a set of entities from an excel template file.
 
         :param str filepath:
             The xlsx file that contains your table and columns.
+        :param function contacts_func:
+            For Azure Purview, a function to be called on each value
+            when you pass in an experts or owners header to json_rows.
+            Leaving it as None will return the exact value passed in
+            to the experts and owners section.
+            It has a built in cache that will prevent redundant calls
+            to your function.
+
         :return: An AtlasTypeDef with entityDefs for the provided rows.
         :rtype: dict(str, list(dict))
         """
         wb = load_workbook(filepath)
-        # A user may omit the entityDef_sheet by providing the
-        # config with None
+
         sheetIsNotPresent = self.config.bulkEntity_sheet not in wb.sheetnames
         if self.config.bulkEntity_sheet and sheetIsNotPresent:
             raise KeyError("The sheet {} was not found".format(
@@ -120,7 +127,7 @@ class ExcelReader(Reader):
             json_bulkEntities = ExcelReader._parse_spreadsheet(
                 bulkEntity_sheet)
             bulkEntities_generated = super().parse_bulk_entities(
-                json_bulkEntities)
+                json_bulkEntities, contacts_func)
             output.update(bulkEntities_generated)
 
         wb.close()
