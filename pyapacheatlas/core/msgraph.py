@@ -31,11 +31,11 @@ class MsGraphClient():
             results = json.loads(getUser.text)["id"]
             getUser.raise_for_status()
         except JSONDecodeError:
-            raise ValueError("Error in parsing: {}".format(getUser.text))
+            raise ValueError(f"For UPN {userPrincipalName}: Error in parsing: {getUser.text}")
         except requests.RequestException as e:
-            raise requests.RequestException(getUser.text)
+            raise requests.RequestException(f"For UPN {userPrincipalName}: Error in parsing: {getUser.text}")
         except KeyError:
-            raise KeyError("Response did not include an id field:"+json.dumps(results))
+            raise KeyError(f"For UPN {userPrincipalName}: Response did not include an id field:"+json.dumps(results))
 
         return results
 
@@ -62,13 +62,13 @@ class MsGraphClient():
             getUser.raise_for_status()
 
             if len(graph_response["value"]) == 0:
-                raise MsGraphException("The response from MS Graph contained zero results.")
+                raise MsGraphException(f"The response from MS Graph for '{email}' contained zero results.")
             results = graph_response["value"][0]["id"]
         except JSONDecodeError:
-            raise ValueError("Error in parsing: {}".format(getUser.text))
+            raise ValueError(f"For email {email}: Error in parsing response: {getUser.text}")
         except requests.RequestException as e:
-            raise requests.RequestException(getUser.text)
+            raise requests.RequestException(f"For email {email}: Error in parsing response: {getUser.text}")
         except KeyError:
-            raise KeyError("Response did not include a value or id field:"+json.dumps(graph_response))
+            raise KeyError(f"For email {email}: Response did not include a value or id field:"+json.dumps(graph_response))
 
         return results
