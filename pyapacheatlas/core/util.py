@@ -6,6 +6,13 @@ import warnings
 class AtlasException(BaseException):
     pass
 
+class AtlasUnInit():
+    """
+    Represents a value that has not been initialized
+    and will not be included in json body.
+    """
+    def __bool__(self):
+        return False
 
 def PurviewOnly(func):
     """

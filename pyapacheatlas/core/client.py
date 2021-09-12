@@ -17,6 +17,7 @@ from ..auth.base import AtlasAuthBase
 
 from .entity import AtlasClassification, AtlasEntity
 from .typedef import BaseTypeDef
+from .glossary import _CrossPlatformTerm
 from .util import AtlasException, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
 class AtlasClient():
@@ -1689,7 +1690,7 @@ class PurviewClient(AtlasClient):
 
         return None
     
-    def upload_term(self, term, status="Draft", glossary_guid = None, glossary_name="Glossary", **kwargs):
+    def upload_term(self, term, includeTermHierarchy=True, **kwargs):
         """
         Upload a single term to Azure Purview. Minimally, you can specify
         the term alone and it will upload it to Purview! However, if you
@@ -1706,41 +1707,21 @@ class PurviewClient(AtlasClient):
         glossary_guid = glossary["guid"]
         ```
         """
-        if not glossary_guid:
-            logging.debug(f"Retreiving a Glossary based on name: {glossary_name}")
-            glossary_guid = self.get_glossary(name=glossary_name)["guid"]
-                
-        payload = {
-            "name":term,
-            "nickName":term,
-            "status": status,
-            "attributes": kwargs["attributes"] if "attributes" in kwargs else {},
-            "anchor": {"glossaryGuid": glossary_guid}
-        }
 
-        if "parent_formal_name" in kwargs:
-            logging.debug(f"Parent formal name provided, so concatenating term with parent")
-            parent_term = kwargs["parent_formal_name"]
-            payload["name"] = parent_term+ "_"+term
-            parent_term_guid = kwargs.get("parent_term_guid")
-            
-            if not parent_term_guid:
-                logging.debug(f"Retreiving the term {parent_term} because parent_term_guid was not provided")
-                parent_term_entity = self.get_glossary_term(
-                    name=parent_term, 
-                    glossary_guid=glossary_guid, 
-                    glossary_name=glossary_name)
-                parent_term_guid = parent_term_entity["termGuid"]
-            
-            payload["parentTerm"] = {"termGuid":parent_term_guid}
+        payload = {}
+        atlas_endpoint = self.endpoint_url + "/glossary/term"
 
-        atlas_endpoint = self.endpoint_url + \
-            f"/glossary/term"
+        if isinstance(term, dict, ):
+            payload = term
+        elif isinstance(term, _CrossPlatformTerm):
+            payload = term.to_json()
+        else:
+            raise TypeError(f"The type {type(term)} is not supported. Please use a dict or PurviewGlossaryTerm")
 
         postResp = requests.post(
             atlas_endpoint,
             json=payload,
-            params={"includeTermHierarchy":"true"},
+            params={"includeTermHierarchy":json.dumps(includeTermHierarchy)},
             headers=self.authentication.get_authentication_headers()
         )
 
