@@ -149,20 +149,19 @@ class GlossaryClient(AtlasBaseClient):
 
     def upload_term(self, term, force_update=False, **kwargs):
         """
-        Upload a single term to Azure Purview. Minimally, you can specify
-        the term alone and it will upload it to Purview! However, if you
-        plan on uploading many terms programmatically, you might look at
-        `PurviewClient.upload_terms` or `PurviewClient.import_terms`.
+        Upload a single term to Apache Atlas.
 
-        If you do intend on using this method for multiple terms consider
-        looking up the glossary_guid and any parent term guids in advance
-        otherwise, this method will call get_glossary multiple times making
-        it much slower to do many updates.
+        Provide an AtlasGlossaryTerm or dictionary.
 
-        ```
-        glossary = client.get_glossary()
-        glossary_guid = glossary["guid"]
-        ```
+        :param term: The term to be uploaded.
+        :type term: Union(:class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict)
+        :param bool force_update: Currently not used.
+
+        Kwargs:
+            :param dict parameters: The parameters to pass into the url.
+
+        :return: The uploaded term's current state.
+        :rtype: dict        
         """
         payload = {}
         atlas_endpoint = self.endpoint_url + "/glossary/term"
@@ -186,24 +185,26 @@ class GlossaryClient(AtlasBaseClient):
 
         return results
 
-    def upload_terms(self, batch, force_update=False, **kwargs):
+    def upload_terms(self, terms, force_update=False, **kwargs):
         """
-        Upload terms to your Atlas backed Data Catalog. Supports Purview Term
-        Templates by passing in an attributes field with the term template's
-        name as a field within attributes and an object of the required and
-        optional fields.
+        Upload a multiple terms to Apache Atlas.
 
-        :param batch: A list of AtlasGlossaryTerm objects to be uploaded.
-        :type batch: list(dict)
-        :return:
-            A list of AtlasGlossaryTerm objects that are the results from
-            your upload.
-        :rtype: list(dict)
+        Provide a list of AtlasGlossaryTerms or dictionaries.
+
+        :param terms: The terms to be uploaded.
+        :type terms: list(Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`, :class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict))
+        :param bool force_update: Currently not used.
+
+        Kwargs:
+            :param dict parameters: The parameters to pass into the url.
+
+        :return: The uploaded term's current state.
+        :rtype: dict        
         """
         results = None
         atlas_endpoint = self.endpoint_url + "/glossary/terms"
         payload = [t.to_json() if isinstance(
-            t, _CrossPlatformTerm) else t for t in batch]
+            t, _CrossPlatformTerm) else t for t in terms]
 
         postResp = requests.post(
             atlas_endpoint,
@@ -409,6 +410,24 @@ class PurviewGlossaryClient(GlossaryClient):
 
     # Terms section
     def upload_term(self, term, includeTermHierarchy=True, force_update=False, **kwargs):
+        """
+        Upload a single term to Azure Purview. If you plan on uploading many
+        terms programmatically, you might look at `PurviewClient.upload_terms`
+        or `PurviewClient.import_terms`.
+
+        Provide a PurviewGlossaryTerm or dictionary.
+
+        :param term: The term to be uploaded.
+        :type term: Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`, dict)
+        :param bool includeTermHierarchy: Must be True if you are using hierarchy or term templates.
+        :param bool force_update: Currently not used.
+
+        Kwargs:
+            :param dict parameters: The parameters to pass into the url.
+
+        :return: The uploaded term's current state.
+        :rtype: dict        
+        """
         return super().upload_term(
             term,
             force_update,
@@ -417,9 +436,27 @@ class PurviewGlossaryClient(GlossaryClient):
             }
         )
 
-    def upload_terms(self, batch, includeTermHierarchy=True, force_update=False, **kwargs):
+    def upload_terms(self, terms, includeTermHierarchy=True, force_update=False, **kwargs):
+        """
+        Upload many terms to Azure Purview. However, if you
+        plan on uploading many terms with many details, you might look at
+        `PurviewClient.import_terms` instead which supports a csv upload.
+
+        Provide a list of PurviewGlossaryTerms or dictionaries.
+
+        :param terms: The term to be uploaded.
+        :type terms: list(Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`, dict))
+        :param bool includeTermHierarchy: Must be True if you are using hierarchy or term templates.
+        :param bool force_update: Currently not used.
+
+        Kwargs:
+            :param dict parameters: The parameters to pass into the url.
+
+        :return: The uploaded terms' current states.
+        :rtype: dict        
+        """
         return super().upload_terms(
-            batch,
+            terms,
             force_update,
             parameters={
                 "includeTermHierarchy": json.dumps(includeTermHierarchy)
@@ -436,6 +473,10 @@ class PurviewGlossaryClient(GlossaryClient):
 
         For custom term templates, additional attributes must include
         [Attribute][termTemplateName]attributeName as the header.
+
+        In the resulting JSON, you will receive an operation guid that can be
+        passed to the `PurviewClient.import_terms_status` method to determine
+        the success or failure of the import.
 
         :param str csv_path: Path to CSV that will be imported.
         :param str glossary_name:
@@ -505,6 +546,12 @@ class PurviewGlossaryClient(GlossaryClient):
 
     def export_terms(self, guids, csv_path, glossary_name="Glossary", glossary_guid=None):
         """
+        Export specific terms as provided by guid. Due to the design of Purview,
+        you may not export terms with different term templates. Instead,
+        you should batch exports based on the term template.
+
+        This method writes the csv file to the provided path.
+
         :param list(str) guids: List of guids that should be exported as csv.
         :param str csv_path: Path to CSV that will be imported.
         :param str glossary_name:

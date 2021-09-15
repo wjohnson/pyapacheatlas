@@ -78,6 +78,6 @@ if __name__ == "__main__":
     # With the terms defined, you can upload them!
     term_results = client.glossary.upload_term(term)
     # Alternatively, you can upload multiple
-    # terms_results = client.glossary.upload_term([term, term2, term3])
+    # terms_results = client.glossary.upload_terms([term, term2, term3])
 
     print(json.dumps(term_results, indent=2))
