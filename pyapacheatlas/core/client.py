@@ -16,6 +16,7 @@ except ImportError:
 from ..auth.base import AtlasAuthBase
 
 from .entity import AtlasClassification, AtlasEntity
+from .msgraph import MsGraphClient
 from .typedef import BaseTypeDef
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
 from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
@@ -517,8 +518,10 @@ class AtlasClient(AtlasBaseClient):
 
         # If we are using type category
         if type_category:
+            # business_Metadata has an underscore so before it can be used in
+            # the endpoint, it must be converted to businessMetadata.
             atlas_endpoint = atlas_endpoint + \
-                "{}def".format(type_category.value)
+                "{}def".format(type_category.value.replace("_", ""))
         elif guid or name:
             atlas_endpoint = atlas_endpoint + "typedef"
         else:
@@ -968,7 +971,7 @@ class AtlasClient(AtlasBaseClient):
         Massage the type upload. See rules in upload_typedefs.
         """
         payload = {}
-        required_keys = ["classificationDefs", "entityDefs",
+        required_keys = ["businessMetadataDefs","classificationDefs", "entityDefs",
                          "enumDefs", "relationshipDefs", "structDefs"]
 
         # If typedefs is defined as a dict and it contains at least one of the
@@ -980,16 +983,23 @@ class AtlasClient(AtlasBaseClient):
             # Assuming this is a single typedef
             key = None
             if isinstance(typedefs, BaseTypeDef):
-                key = typedefs.category.lower() + "Defs"
+                key = typedefs.category
                 val = [typedefs.to_json()]
             elif isinstance(typedefs, dict):
-                key = typedefs["category"].lower() + "Defs"
+                key = typedefs["category"]
                 val = [typedefs]
             else:
                 raise NotImplementedError(
                     "Uploading an object of type '{}' is not supported."
                     .format(type(typedefs))
                 )
+
+            # business_metadata must be converted to businessMetadataDefs
+            # but it's stored as BUSINESS_METADATA
+            key = key.lower()
+            if key == "business_metadata":
+                key = "businessMetadata"
+            key = key + "Defs"
             payload = {key: val}
         # Did we set any of the xDefs as arguments?
         elif len(set(kwargs.keys()).intersection(required_keys)) > 0:
@@ -1051,9 +1061,8 @@ class AtlasClient(AtlasBaseClient):
             :type relationshipDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
             :param structDefs: structDefs to upload.
             :type structDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
-
-        Returns:
-
+            :param businessMetadataDefs: businessMetadataDefs to upload.
+            :type businessMetadataDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
         """
         # Should this take a list of type defs and figure out the formatting
         # by itself?
@@ -1331,6 +1340,129 @@ class AtlasClient(AtlasBaseClient):
         )
         results = self._handle_response(getLineageRequest)
         return results
+    
+    @PurviewLimitation
+    def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
+        """
+        Delete the given labels for one entity. Provide a list of strings that
+        should be removed. You can either provide the guid of the entity or
+        the typeName and qualifiedName of the entity.
+
+        If you want to clear out an entity without knowing all the labels, you
+        should consider `update_entity_labels` instead and set
+        force_update to True.
+
+        :param list(str) labels: The label(s) that should be removed.
+        :param str guid:
+            The guid of the entity to be updated. Optional if using typeName
+            and qualifiedName.
+        :param str typeName:
+            The type name of the entity to be updated. Must also use
+            qualifiedname with typeName. Not used if guid is provided.
+        :param str qualifiedName:
+            The qualified name of the entity to be updated. Must also use
+            typeName with qualifiedName. Not used if guid is provided.
+        :return:
+            A dict containing a message indicating success. Otherwise
+            it will raise an AtlasException.
+        :rtype: dict(str, str)
+        """
+        
+        parameters = {}
+        if guid:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/guid/{guid}/labels"
+        elif qualifiedName and typeName:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/uniqueAttribute/type/{typeName}/labels"
+            parameters.update({"attr:qualifiedName": qualifiedName})
+        else:
+            raise ValueError(
+                "Either guid or typeName and qualifiedName must be defined.")
+            
+        deleteResp = requests.delete(
+            atlas_endpoint,
+            params = parameters,
+            json = labels,
+            headers=self.authentication.get_authentication_headers())
+
+        # Can't use _handle_response since it expects json returned
+        try:
+            deleteResp.raise_for_status()
+        except requests.RequestException as e:
+            if "errorCode" in deleteResp:
+                raise AtlasException(deleteResp.text)
+            else:
+                raise requests.RequestException(deleteResp.text)
+
+        action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
+        results = {"message": f"Successfully deleted labels for {action}"}
+        return results
+
+    @PurviewLimitation
+    def update_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None, force_update=False):
+        """
+        Update the given labels for one entity. Provide a list of strings that
+        should be added. You can either provide the guid of the entity or
+        the typeName and qualifiedName of the entity. By using force_update
+        set to True you will overwrite the existing entity. force_update
+        set to False will append to the existing entity.
+
+        :param list(str) labels: The label(s) that should be appended or set.
+        :param str guid:
+            The guid of the entity to be updated. Optional if using typeName
+            and qualifiedName.
+        :param str typeName:
+            The type name of the entity to be updated. Must also use
+            qualifiedname with typeName. Not used if guid is provided.
+        :param str qualifiedName:
+            The qualified name of the entity to be updated. Must also use
+            typeName with qualifiedName. Not used if guid is provided.
+        :return:
+            A dict containing a message indicating success. Otherwise
+            it will raise an AtlasException.
+        :rtype: dict(str, str)
+        """
+        
+        parameters = {}
+        if guid:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/guid/{guid}/labels"
+        elif qualifiedName and typeName:
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/uniqueAttribute/type/{typeName}/labels"
+            parameters.update({"attr:qualifiedName": qualifiedName})
+        else:
+            raise ValueError(
+                "Either guid or typeName and qualifiedName must be defined.")
+        
+        verb = "added"
+        if force_update:
+            updateResp = requests.post(
+                atlas_endpoint,
+                params = parameters,
+                json = labels,
+                headers=self.authentication.get_authentication_headers())
+            verb = "overwrote"
+        else:
+            updateResp = requests.put(
+                atlas_endpoint,
+                params = parameters,
+                json = labels,
+                headers=self.authentication.get_authentication_headers())
+
+        # Can't use _handle_response since it expects json returned
+        try:
+            updateResp.raise_for_status()
+        except requests.RequestException as e:
+            if "errorCode" in updateResp:
+                raise AtlasException(updateResp.text)
+            else:
+                raise requests.RequestException(updateResp.text)
+
+        action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
+        results = {"message": f"Successfully {verb} labels for {action}"}
+        return results
 
 
 class PurviewClient(AtlasClient):
@@ -1358,6 +1490,7 @@ class PurviewClient(AtlasClient):
         super().__init__(endpoint_url, authentication)
         
         self.glossary = PurviewGlossaryClient(endpoint_url, authentication)
+        self.msgraph = MsGraphClient(authentication)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):

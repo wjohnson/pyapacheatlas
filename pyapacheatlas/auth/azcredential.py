@@ -24,6 +24,8 @@ class AzCredentialWrapper(AtlasAuthBase):
         self._credential = credential
         self.access_token = None
         self.expiration = datetime.now()
+        self.graph_access_token = None
+        self.graph_expiration = datetime.now()
 
     def _set_access_token(self):
         """
@@ -46,5 +48,28 @@ class AzCredentialWrapper(AtlasAuthBase):
 
         return {
             "Authorization": "Bearer " + self.access_token,
+            "Content-Type": "application/json"
+        }
+
+    def _set_graph_access_token(self):
+        """
+        Sets the microsoft graph access token for your session.
+        """
+        token_req = self._credential.get_token("https://graph.microsoft.com/.default")
+        self.graph_access_token = token_req.token
+        self.graph_expiration = datetime.fromtimestamp(token_req.expires_on)
+
+    def get_graph_authentication_headers(self):
+        """
+        Gets the current graph access token or refreshes the token if it
+        has expired.
+        :return: The authorization headers.
+        :rtype: dict(str, str)
+        """
+        if self.graph_expiration <= datetime.now():
+            self._set_graph_access_token()
+
+        return {
+            "Authorization": "Bearer " + self.graph_access_token,
             "Content-Type": "application/json"
         }

@@ -1,5 +1,6 @@
-from warnings import warn
 from collections import OrderedDict
+import re
+from warnings import warn
 
 from ..core.util import GuidTracker
 from ..core import (
@@ -93,6 +94,29 @@ class Reader(LineageMixIn):
         self.config = configuration
         self.guidTracker = GuidTracker(guid)
 
+    def _parse_relationship_value(self, relationship_value, existing_entities):
+        guid_object_id = re.match(r"AtlasObjectId\(guid:(.*)\)", relationship_value)
+        type_qn_object_id = re.match(r"AtlasObjectId\(typeName:(.*) qualifiedName:(.*)\)", relationship_value)
+        if guid_object_id:
+            reference_object = {"guid":guid_object_id.groups()[0]}
+        elif type_qn_object_id:
+            reference_object = {
+                "typeName":type_qn_object_id.groups()[0],
+                "uniqueAttributes":{
+                    "qualifiedName":type_qn_object_id.groups()[1]
+                }
+            }
+        elif relationship_value in existing_entities:
+            reference_object = existing_entities[relationship_value].to_json(minimum=True)
+        else:
+            raise KeyError(
+                f"The entity {relationship_value} should be present in the input data prior to being used in a relationship"+
+                " or should be of the form AtlasObjectId(guid:xx-xx-xx)"+
+                " or AtlasObjectId(typeName:xx qualifiedName:xxx)."
+            )
+        return reference_object
+
+
     def _organize_attributes(self, row, existing_entities, ignore=[]):
         """
         Organize the row entries into a distinct set of attributes and
@@ -111,7 +135,7 @@ class Reader(LineageMixIn):
             A dictionary containing 'attributes' and 'relationshipAttributes'
         :rtype: dict(str, dict(str,str))
         """
-        output = {"attributes": {}, "relationshipAttributes": {}, "root":{}}
+        output = {"attributes": {}, "relationshipAttributes": {}, "root":{}, "custom":{}}
         for column_name, cell_value in row.items():
             # Remove the required attributes so they're not double dipping.
             if column_name in ignore:
@@ -127,28 +151,39 @@ class Reader(LineageMixIn):
                 if cleaned_key == "meanings":
 
                      terms = self._splitField(cell_value)
-                     min_reference = [
+                     reference_object = [
                          {"typeName": "AtlasGlossaryTerm",
                           "uniqueAttributes": {
                             "qualifiedName": "{}@Glossary".format(t)
                             }
                          } for t in terms
                      ]
-                else:
-                    # Assuming that we can find this in an existing entity
-                    # TODO: Add support for guid:xxx or typeName/uniqueAttributes.qualifiedName
-                    try:
-                        min_reference = existing_entities[cell_value].to_json(minimum=True)
-                    # LIMITATION: We must have already seen the relationship
-                    # attribute to be certain it can be looked up.
-                    except KeyError:
-                        raise KeyError(
-                            f"The entity {cell_value} should be listed before {row['qualifiedName']}."
+
+                     output["relationshipAttributes"].update(
+                            {cleaned_key: reference_object}
                         )
-                output["relationshipAttributes"].update(
-                    {cleaned_key: min_reference}
-                )
-            # TODO: Add support for Business, Custom
+                else:
+                    # If there is a value separator in the cell value
+                    # assuming it's trying to make an array of relationships
+                    if self.config.value_separator in cell_value:
+                        relationships = self._splitField(cell_value)
+                        all_references = []
+
+                        for rel in relationships:
+                            reference_object = self._parse_relationship_value(rel, existing_entities)
+                            all_references.append(reference_object)
+                            output["relationshipAttributes"].update(
+                                {cleaned_key: all_references}
+                            )
+                    # There is no value separator in the cell value
+                    # Thus it's a single string that needs to be parsed
+                    else:
+                        reference_object = self._parse_relationship_value(cell_value, existing_entities)
+                        output["relationshipAttributes"].update(
+                            {cleaned_key: reference_object}
+                        )
+
+            # TODO: Add support for Business
             elif column_name.startswith("[root]"):
                 # This is a root level attribute
                 cleaned_key = column_name.replace("[root]", "").strip()
@@ -166,12 +201,43 @@ class Reader(LineageMixIn):
 
                 output["root"].update( {cleaned_key: output_value} )
 
+            elif column_name.startswith("[custom]"):
+                cleaned_key = column_name.replace("[custom]", "").strip()
+                
+                output["custom"].update( {cleaned_key: cell_value})
             else:
                 output["attributes"].update({column_name: cell_value})
 
         return output
+    
+    def _organize_contacts(self, contacts, contacts_func, contacts_cache):
+        """
+        Convert the string with delimiters into a list of `{id: contact}`
+        after calling the contacts_func on the stripped contact string.
+        
+        :param str contacts: a splittable string.
+        :param function contacts_func:
+            A function that will be called on each contact.
+        :param dict contacts_cache:
+            Stores the contact and the results of the contacts_func.
+        """
+        contacts_enhanced = []
+        for contact in contacts.split(self.config.value_separator):
+            if contact == "":
+                continue
+            clean_contact = contact.strip()
+            output = contact.strip()
+            if clean_contact in contacts_cache:
+                output = contacts_cache[clean_contact]
+            else:
+                output = contacts_func(clean_contact)
+                contacts_cache[clean_contact] = output
+            # This format is specific to Azure Purview
+            contacts_enhanced.append({"id": output})
+        
+        return contacts_enhanced
 
-    def parse_bulk_entities(self, json_rows):
+    def parse_bulk_entities(self, json_rows, contacts_func=None):
         """
         Create an AtlasEntityWithExtInfo consisting of entities and their attributes
         for the given json_rows.
@@ -179,6 +245,14 @@ class Reader(LineageMixIn):
         :param list(dict(str,object)) json_rows:
             A list of dicts containing at least `typeName`, `name`, and `qualifiedName`
             that represents the entity to be uploaded.
+        :param function contacts_func:
+            For Azure Purview, a function to be called on each value
+            when you pass in an experts or owners header to json_rows.
+            Leaving it as None will return the exact value passed in
+            to the experts and owners section. 
+            It has a built in cache that will prevent redundant calls
+            to your function.
+        
         :return: An AtlasEntityWithExtInfo with entities for the provided rows.
         :rtype: dict(str, list(dict))
         """
@@ -220,14 +294,19 @@ class Reader(LineageMixIn):
                     row["classifications"],
                     sep=self.config.value_separator)
 
+            contacts_cache = {}
+            contacts_func = contacts_func or (lambda x: x)
             if "experts" in row or "owners" in row and len( row.get("experts", []) + row.get("owners", []) ) > 0:
                 experts = []
                 owners = []
-                if len(row.get("experts", []) or [])>0:
-                    experts = [{"id":e} for e in row.get("experts", "").split(self.config.value_separator) if e != '']
-                if len(row.get("owners", []) or [])>0:
-                    owners = [{"id":o} for o in row.get("owners", "").split(self.config.value_separator) if o != '']
+
+                experts = self._organize_contacts((row.get("experts") or ""), contacts_func, contacts_cache)
+                owners = self._organize_contacts((row.get("owners") or ""), contacts_func, contacts_cache)
+
                 entity.contacts = {"Expert": experts, "Owner": owners }
+            
+            if _extracted["custom"]:
+                entity.customAttributes = _extracted["custom"]
 
             existing_entities.update({row["qualifiedName"]: entity})
 
