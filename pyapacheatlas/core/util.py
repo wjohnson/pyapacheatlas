@@ -1,11 +1,48 @@
 from functools import wraps
+import json
+from json import JSONDecodeError
 import re
 import warnings
 
+import requests
+
+
+class AtlasBaseClient():
+    def __init__(self):
+        super().__init__()
+    
+    def _handle_response(self, resp):
+        """
+        Safely handle an Atlas Response and return the results if valid.
+
+        :param Response resp: The response from the request method.
+        :return: A dict containing the results.
+        :rtype: dict
+        """
+
+        try:
+            results = json.loads(resp.text)
+            resp.raise_for_status()
+        except JSONDecodeError:
+            raise ValueError("Error in parsing: {}".format(resp.text))
+        except requests.RequestException as e:
+            if "errorCode" in results:
+                raise AtlasException(resp.text)
+            else:
+                raise requests.RequestException(resp.text)
+
+        return results
 
 class AtlasException(BaseException):
     pass
 
+class AtlasUnInit():
+    """
+    Represents a value that has not been initialized
+    and will not be included in json body.
+    """
+    def __bool__(self):
+        return False
 
 def PurviewOnly(func):
     """

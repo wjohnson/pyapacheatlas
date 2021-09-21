@@ -306,7 +306,7 @@ if __name__ == "__main__":
                         # Inefficient, instead you could list all of the entities
                         # getting this classification, but likely it's rare to
                         # have a large batch of entities with the same term
-                        new_client.assignTerm(
+                        new_client.glossary.assignTerm(
                             entities=[{"guid": newest_entity_original_guid}],
                             termName=term
                         )

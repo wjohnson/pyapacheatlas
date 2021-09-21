@@ -1,13 +1,6 @@
 import warnings
 
-class AtlasUnInit():
-    """
-    Represents a value that has not been initialized
-    and will not be included in json body.
-    """
-    def __bool__(self):
-        return False
-
+from .util import AtlasUnInit
 
 class AtlasEntity():
     """
