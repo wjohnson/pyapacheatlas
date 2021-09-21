@@ -96,7 +96,7 @@ class ExcelReader(Reader):
 
         return output
 
-    def parse_bulk_entities(self, filepath, contacts_func = None):
+    def parse_bulk_entities(self, filepath, contacts_func=None):
         """
         Generate a set of entities from an excel template file.
 
@@ -462,11 +462,11 @@ class ExcelReader(Reader):
         for column in headers:
             first_token, *remainder = column.split(" ", 1)
             if first_token in prefix_mapping:
-                new_header.append(prefix_mapping[first_token]+' '+''.join(remainder))
+                new_header.append(
+                    prefix_mapping[first_token]+' '+''.join(remainder))
             else:
                 new_header.append(column)
         return new_header
-
 
     @staticmethod
     def make_template(filepath, **kwargs):
@@ -482,7 +482,6 @@ class ExcelReader(Reader):
         :param str classificationDef_sheet: Defaults to "ClassificationDefs"
         :param str table_sheet: Defaults to "TablesLineage"
         :param str column_sheet: Defaults to "FineGrainColumnLineage"
-                
         :param str source_prefix:
             Defaults to "Source" and represents the prefix of the columns
             in Excel to be considered related to the source table or column.
@@ -498,13 +497,20 @@ class ExcelReader(Reader):
         """
         wb = Workbook()
         bulkEntitiesSheet = wb.active
-        bulkEntitiesSheet.title = kwargs.get("bulkEntity_sheet", "BulkEntities")
-        updateLineageSheet = wb.create_sheet(kwargs.get("updateLineage_sheet", "UpdateLineage"))
-        columnMappingSheet = wb.create_sheet(kwargs.get("columnMapping_sheet", "ColumnMapping"))
-        entityDefsSheet = wb.create_sheet(kwargs.get("entityDef_sheet", "EntityDefs"))
-        classificationDefsSheet = wb.create_sheet(kwargs.get("classificationDef_sheet", "ClassificationDefs"))
-        tablesSheet = wb.create_sheet(kwargs.get("table_sheet", "TablesLineage"))
-        columnsSheet = wb.create_sheet(kwargs.get("column_sheet", "FineGrainColumnLineage"))
+        bulkEntitiesSheet.title = kwargs.get(
+            "bulkEntity_sheet", "BulkEntities")
+        updateLineageSheet = wb.create_sheet(
+            kwargs.get("updateLineage_sheet", "UpdateLineage"))
+        columnMappingSheet = wb.create_sheet(
+            kwargs.get("columnMapping_sheet", "ColumnMapping"))
+        entityDefsSheet = wb.create_sheet(
+            kwargs.get("entityDef_sheet", "EntityDefs"))
+        classificationDefsSheet = wb.create_sheet(kwargs.get(
+            "classificationDef_sheet", "ClassificationDefs"))
+        tablesSheet = wb.create_sheet(
+            kwargs.get("table_sheet", "TablesLineage"))
+        columnsSheet = wb.create_sheet(kwargs.get(
+            "column_sheet", "FineGrainColumnLineage"))
 
         # Supporting changing the default headers on select pages
         header_changes = {}
@@ -516,7 +522,7 @@ class ExcelReader(Reader):
             header_changes["Process"] = kwargs["process_prefix"]
         if "column_transformation_name" in kwargs:
             header_changes["transformation"] = kwargs["column_transformation_name"]
-        
+
         if header_changes:
             FineGrainColumnLineageHeaders = ExcelReader._replace_header_prefix(
                 Reader.TEMPLATE_HEADERS["FineGrainColumnLineage"],

@@ -2,6 +2,35 @@ from ..util import AtlasUnInit
 
 
 class _CrossPlatformTerm():
+    """
+    The base term properties used by both Atlas and Purview.
+
+    :param str abbreviation: The abbreviation of the term.
+    :param str glossary_guid: The guid of the glossary the term belongs to.
+    :param dict(str, str) anchor:
+        Not required if passing in glossary_guid. Otherwise, should have
+        key glossaryGuid and value of the glossary guid you want to use.
+    :param str examples: A list of examples.
+    :param str guid: The guid of the term. Not necessary for new uploads.
+    :parm str longDescription: The long description of the term.
+    :param str name: The name of the term.
+    :param str qualifiedName:
+        The qualified name of the term. It usually is termName@GlossaryName
+    :param str usage: The usage of the term.
+    :param list(dict) antonyms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) classifies: A list of AtlasRelatedTermHeaders.
+    :param list(dict) isA: A list of AtlasRelatedTermHeaders.
+    :param list(dict) preferredTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) preferredToTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) replacedBy: A list of AtlasRelatedTermHeaders.
+    :param list(dict) replacementTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) seeAlso: A list of AtlasRelatedTermHeaders.
+    :param list(dict) synonyms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) translatedTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) translationTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) validValues: A list of AtlasRelatedTermHeaders.
+    :param list(dict) validValuesFor: A list of AtlasRelatedTermHeaders.
+    """
 
     def __init__(self, **kwargs):
         self.abbreviation = kwargs.get("abbreviation", AtlasUnInit())
@@ -14,7 +43,6 @@ class _CrossPlatformTerm():
         self.qualifiedName = kwargs.get("qualifiedName")
         if self.name is None or self.qualifiedName is None:
             raise TypeError("name and qualifiedName are required attributes")
-        self.resources = kwargs.get("resources", AtlasUnInit())
         self.usage = kwargs.get("usage", AtlasUnInit())
 
         # These are all supposed to be AtlasRelatedTermHeaders
@@ -34,6 +62,9 @@ class _CrossPlatformTerm():
 
     def to_json(self, minimum=False):
         """
+        Convert the GlossaryTerm to a json / dict. It will omit the
+        non-initalized fields.
+
         :return: The json representation of this term.
         :rtype: dict
         """
@@ -60,38 +91,50 @@ class _CrossPlatformTerm():
 
 
 class AtlasGlossaryTerm(_CrossPlatformTerm):
+    """
+    Defines an Atlas Glossary Term for use by the AtlasClient.
+
+    You should provide at least a name and a glossary_guid. You can find
+    the glossary guid with the `AtlasClient.glossary.get_glossary()` method
+    and extract the guid from the results.
+
+    :param str name:
+        A term that you want to upload. Also used as the nickname.
+    :param str qualifiedName:
+        The qualified name of the term. It usually is termName@GlossaryName
+    :param str glossary_guid: The guid of the glossary the term belongs to.
+    :param str status: Should be one of Draft, Approved, Alert, Expired.
+    :param str shortDescription: A short description of your term.
+    :param str longDescription: A long description of your term.
+    :param str abbreviation: A comma delimited set of abbreviations.
+    :param list(dict) classifications: The classifications to assign to term.
+
+    **Additional Args**
+
+    :param str abbreviation: The abbreviation of the term.
+
+    :param dict(str, str) anchor:
+        Not required if passing in glossary_guid. Otherwise, should have
+        key glossaryGuid and value of the glossary guid you want to use.
+    :param str examples: A list of examples.
+    :param str guid: The guid of the term. Not necessary for new uploads.
+    :param str usage: The usage of the term.
+    :param list(dict) antonyms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) classifies: A list of AtlasRelatedTermHeaders.
+    :param list(dict) isA: A list of AtlasRelatedTermHeaders.
+    :param list(dict) preferredTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) preferredToTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) replacedBy: A list of AtlasRelatedTermHeaders.
+    :param list(dict) replacementTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) seeAlso: A list of AtlasRelatedTermHeaders.
+    :param list(dict) synonyms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) translatedTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) translationTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) validValues: A list of AtlasRelatedTermHeaders.
+    :param list(dict) validValuesFor: A list of AtlasRelatedTermHeaders.
+    """
 
     def __init__(self, **kwargs):
-        """
-        :param str name:
-            A term that you want to upload. Also used as the nickname.
-        :param str status: Should be one of Draft, Approved, Alert, Expired.
-        :param str glossary_guid:
-            The guid of the glossary you want to use. It will call AtlasClient.get_glossary
-            with the value of glossary_name if no guid is provided.
-        :param dict attributes: Any additional attributes you want to provide to the term.
-        :param str parent_formal_name:
-            The formal name of the parent term which would be used in the
-            hierarchy. It will be concatenated with term's value to create
-            the formal name of the uploaded term. Must be provided if you
-            plan on using the hierarchy feature of Purview.
-        :param str parent_term_guid:
-            The guid of the parent term which would be used in the hierarchy.
-            If you only provide parent_formal_name, get_glossary_term is
-            called to get this guid.
-        :param str long_description": A description of your term.
-        :param str abbreviation: A comma delimited set of abbreviations.
-        :param list(dict) resources:
-            An array of resource objects with keys displayName and url.
-        :param list(dict) seeAlso:
-            Each dictionary should have the key termGuid and value of a guid.
-        :param list(dict) synonyms:
-            Each dictionary should have the key termGuid and value of a guid.
-        :param dict(str,list(dict(str,str))) contacts:
-            Root keys of both or either Experts or Stewards and the inner dicts
-            in the list should have a key of id with an AAD object id as value
-            and key of info with a string.
-        """
         super().__init__(**kwargs)
         self.additionalAttributes = kwargs.get(
             "additionalAttributes", AtlasUnInit())
@@ -100,42 +143,62 @@ class AtlasGlossaryTerm(_CrossPlatformTerm):
 
 
 class PurviewGlossaryTerm(_CrossPlatformTerm):
+    """
+    Create a Purview Glossary Term that supports term template attributes
+    and hierarchical parents.
 
-    def __init__(self, **kwargs):
-        """
-        Create a Purview Glossary Term that supports term template attributes
-        and hierarchical parents.
+    :param str name:
+        A term that you want to upload. Also used as the nickname.
+    :param str glossary_guid: The guid of the glossary the term belongs to.
+    :param str qualifiedName:
+        The qualified name of the term. It usually is termName@GlossaryName
+    :param str status: Should be one of Draft, Approved, Alert, Expired.
+    :param str longDescription: The long description of the term.
 
+    **Purview Supported Term Features**:
 
-        :param str name:
-            A term that you want to upload. Also used as the nickname.
-        :param str status: Should be one of Draft, Approved, Alert, Expired.
-        :param str glossary_guid:
-            The guid of the glossary you want to use. You should call AtlasClient.get_glossary
-            to extract the glossary guid.
-        :param dict attributes: Any additional attributes you want to provide to the term.
-        :param str parent_formal_name:
-            The formal name of the parent term which would be used in the
-            hierarchy. It will be concatenated with term's value to create
-            the formal name of the uploaded term. Must be provided if you
-            plan on using the hierarchy feature of Purview.
-        :param str parent_term_guid:
-            The guid of the parent term which would be used in the hierarchy.
-            If you only provide parent_formal_name, get_glossary_term is
-            called to get this guid.
-        :param str long_description": A description of your term.
-        :param str abbreviation: A comma delimited set of abbreviations.
-        :param list(dict) resources:
-            An array of resource objects with keys displayName and url.
-        :param list(dict) seeAlso:
-            Each dictionary should have the key termGuid and value of a guid.
-        :param list(dict) synonyms:
-            Each dictionary should have the key termGuid and value of a guid.
-        :param dict(str,list(dict(str,str))) contacts:
-            Root keys of both or either Experts or Stewards and the inner dicts
-            in the list should have a key of id with an AAD object id as value
-            and key of info with a string.
-        """
+    :param str parent_formal_name:
+        The formal name of the parent term which would be used in the
+        hierarchy. It will be concatenated with term's value to create
+        the formal name of the uploaded term. Must be provided if you
+        plan on using the hierarchy feature of Purview.
+    :param str parent_term_guid:
+        The guid of the parent term which would be used in the hierarchy.
+        If you only provide parent_formal_name, get_glossary_term is
+        called to get this guid.
+    :param list(dict) resources:
+        An array of resource objects with keys displayName and url.
+    :param list(dict) seeAlso:
+        Each dictionary should have the key termGuid and value of a guid.
+    :param list(dict) synonyms:
+        Each dictionary should have the key termGuid and value of a guid.
+    :param dict(str,list(dict(str,str))) contacts:
+        Root keys of both or either Experts or Stewards and the inner dicts
+        in the list should have a key of id with an AAD object id as value
+        and key of info with a string.
+
+    **Additional Args**: While the Glossary Term may support these, not all
+    are visible on the Azure Purview portal UI.
+
+    :param str abbreviation: The abbreviation of the term.
+    :param dict(str, str) anchor:
+        Not required if passing in glossary_guid. Otherwise, should have
+        key glossaryGuid and value of the glossary guid you want to use.
+    :param str examples: A list of examples.
+    :param str guid: The guid of the term. Not necessary for new uploads.
+    :param str usage: The usage of the term.
+    :param list(dict) antonyms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) classifies: A list of AtlasRelatedTermHeaders.
+    :param list(dict) isA: A list of AtlasRelatedTermHeaders.
+    :param list(dict) preferredTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) preferredToTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) replacedBy: A list of AtlasRelatedTermHeaders.
+    :param list(dict) replacementTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) translatedTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) translationTerms: A list of AtlasRelatedTermHeaders.
+    :param list(dict) validValues: A list of AtlasRelatedTermHeaders.
+    :param list(dict) validValuesFor: A list of AtlasRelatedTermHeaders.
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -153,6 +216,13 @@ class PurviewGlossaryTerm(_CrossPlatformTerm):
 
     @property
     def name(self):
+        """
+        The name of the term. Will be concatenated with parent formal name if
+        provided.
+
+        :return: The formal name of the term.
+        :rtype: str
+        """
         if "_parentFormalName" in vars(self):
             return self._parentFormalName + "_" + self._name
         return self._name
@@ -163,10 +233,26 @@ class PurviewGlossaryTerm(_CrossPlatformTerm):
 
     @property
     def nickName(self):
+        """
+        Returns the raw name. It will match the name property if no parent
+        formal name is provided.
+
+        :return: The raw name of the term.
+        :rtype: str
+        """
         return self._name
 
     @property
     def qualifiedName(self):
+        """
+        The qualified name should be suffixed with `@glossaryName` with
+        `@Glossary` being the correct suffix for the default dictionary.
+        If a parent formal name was provided the qualified name will be
+        prefixed with the parent formal name.
+
+        :return: The qualified name of the term.
+        :rtype: str
+        """
         if "_parentFormalName" in vars(self):
             return self._parentFormalName + "_" + self._qualifiedName
         return self._qualifiedName
@@ -177,6 +263,12 @@ class PurviewGlossaryTerm(_CrossPlatformTerm):
 
     @property
     def parentGuid(self):
+        """
+        The guid of the parent term used in hierarchies.
+
+        :return: The parent guid.
+        :rtype: str
+        """
         if "parentTerm" in vars(self):
             return self.parentTerm["termGuid"]
         else:
@@ -184,6 +276,12 @@ class PurviewGlossaryTerm(_CrossPlatformTerm):
 
     @property
     def parentFormalName(self):
+        """
+        The formal name of the parent term used in hierarchies.
+
+        :return: The parent formal name.
+        :rtype: str
+        """
         if "parentTerm" in vars(self):
             return self._parentFormalName
         else:
@@ -241,6 +339,15 @@ class PurviewGlossaryTerm(_CrossPlatformTerm):
             }
 
     def to_json(self):
+        """
+        Convert the PurviewGlossaryTerm to a json / dict. It will omit the
+        non-initalized fields and handle the nickname, name, qualifiedName,
+        and parentTerm (for hierarchical terms) appropriately if set using the
+        `add_hierarchy` method.
+
+        :return: The glossary term as a dict.
+        :rtype: dict
+        """
         output = super().to_json()
 
         output["name"] = self.name

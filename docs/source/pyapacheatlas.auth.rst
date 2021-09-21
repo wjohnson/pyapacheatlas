@@ -10,7 +10,7 @@ pyapacheatlas.auth.base module
    :show-inheritance:
 
 pyapacheatlas.auth.azcredential module
-------------------------------
+--------------------------------------
 
 .. automodule:: pyapacheatlas.auth.azcredential
    :members:

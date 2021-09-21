@@ -55,7 +55,8 @@ class AzCredentialWrapper(AtlasAuthBase):
         """
         Sets the microsoft graph access token for your session.
         """
-        token_req = self._credential.get_token("https://graph.microsoft.com/.default")
+        token_req = self._credential.get_token(
+            "https://graph.microsoft.com/.default")
         self.graph_access_token = token_req.token
         self.graph_expiration = datetime.fromtimestamp(token_req.expires_on)
 
