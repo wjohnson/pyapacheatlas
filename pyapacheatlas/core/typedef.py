@@ -13,8 +13,8 @@ class TypeCategory(Enum):
     BUSINESSMETADATA = "business_Metadata"
     # BusinessMetadata is used in BaseTypeDef where it is forced UPPER
     # BusinessMetadata is used in AtlasClient.upload_typedefs
-    ## as part of the url (converted to businessMetadata)
-    ## as part of the payload (converted to businessMetadataDefs)
+    # as part of the url (converted to businessMetadata)
+    # as part of the payload (converted to businessMetadataDefs)
 
 
 class Cardinality(Enum):
@@ -80,6 +80,7 @@ class AtlasAttributeDef():
             ) if v is not None and omit_nulls}
         return output
 
+
 class AtlasRelationshipAttributeDef(AtlasAttributeDef):
     """
     An implementation of AtlasRelationshipAttributeDef. Provides a standard
@@ -98,6 +99,7 @@ class AtlasRelationshipAttributeDef(AtlasAttributeDef):
         :type cardinality: :class:`pyapacheatlas.core.typedef.Cardinality`
         :param str typeName: The type of this attribute. Defaults to string.
     """
+
     def __init__(self, name, relationshipTypeName, **kwargs):
         super().__init__(name, **kwargs)
         self.relationshipTypeName = relationshipTypeName
@@ -106,14 +108,13 @@ class AtlasRelationshipAttributeDef(AtlasAttributeDef):
 class BaseTypeDef():
     """
     An implementation of AtlasBaseTypeDef.
-    
+
     :param str name: The name of the typedef.
     :param category: The category of the typedef.
     :type category: :class:`~pyapacheatlas.core.typedef.TypeCategory`
     """
 
     def __init__(self, name, category, **kwargs):
-        
         super().__init__()
         self.category = category.value.upper()
         self.createTime = kwargs.get("createTime")
@@ -202,6 +203,12 @@ class AtlasStructDef(BaseTypeDef):
         ]
 
     def to_json(self, omit_nulls=True):
+        """
+        Convert the defintion to a JSON dict.
+
+        :return: The definition as a dict.
+        :rtype: dict
+        """
         output = super().to_json(omit_nulls)
         output.update({"attributeDefs": self.attributeDefs})
         output.pop("_attributeDefs")
@@ -256,7 +263,7 @@ class EntityTypeDef(AtlasStructDef):
 
     def __str__(self):
         return self.name
-    
+
     @property
     def relationshipAttributeDefs(self):
         """
@@ -295,10 +302,17 @@ class EntityTypeDef(AtlasStructDef):
             else e
             for e in args
         ]
-    
+
     def to_json(self, omit_nulls=True):
+        """
+        Convert the defintion to a JSON dict.
+
+        :return: The definition as a dict.
+        :rtype: dict
+        """
         output = super().to_json(omit_nulls)
-        output.update({"relationshipAttributeDefs": self.relationshipAttributeDefs})
+        output.update(
+            {"relationshipAttributeDefs": self.relationshipAttributeDefs})
         output.pop("_relationshipAttributeDefs")
         return output
 
@@ -377,6 +391,12 @@ class RelationshipTypeDef(BaseTypeDef):
                 f"An EndDef of type `{type(value)}` is not supported.")
 
     def to_json(self, omit_nulls=True):
+        """
+        Convert the defintion to a JSON dict.
+
+        :return: The definition as a dict.
+        :rtype: dict
+        """
         output = super().to_json(omit_nulls)
         output.update({"endDef1": self.endDef1, "endDef2": self.endDef2})
         output.pop("_endDef1")

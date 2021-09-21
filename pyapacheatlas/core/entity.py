@@ -2,6 +2,7 @@ import warnings
 
 from .util import AtlasUnInit
 
+
 class AtlasEntity():
     """
     A python representation of the AtlasEntity from Apache Atlas.
@@ -35,7 +36,8 @@ class AtlasEntity():
         self.attributes = kwargs.get("attributes", {})
         self.attributes.update({"name": None, "qualifiedName": None})
         # Normally takes a dict of dicts
-        self.businessAttributes = kwargs.get("businessAttributes", AtlasUnInit())
+        self.businessAttributes = kwargs.get(
+            "businessAttributes", AtlasUnInit())
         self.classifications = kwargs.get("classifications", AtlasUnInit())
         # This isn't implemented in Apache Atlas, so being cautious
         # Data Structure: {"Expert":[{"id","info"}], "Owner":...}
@@ -52,7 +54,8 @@ class AtlasEntity():
         self.lastModifiedTS = kwargs.get("lastModifiedTS", AtlasUnInit())
         self.provenanceType = kwargs.get("provenanceType", AtlasUnInit())
         self.proxy = kwargs.get("proxy", AtlasUnInit())
-        self.relationshipAttributes = kwargs.get("relationshipAttributes", AtlasUnInit())
+        self.relationshipAttributes = kwargs.get(
+            "relationshipAttributes", AtlasUnInit())
         self.source = kwargs.get("source", AtlasUnInit())
         self.sourceDetails = kwargs.get("sourceDetails", AtlasUnInit())
         self.status = kwargs.get("status", AtlasUnInit())
@@ -64,7 +67,7 @@ class AtlasEntity():
         self.qualifiedName = qualified_name
         if "description" in kwargs:
             self.attributes.update({"description": kwargs["description"]})
-    
+
     def __eq__(self, other):
         return self.qualifiedName == other
 
@@ -134,7 +137,8 @@ class AtlasEntity():
             :param kwarg: The name(s) of the business attribute(s) you're adding.
             :type kwarg: dict
         """
-        businessAttributes_was_uninitialized = isinstance(self.businessAttributes, AtlasUnInit)
+        businessAttributes_was_uninitialized = isinstance(
+            self.businessAttributes, AtlasUnInit)
         if businessAttributes_was_uninitialized:
             self.businessAttributes = {}
         try:
@@ -143,7 +147,7 @@ class AtlasEntity():
             if businessAttributes_was_uninitialized:
                 self.businessAttributes = AtlasUnInit()
             raise e
-    
+
     def addClassification(self, *args):
         """
         Add one or many classifications to the entity. This will
@@ -155,7 +159,8 @@ class AtlasEntity():
             arguments. You can unpack a list using something like `*my_list`.
         :type args: Union(str, dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
         """
-        classification_was_uninitialized = isinstance(self.classifications, AtlasUnInit)
+        classification_was_uninitialized = isinstance(
+            self.classifications, AtlasUnInit)
         classifications_to_add = []
         if classification_was_uninitialized:
             self.classifications = []
@@ -164,7 +169,8 @@ class AtlasEntity():
                 if isinstance(arg, dict):
                     classifications_to_add.append(arg)
                 elif isinstance(arg, str):
-                    classifications_to_add.append(AtlasClassification(arg).to_json())
+                    classifications_to_add.append(
+                        AtlasClassification(arg).to_json())
                 elif isinstance(arg, AtlasClassification):
                     classifications_to_add.append(arg.to_json())
                 else:
@@ -178,7 +184,6 @@ class AtlasEntity():
                 self.classifications = AtlasUnInit()
             raise e
 
-    
     def addCustomAttribute(self, **kwargs):
         """
         Add one or many customAttributes to the entity. This will
@@ -189,7 +194,8 @@ class AtlasEntity():
             :param kwarg: The name(s) of the custom attribute(s) you're adding.
             :type kwarg: dict(str, str)
         """
-        customAttributes_was_uninitialized = isinstance(self.customAttributes, AtlasUnInit)
+        customAttributes_was_uninitialized = isinstance(
+            self.customAttributes, AtlasUnInit)
         if customAttributes_was_uninitialized:
             self.customAttributes = {}
         try:
@@ -198,7 +204,7 @@ class AtlasEntity():
             if customAttributes_was_uninitialized:
                 self.customAttributes = AtlasUnInit()
             raise e
-    
+
     def addRelationship(self, **kwargs):
         """
         Add one or many relationshipAttributes to the entity. This will
@@ -213,20 +219,21 @@ class AtlasEntity():
             :type kwarg:
                 Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
-        relationshipAttributes_was_uninitialized = isinstance(self.customAttributes, AtlasUnInit)
+        relationshipAttributes_was_uninitialized = isinstance(
+            self.customAttributes, AtlasUnInit)
         relationships_to_add = {}
         if relationshipAttributes_was_uninitialized:
             self.relationshipAttributes = {}
         try:
-            for k,v in kwargs.items():
-                val = v.to_json(minimum=True) if isinstance(v, AtlasEntity) else v
+            for k, v in kwargs.items():
+                val = v.to_json(minimum=True) if isinstance(
+                    v, AtlasEntity) else v
                 relationships_to_add[k] = val
             # Add all the relationships
             self.relationshipAttributes.update(relationships_to_add)
         except Exception as e:
             if relationshipAttributes_was_uninitialized:
                 self.relationshipAttributes = AtlasUnInit()
-
 
     def to_json(self, minimum=False):
         """
@@ -274,9 +281,9 @@ class AtlasEntity():
                 if is_uninitialized or is_asset_attribute:
                     continue
                 output[k] = v
-        
+
         return output
-    
+
     @classmethod
     def from_json(cls, entity_json):
         local_entity = entity_json.copy()
@@ -285,13 +292,13 @@ class AtlasEntity():
         name = local_entity["attributes"]["name"]
         qualified_name = local_entity["attributes"]["qualifiedName"]
         ae = cls(
-            name = name,
-            typeName= typeName,
-            qualified_name = qualified_name,
-            guid = guid,
+            name=name,
+            typeName=typeName,
+            qualified_name=qualified_name,
+            guid=guid,
             # This is necessary for AtlasProcess and shouldn't affect Entity
-            inputs = local_entity["attributes"].get("inputs"),
-            outputs = local_entity["attributes"].get("outputs"),
+            inputs=local_entity["attributes"].get("inputs"),
+            outputs=local_entity["attributes"].get("outputs"),
             **local_entity
         )
         return ae
@@ -322,7 +329,8 @@ class AtlasEntity():
                 if k in _new_keys_in_other})
         # TODO: Handle duplicate classifications
         if other.classifications:
-            self.classifications = (self.classifications or []).extend(self.classifications)
+            self.classifications = (self.classifications or []).extend(
+                self.classifications)
 
 
 class AtlasProcess(AtlasEntity):

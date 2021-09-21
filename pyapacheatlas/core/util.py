@@ -10,7 +10,7 @@ import requests
 class AtlasBaseClient():
     def __init__(self):
         super().__init__()
-    
+
     def _handle_response(self, resp):
         """
         Safely handle an Atlas Response and return the results if valid.
@@ -33,16 +33,20 @@ class AtlasBaseClient():
 
         return results
 
+
 class AtlasException(BaseException):
     pass
+
 
 class AtlasUnInit():
     """
     Represents a value that has not been initialized
     and will not be included in json body.
     """
+
     def __bool__(self):
         return False
+
 
 def PurviewOnly(func):
     """
@@ -249,7 +253,7 @@ def batch_dependent_entities(entities, batch_size=1000):
             # To reduce the number of updates to the index
             # Iterate over all of the candidate sets
             # Identify the index position of the largest candidate set
-            ## Hopefully saving a few thousands updates in the worst case?
+            # Hopefully saving a few thousands updates in the worst case?
             # Build up one master set that will be the new group
             # (from the current entity) and assigned to the largest
             # candidate set's index position.

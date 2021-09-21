@@ -412,8 +412,9 @@ class PurviewGlossaryClient(GlossaryClient):
     def upload_term(self, term, includeTermHierarchy=True, force_update=False, **kwargs):
         """
         Upload a single term to Azure Purview. If you plan on uploading many
-        terms programmatically, you might look at `PurviewClient.upload_terms`
-        or `PurviewClient.import_terms`.
+        terms programmatically, you might look at
+        `PurviewClient.glossary.upload_terms` or 
+        `PurviewClient.glossary.import_terms`.
 
         Provide a PurviewGlossaryTerm or dictionary.
 
@@ -440,7 +441,8 @@ class PurviewGlossaryClient(GlossaryClient):
         """
         Upload many terms to Azure Purview. However, if you
         plan on uploading many terms with many details, you might look at
-        `PurviewClient.import_terms` instead which supports a csv upload.
+        `PurviewClient.glossary.import_terms` instead which supports a csv
+        upload.
 
         Provide a list of PurviewGlossaryTerms or dictionaries.
 
@@ -475,8 +477,8 @@ class PurviewGlossaryClient(GlossaryClient):
         [Attribute][termTemplateName]attributeName as the header.
 
         In the resulting JSON, you will receive an operation guid that can be
-        passed to the `PurviewClient.import_terms_status` method to determine
-        the success or failure of the import.
+        passed to the `PurviewClient.glossary.import_terms_status` method to
+        determine the success or failure of the import.
 
         :param str csv_path: Path to CSV that will be imported.
         :param str glossary_name:

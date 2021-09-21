@@ -1,3 +1,9 @@
+from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
+from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
+from .typedef import BaseTypeDef
+from .msgraph import MsGraphClient
+from .entity import AtlasClassification, AtlasEntity
+from ..auth.base import AtlasAuthBase
 import json
 from json.decoder import JSONDecodeError
 import logging
@@ -13,13 +19,6 @@ try:
 except ImportError:
     pass
 
-from ..auth.base import AtlasAuthBase
-
-from .entity import AtlasClassification, AtlasEntity
-from .msgraph import MsGraphClient
-from .typedef import BaseTypeDef
-from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
-from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
 
 class AtlasClient(AtlasBaseClient):
     """
@@ -120,7 +119,8 @@ class AtlasClient(AtlasBaseClient):
         except requests.RequestException:
             raise Exception(deleteType.text)
 
-        results = {"message": f"Successfully deleted relationship with guid {guid}"}
+        results = {
+            "message": f"Successfully deleted relationship with guid {guid}"}
         return results
 
     def delete_type(self, name):
@@ -147,7 +147,7 @@ class AtlasClient(AtlasBaseClient):
 
         results = {"message": f"successfully delete {name}"}
         return results
-    
+
     def delete_typedefs(self, **kwargs):
         """
         Delete one or many types. You can provide a parameters as listed in the
@@ -157,7 +157,7 @@ class AtlasClient(AtlasBaseClient):
         creating the typedef with, for example `EntityTypeDef("someType")` as
         imported from :class:`~pyapacheatlas.core.typedef.EntityTypeDef`. You
         do not need to include any attribute defs, even if they're required.
-        
+
         Kwargs:
             :param entityDefs: EntityDefs to delete.
             :type entityDefs: list( Union(:class:`~pyapacheatlas.core.typedef.BaseTypeDef`, dict))
@@ -182,12 +182,14 @@ class AtlasClient(AtlasBaseClient):
             "businessMetadataDefs", "classificationDefs", "entityDefs",
             "enumDefs", "relationshipDefs", "structDefs"]
         if len(set(kwargs.keys()).intersection(allowed_defs)) == 0:
-            raise TypeError(f"You must include one of these keyword arguments: {allowed_defs}")
-        
+            raise TypeError(
+                f"You must include one of these keyword arguments: {allowed_defs}")
+
         for defType in allowed_defs:
             if defType in kwargs:
-                # Should be a list 
-                json_list = [t.to_json() if isinstance(t, BaseTypeDef) else t for t in kwargs[defType]]
+                # Should be a list
+                json_list = [t.to_json() if isinstance(
+                    t, BaseTypeDef) else t for t in kwargs[defType]]
                 payload[defType] = json_list
 
         atlas_endpoint = self.endpoint_url + \
@@ -264,7 +266,8 @@ class AtlasClient(AtlasBaseClient):
                 "/entity/bulk?guid={}".format(guid_str)
 
         # Support the adding or removing of relationships and extra info
-        parameters.update({"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
+        parameters.update(
+            {"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
@@ -299,7 +302,8 @@ class AtlasClient(AtlasBaseClient):
             "/entity/guid/{}".format(guid)
 
         # Support the adding or removing of relationships and extra info
-        parameters.update({"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
+        parameters.update(
+            {"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
@@ -573,7 +577,8 @@ class AtlasClient(AtlasBaseClient):
         :rtype: list(dict)
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("AtlasClient.get_glossary is being deprecated. Please use AtlasClient.glossary.get_glossary instead.")
+        warnings.warn(
+            "AtlasClient.get_glossary is being deprecated. Please use AtlasClient.glossary.get_glossary instead.")
         results = self.glossary.get_glossary(name, guid, detailed)
         return results
 
@@ -603,8 +608,10 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("AtlasClient.get_glossary_term is being deprecated. Please use AtlasClient.glossary.get_term instead.")
-        results = self.glossary.get_term(guid, name, glossary_name, glossary_guid)
+        warnings.warn(
+            "AtlasClient.get_glossary_term is being deprecated. Please use AtlasClient.glossary.get_term instead.")
+        results = self.glossary.get_term(
+            guid, name, glossary_name, glossary_guid)
         return results
 
     def assignTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
@@ -633,8 +640,10 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("AtlasClient.assignTerm is being deprecated. Please use AtlasClient.glossary.assignTerm instead.")
-        results = self.glossary.assignTerm(entities, termGuid, termName, glossary_name)
+        warnings.warn(
+            "AtlasClient.assignTerm is being deprecated. Please use AtlasClient.glossary.assignTerm instead.")
+        results = self.glossary.assignTerm(
+            entities, termGuid, termName, glossary_name)
         return results
 
     def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
@@ -667,8 +676,10 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("AtlasClient.delete_assignedTerm is being deprecated. Please use AtlasClient.glossary.delete_assignedTerm instead.")
-        results = self.glossary.delete_assignedTerm(entities, termGuid, termName, glossary_name)
+        warnings.warn(
+            "AtlasClient.delete_assignedTerm is being deprecated. Please use AtlasClient.glossary.delete_assignedTerm instead.")
+        results = self.glossary.delete_assignedTerm(
+            entities, termGuid, termName, glossary_name)
         return results
 
     def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC"):
@@ -687,15 +698,17 @@ class AtlasClient(AtlasBaseClient):
         :rtype: list(dict)
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("AtlasClient.get_termAssignedEntities is being deprecated. Please use AtlasClient.glossary.get_termAssignedEntities instead.")
-        results = self.glossary.get_termAssignedEntities(termGuid, termName, glossary_name, limit, offset, sort)
+        warnings.warn(
+            "AtlasClient.get_termAssignedEntities is being deprecated. Please use AtlasClient.glossary.get_termAssignedEntities instead.")
+        results = self.glossary.get_termAssignedEntities(
+            termGuid, termName, glossary_name, limit, offset, sort)
         return results
-    
+
     def upload_terms(self, batch, force_update=False):
         """
         AtlasClient.upload_terms is being deprecated.
         Please use AtlasClient.glossary.upload_terms instead.
-        
+
         Upload terms to your Atlas backed Data Catalog. Supports Purview Term
         Templates by passing in an attributes field with the term template's
         name as a field within attributes and an object of the required and
@@ -709,7 +722,8 @@ class AtlasClient(AtlasBaseClient):
         :rtype: list(dict)
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("AtlasClient.upload_terms is being deprecated. Please use AtlasClient.glossary.upload_terms instead.")
+        warnings.warn(
+            "AtlasClient.upload_terms is being deprecated. Please use AtlasClient.glossary.upload_terms instead.")
         results = self.glossary.upload_terms(batch, force_update)
         return results
 
@@ -971,7 +985,7 @@ class AtlasClient(AtlasBaseClient):
         Massage the type upload. See rules in upload_typedefs.
         """
         payload = {}
-        required_keys = ["businessMetadataDefs","classificationDefs", "entityDefs",
+        required_keys = ["businessMetadataDefs", "classificationDefs", "entityDefs",
                          "enumDefs", "relationshipDefs", "structDefs"]
 
         # If typedefs is defined as a dict and it contains at least one of the
@@ -1177,10 +1191,12 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + "/entity/bulk"
 
         payload = AtlasClient._prepare_entity_upload(batch)
-        
+
         results = []
         if batch_size and len(payload["entities"]) > batch_size:
-            batches = [{"entities":x} for x in batch_dependent_entities(payload["entities"], batch_size=batch_size)]
+            batches = [{"entities": x} for x in batch_dependent_entities(
+                payload["entities"], batch_size=batch_size)]
+
             for batch_id, batch in enumerate(batches):
                 batch_size = len(batch["entities"])
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
@@ -1191,7 +1207,7 @@ class AtlasClient(AtlasBaseClient):
                 )
                 temp_results = self._handle_response(postBulkEntities)
                 results.append(temp_results)
-        
+
         else:
             postBulkEntities = requests.post(
                 atlas_endpoint,
@@ -1340,7 +1356,7 @@ class AtlasClient(AtlasBaseClient):
         )
         results = self._handle_response(getLineageRequest)
         return results
-    
+
     @PurviewLimitation
     def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
         """
@@ -1367,7 +1383,7 @@ class AtlasClient(AtlasBaseClient):
             it will raise an AtlasException.
         :rtype: dict(str, str)
         """
-        
+
         parameters = {}
         if guid:
             atlas_endpoint = self.endpoint_url + \
@@ -1379,11 +1395,11 @@ class AtlasClient(AtlasBaseClient):
         else:
             raise ValueError(
                 "Either guid or typeName and qualifiedName must be defined.")
-            
+
         deleteResp = requests.delete(
             atlas_endpoint,
-            params = parameters,
-            json = labels,
+            params=parameters,
+            json=labels,
             headers=self.authentication.get_authentication_headers())
 
         # Can't use _handle_response since it expects json returned
@@ -1423,7 +1439,7 @@ class AtlasClient(AtlasBaseClient):
             it will raise an AtlasException.
         :rtype: dict(str, str)
         """
-        
+
         parameters = {}
         if guid:
             atlas_endpoint = self.endpoint_url + \
@@ -1435,20 +1451,20 @@ class AtlasClient(AtlasBaseClient):
         else:
             raise ValueError(
                 "Either guid or typeName and qualifiedName must be defined.")
-        
+
         verb = "added"
         if force_update:
             updateResp = requests.post(
                 atlas_endpoint,
-                params = parameters,
-                json = labels,
+                params=parameters,
+                json=labels,
                 headers=self.authentication.get_authentication_headers())
             verb = "overwrote"
         else:
             updateResp = requests.put(
                 atlas_endpoint,
-                params = parameters,
-                json = labels,
+                params=parameters,
+                json=labels,
                 headers=self.authentication.get_authentication_headers())
 
         # Can't use _handle_response since it expects json returned
@@ -1486,9 +1502,10 @@ class PurviewClient(AtlasClient):
             if _AZ_IDENTITY_INSTALLED:
                 authentication = AzCredentialWrapper(authentication)
             else:
-                raise Exception("You probably need to install azure-identity to use this authentication method.")
+                raise Exception(
+                    "You probably need to install azure-identity to use this authentication method.")
         super().__init__(endpoint_url, authentication)
-        
+
         self.glossary = PurviewGlossaryClient(endpoint_url, authentication)
         self.msgraph = MsGraphClient(authentication)
 
@@ -1549,8 +1566,10 @@ class PurviewClient(AtlasClient):
         :rtype: dict
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("PurviewClient.import_terms is being deprecated. Please use PurviewClient.glossary.import_terms instead.")
-        results = self.glossary.import_terms(csv_path, glossary_name, glossary_guid)
+        warnings.warn(
+            "PurviewClient.import_terms is being deprecated. Please use PurviewClient.glossary.import_terms instead.")
+        results = self.glossary.import_terms(
+            csv_path, glossary_name, glossary_guid)
         return results
 
     @PurviewOnly
@@ -1571,7 +1590,8 @@ class PurviewClient(AtlasClient):
         :rtype: dict
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("PurviewClient.import_terms_status is being deprecated. Please use PurviewClient.glossary.import_terms_status instead.")
+        warnings.warn(
+            "PurviewClient.import_terms_status is being deprecated. Please use PurviewClient.glossary.import_terms_status instead.")
         results = self.glossary.import_terms_status(operation_guid)
         return results
 
@@ -1596,10 +1616,12 @@ class PurviewClient(AtlasClient):
         :rtype: None
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("PurviewClient.export_terms is being deprecated. Please use PurviewClient.glossary.export_terms instead.")
-        results = self.glossary.export_terms(guids, csv_path, glossary_name, glossary_guid)
+        warnings.warn(
+            "PurviewClient.export_terms is being deprecated. Please use PurviewClient.glossary.export_terms instead.")
+        results = self.glossary.export_terms(
+            guids, csv_path, glossary_name, glossary_guid)
         return results
-    
+
     def upload_term(self, term, includeTermHierarchy=True, **kwargs):
         """
         PurviewClient.upload_term is being deprecated.
@@ -1621,6 +1643,7 @@ class PurviewClient(AtlasClient):
         ```
         """
         # TODO: Remove at 1.0.0 release
-        warnings.warn("PurviewClient.upload_term is being deprecated. Please use PurviewClient.glossary.upload_term instead.")
+        warnings.warn(
+            "PurviewClient.upload_term is being deprecated. Please use PurviewClient.glossary.upload_term instead.")
         results = self.glossary.upload_term(term, includeTermHierarchy)
         return results

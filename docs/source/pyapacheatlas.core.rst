@@ -17,8 +17,16 @@ pyapacheatlas.core.entity module
    :undoc-members:
    :show-inheritance:
 
+pyapacheatlas.core.glossary module
+----------------------------------
+
+.. automodule:: pyapacheatlas.core.glossary
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pyapacheatlas.core.msgraph module
---------------------------------
+---------------------------------
 
 .. automodule:: pyapacheatlas.core.msgraph
    :members:
