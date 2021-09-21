@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # Export the glossary terms
     if not args.skip_download:
         print("Exporting the old glossary terms")
-        glossary_terms = old_client.get_glossary(detailed=True)
+        glossary_terms = old_client.glossary.get_glossary(detailed=True)
         glossary_terms_copy = list(glossary_terms["termInfo"].values())
         with open(unchanged_path, 'w') as fp:
             json.dump(glossary_terms_copy, fp)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Remove the other attributes that interfere with upload
     # including the relationship attributes
     print("Getting the new glossary id")
-    new_glossary = new_client.get_glossary("Glossary")
+    new_glossary = new_client.glossary.get_glossary("Glossary")
     new_glossary_guid = new_glossary["guid"]
     print(f"The new glossary guid is: {new_glossary_guid}")
 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     input("About to upload remapped glossary terms to the new catalog. Continue? Ctrl + C to back out")
     # Upload the guids
-    results = new_client.upload_terms(batch=remapped_glossary)
+    results = new_client.glossary.upload_terms(batch=remapped_glossary)
     # Get the second half of the mapping (B to C)
     term_name_to_new_guid = {g["name"]: g["guid"] for g in results}
 
