@@ -411,6 +411,11 @@ class ExcelReader(Reader):
         by type.
 
         The sheet should have columns: typeName, qualifiedName, and term.
+
+        The term should be the term's formal name. The typeName should be the
+        Atlas type name and not the friendly display name. The qualified name
+        should be the fully qualified name of the entity you want to assign
+        the given row's term with.
         
         It will return Entities by type name: Making it easier to do a lookup
         by type. Entities by term: Making it easier to do bulk term
