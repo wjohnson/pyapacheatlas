@@ -218,7 +218,7 @@ class GlossaryClient(AtlasBaseClient):
         return results
 
     # assignTerm section
-    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC"):
+    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC", glossary_guid=None):
         """
         Page through the assigned entities for the given term.
 
@@ -234,7 +234,8 @@ class GlossaryClient(AtlasBaseClient):
 
         if termName:
             _discoveredTerm = self.get_term(
-                name=termName, glossary_name=glossary_name)
+                name=termName, glossary_name=glossary_name,
+                glossary_guid=glossary_guid)
             termGuid = _discoveredTerm["guid"]
 
         atlas_endpoint = self.endpoint_url + \
@@ -250,7 +251,7 @@ class GlossaryClient(AtlasBaseClient):
         results = self._handle_response(getAssignments)
         return results
 
-    def assignTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
+    def assignTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary", glossary_guid=None):
         """
         Assign a single term to many entities. Provide either a term guid
         (if you know it) or provide the term name and glossary name. If
@@ -293,8 +294,10 @@ class GlossaryClient(AtlasBaseClient):
 
         # Term Name will supercede term guid.
         if termName:
-            _discoveredTerm = self.get_glossary_term(
-                name=termName, glossary_name=glossary_name)
+            _discoveredTerm = self.get_term(
+                name=termName, glossary_name=glossary_name,
+                glossary_guid=glossary_guid
+                )
             termGuid = _discoveredTerm["guid"]
 
         atlas_endpoint = self.endpoint_url + \
@@ -314,7 +317,7 @@ class GlossaryClient(AtlasBaseClient):
         results = {"message": f"Successfully assigned term to entities."}
         return results
 
-    def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary"):
+    def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary", glossary_guid=None):
         """
         Remove a single term from many entities. Provide either a term guid
         (if you know it) or provide the term name and glossary name. If
@@ -344,8 +347,9 @@ class GlossaryClient(AtlasBaseClient):
 
         # Need the term guid to build the payload
         if termName:
-            _discoveredTerm = self.get_glossary_term(
-                name=termName, glossary_name=glossary_name)
+            _discoveredTerm = self.get_term(
+                name=termName, glossary_name=glossary_name,
+                glossary_guid=glossary_guid)
             termGuid = _discoveredTerm["guid"]
 
         # Massage the data into dicts
