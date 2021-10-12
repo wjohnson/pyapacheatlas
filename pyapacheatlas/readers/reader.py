@@ -40,6 +40,9 @@ class Reader(LineageMixIn):
     The base Reader with functionality that supports python dicts.
     """
     TEMPLATE_HEADERS = {
+        "AssignTerms": [
+            "typeName", "qualifiedName", "term"
+        ],
         "FineGrainColumnLineage": [
             "Target table", "Target column", "Target classifications",
             "Source table", "Source column", "Source classifications",
@@ -243,6 +246,46 @@ class Reader(LineageMixIn):
             contacts_enhanced.append({"id": output})
 
         return contacts_enhanced
+    
+    def parse_assign_terms(self, json_rows):
+        """
+        Organize a set of typeName, qualifiedName, and term dicts into
+        two groupings. Entities by type name: Making it easier to do a lookup.
+        Entities by term: Making it easier to do bulk term assignments.
+
+        Given the response, you will need to look up the entities for their
+        guids and then combine those guids with the entities by term.
+
+        :param list(dict(str,str)) json_rows:
+            A list of dicts containing at `typeName`, `term`, and `qualifiedName`
+            that represents the term's formal name and the entity the term will
+            be assigned to.
+        """
+        entities_by_type = {}
+        entities_by_term = {}
+
+        for row in json_rows:
+            if row["qualifiedName"] is None or row["term"] is None or row["typeName"] is None:
+                # Somehow some empty data made its way into here
+                continue
+
+            qn = row["qualifiedName"]
+            term = row["term"]
+            typeName = row["typeName"]
+
+            # For every type, collect all the qualified names
+            if typeName in entities_by_type:
+                entities_by_type[typeName].append(qn)
+            else:
+                entities_by_type[typeName] = [qn]
+            
+            # For every term, collect all the qualified names
+            if term in entities_by_term:
+                entities_by_term[term].append(qn)
+            else:
+                entities_by_term[term] = [qn]
+
+        return entities_by_type, entities_by_term
 
     def parse_bulk_entities(self, json_rows, contacts_func=None):
         """

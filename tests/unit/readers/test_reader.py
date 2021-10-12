@@ -436,3 +436,36 @@ def test_parse_bulk_entities_with_custom_attributes():
     assert(ae1["customAttributes"]["foo"] == "bar")
 
     assert("customAttributes" not in ae2)
+
+def test_parse_assign_terms():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "qualifiedName",
+    # term
+    json_rows = [
+        {"typeName": "demo_table", "qualifiedName": "qn1",
+         "term": "bar"
+         },
+         {"typeName": "demo_table", "qualifiedName": "qn2",
+         "term": "baz"
+         },
+         {"typeName": "demo_column", "qualifiedName": "qn3",
+         "term": "bar"
+         },
+    ]
+    entities_by_type, entities_by_term = reader.parse_assign_terms(json_rows)
+    
+    assert(len(entities_by_type) == 2)
+    assert("demo_table" in entities_by_type)
+    assert("demo_column" in entities_by_type)
+
+    assert(len(entities_by_type["demo_table"]) == 2)
+    assert("qn1" in entities_by_type["demo_table"])
+    assert("qn2" in entities_by_type["demo_table"])
+
+    assert(len(entities_by_term) == 2)
+    assert("bar" in entities_by_term)
+    assert("baz" in entities_by_term)
+
+    assert(len(set(entities_by_term["bar"]).difference(["qn1","qn3"])) == 0)
+    assert(entities_by_term["baz"] == ["qn2"])

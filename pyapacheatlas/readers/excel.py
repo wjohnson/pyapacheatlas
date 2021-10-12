@@ -25,6 +25,7 @@ class ExcelConfiguration(ReaderConfiguration):
     :param str updateLineage_sheet: Defaults to "UpdateLineage"
     :param str columnMapping_sheet: Defaults to "ColumnMapping"
     :param str entityDef_sheet: Defaults to "EntityDefs"
+    :param str assignTerms_sheet: Defaults to "AssignTerms"
     :param str classificationDef_sheet: Defaults to "ClassificationDefs"
     :param str table_sheet: Defaults to "TablesLineage"
     :param str column_sheet: Defaults to "FineGrainColumnLineage"
@@ -48,6 +49,7 @@ class ExcelConfiguration(ReaderConfiguration):
                  classificationDef_sheet="ClassificationDefs",
                  updateLineage_sheet="UpdateLineage",
                  columnMapping_sheet="ColumnMapping",
+                 assignTerms_sheet="AssignTerms",
                  **kwargs):
         super().__init__(**kwargs)
         # Required attributes:
@@ -55,6 +57,7 @@ class ExcelConfiguration(ReaderConfiguration):
         self.column_sheet = column_sheet
         self.table_sheet = table_sheet
         self.entityDef_sheet = entityDef_sheet
+        self.assignTerms_sheet = assignTerms_sheet
         self.classificationDef_sheet = classificationDef_sheet
         self.bulkEntity_sheet = bulkEntity_sheet
         self.updateLineage_sheet = updateLineage_sheet
@@ -401,6 +404,72 @@ class ExcelReader(Reader):
 
         return list(seen_qualifiedNames.values())
 
+    def parse_assign_terms(self, filepath):
+        """
+        Read a given excel file that conforms to the excel template and
+        parse the (default) AssignTerms tab into entities by term and entities
+        by type.
+
+        The sheet should have columns: typeName, qualifiedName, and term.
+        
+        It will return Entities by type name: Making it easier to do a lookup
+        by type. Entities by term: Making it easier to do bulk term
+        assignments.
+
+        Given the response, you will need to look up the entities for their
+        guids and then combine those guids with the entities by term.
+
+        To actually assign terms, you'll need to run additional code to lookup
+        the entities by their qualified names you provided and then merge the
+        found results with the entities organized by the term.
+
+        Sample code below demonstrates this process
+
+        .. code-block:: python
+
+            entities_by_type, entities_by_term = excel_reader.parse_assign_terms(file_path)
+
+            qn_to_guid = {}
+            for typeName in entities_by_type:
+                qualifiedNames = entities_by_type[typeName]
+                entity_resp = client.get_entity(qualifiedName=qualifiedNames, typeName=typeName)
+                _local_qn_to_guid = {e["attributes"]["qualifiedName"]:e["guid"] for e in entity_resp["entities"]}
+                if len(_local_qn_to_guid) != len(qualifiedNames):
+                    raise RuntimeError("Some qualified names were not found: {}".format(
+                        set(qualifiedNames).difference(qn_to_guid.keys())))
+                qn_to_guid.update(_local_qn_to_guid)
+            
+            default_glossary = client.glossary.get_glossary()
+
+            for term in entities_by_term:
+                entities_to_assign = [{"guid":qn_to_guid[e]} for e in entities_by_term[term]]
+                _ = client.glossary.assignTerm(
+                    entities=entities_to_assign, termName=term,
+                    glossary_guid=default_glossary["guid"]
+                    )
+
+        :param str filepath:
+            The xlsx file that contains your table and columns.
+        :return:
+            A dictionary of entities by type with types as key and a list of
+            entities as the values and a second dictionary of entity by term
+            with term as key and a list of entities as the values.
+        :rtype: dict(str, list(str)) and dict(str, list(str))
+        """
+        wb = load_workbook(filepath)
+        # A user may omit the classificationDef_sheet by providing the config with None
+        if self.config.assignTerms_sheet not in wb.sheetnames:
+            raise KeyError("The sheet {} was not found".format(
+                self.config.assignTerms_sheet))
+
+        # Getting table entities
+        assignTerms_sheet = wb[self.config.assignTerms_sheet]
+        json_sheet = ExcelReader._parse_spreadsheet(assignTerms_sheet)
+        entities_by_type, entities_by_term = super().parse_assign_terms(json_sheet)
+
+        wb.close()
+        return entities_by_type, entities_by_term
+
     def parse_classification_defs(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
@@ -479,6 +548,7 @@ class ExcelReader(Reader):
         :param str updateLineage_sheet: Defaults to "UpdateLineage"
         :param str columnMapping_sheet: Defaults to "ColumnMapping"
         :param str entityDef_sheet: Defaults to "EntityDefs"
+        :param str assignTerms_sheet: Defaults to "AssignTerms"
         :param str classificationDef_sheet: Defaults to "ClassificationDefs"
         :param str table_sheet: Defaults to "TablesLineage"
         :param str column_sheet: Defaults to "FineGrainColumnLineage"
@@ -505,6 +575,8 @@ class ExcelReader(Reader):
             kwargs.get("columnMapping_sheet", "ColumnMapping"))
         entityDefsSheet = wb.create_sheet(
             kwargs.get("entityDef_sheet", "EntityDefs"))
+        assignTermsSheet = wb.create_sheet(
+            kwargs.get("assignTerms_Sheet", "AssignTerms"))
         classificationDefsSheet = wb.create_sheet(kwargs.get(
             "classificationDef_sheet", "ClassificationDefs"))
         tablesSheet = wb.create_sheet(
@@ -554,6 +626,9 @@ class ExcelReader(Reader):
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["EntityDefs"], entityDefsSheet
+        )
+        ExcelReader._update_sheet_headers(
+            Reader.TEMPLATE_HEADERS["AssignTerms"], assignTermsSheet
         )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["ClassificationDefs"], classificationDefsSheet
