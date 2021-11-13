@@ -24,7 +24,6 @@ export MYSQL_INSTANCE_PORT=<port>
 export MYSQL_USERNAME=<username>
 export MYSQL_PASSWORD=<password>
 export MYSQL_INCLUDE_DATABASES=<comma separated list of databases to include>
-export MYSQL_EXCLUDE_DATABASES=<comma separated list of databases to exclude>
 export MYSQL_SERVERINSTANCE_CLOUDORONPREM=<onprem or cloud>
 export MYSQL_SERVERINSTANCE_PROD_OR_OTHER=<dev, qa, prod, etc.>
 export MYSQL_SERVERINSTANCE_CONTACTINFO=<contactinfo>
@@ -85,6 +84,14 @@ table
 ``` sql
 ALTER TABLE city CHANGE id id int not null COMMENT "id of city";
 ```
+
+## Running the Entity Registration script for MySQL
+
+From the command prompt, run the `register_typedef.py`. The result will upload the Custom type 
+definitions for our MySQL Instance > Database > Table > Column, as well as the relationship between them
+defined in `pyapacheatlas_mysql_typedefs_v2.json`
+
+Once the relationships are defined, we're ready to scan our MySQL Instance and ingest the metadata.
 
 ## Running the Custom Ingestion script for MySQL
 

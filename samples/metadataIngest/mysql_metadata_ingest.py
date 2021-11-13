@@ -15,7 +15,6 @@ MYSQL_SERVERINSTANCE_PROD_OR_OTHER = os.environ.get('MYSQL_SERVERINSTANCE_PROD_O
 MYSQL_SERVERINSTANCE_CONTACTINFO = os.environ.get('MYSQL_SERVERINSTANCE_CONTACTINFO','')
 MYSQL_SERVERINSTANCE_COMMENT = os.environ.get('MYSQL_SERVERINSTANCE_COMMENT','')
 MYSQL_INCLUDE_DATABASES = os.environ.get('MYSQL_INCLUDE_DATABASES','')
-MYSQL_EXCLUDE_DATABASES = os.environ.get('MYSQL_EXCLUDE_DATABASES','')
 
 class AtlasMySQL:
   guid_count = 0
@@ -144,6 +143,7 @@ def scan_databases(conn, atlas_mysql):
     databases = cursor.fetchall()
     for database in databases:
         if database[0] in MYSQL_INCLUDE_DATABASES:
+            print(f'{database[0]} is included')
             database_fqn = f'{atlas_mysql.instance.qualifiedName}{database[0]}/'
             db = atlas_mysql.add_atlas_db(database, database_fqn)
             db.addRelationship(instance = atlas_mysql.instance)
