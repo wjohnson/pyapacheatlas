@@ -1,0 +1,9 @@
+[PurviewClient]
+TENANT_ID=
+CLIENT_ID=
+CLIENT_SECRET=
+PURVIEW_ACCOUNT_NAME=
+
+[Snowflake]
+SNOWFLAKE_ODBC_CONNNECTION='odbc:Snowflake://<your-instance>.snowflakecomputing.com'
+SNOWFLAKE_CONNECTION_STRING='Driver={SnowflakeDSIIDriver}; Server=<your-instance>.snowflakecomputing.com; Warehouse=; Database=; UID=; PWD='
