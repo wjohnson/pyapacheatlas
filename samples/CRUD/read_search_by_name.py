@@ -30,7 +30,7 @@ if __name__ == "__main__":
     )
 
     # Assuming you have an entity with the word demo in the name or description
-    search = client.search_entities("demo")
+    search = client.discovery.search_entities("demo")
 
     # Alternative search methods include...
     # Searching across a given attribute:
@@ -38,15 +38,15 @@ if __name__ == "__main__":
     # Must include a wildcard character (*) at the end, does not support
     # wildcard at the beginning or middle.
 
-    # search = client.search_entities("name:demo*")
-    # search = client.search_entities("qualifiedName:demo*")
+    # search = client.discovery.search_entities("name:demo*")
+    # search = client.discovery.search_entities("qualifiedName:demo*")
 
     # Searching within a given type and include subtypes...
     # Provide a search filter that specifies the typeName and whether
     # you want to include sub types of that type or not.
 
     # filter_setup = {"typeName": "DataSet", "includeSubTypes": True}
-    # search = client.search_entities("*", search_filter=filter_setup)
+    # search = client.discovery.search_entities("*", search_filter=filter_setup)
 
     # The response is a Python generator that allows you to page through the
     # search results without having to worry about paging or offsets.

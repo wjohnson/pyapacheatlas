@@ -12,7 +12,7 @@ def export_records(old_client, folder_path, list_of_types_to_consider):
         print(f"Working on {typename}")
         counter = 0
         filter_setup = {"typeName": typename}
-        results = old_client.search_entities("*", search_filter=filter_setup)
+        results = old_client.discovery.search_entities("*", search_filter=filter_setup)
         # Iterate over the search results
         # TODO: Need to implement batching since the search is now single entities
         for entity in results:

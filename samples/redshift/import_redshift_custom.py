@@ -223,7 +223,7 @@ def createEntities(client,redshiftMetaData):
                     print(column["name"])   
 
 def cleanup(client):
-    search = client.search_entities("\"Amazon Redshift Database\"")
+    search = client.discovery.search_entities("\"Amazon Redshift Database\"")
     for entity in search:
         client.delete_entity(guid=[entity["id"]])
         #print(json.dumps(entity, indent=2))

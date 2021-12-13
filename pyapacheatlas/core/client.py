@@ -1,5 +1,6 @@
 from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
+from .discovery.purview import PurviewDiscoveryClient
 from .typedef import BaseTypeDef
 from .msgraph import MsGraphClient
 from .entity import AtlasClassification, AtlasEntity
@@ -1254,6 +1255,7 @@ class AtlasClient(AtlasBaseClient):
 
         return results
 
+    # TODO: Remove at 1.0.0 release
     def _search_generator(self, search_params, starting_offset=0):
         """
         Generator to page through the search query results.
@@ -1300,6 +1302,9 @@ class AtlasClient(AtlasBaseClient):
         :return: The results of your search as a generator.
         :rtype: Iterator(dict)
         """
+        # TODO: Remove at 1.0.0 release
+        warnings.warn(
+            "PurviewClient.search_entities is being deprecated. Please use PurviewClient.discovery.search_entities instead.")
 
         if limit > 1000 or limit < 1:
             raise ValueError(
@@ -1508,6 +1513,7 @@ class PurviewClient(AtlasClient):
 
         self.glossary = PurviewGlossaryClient(endpoint_url, authentication)
         self.msgraph = MsGraphClient(authentication)
+        self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api/search", authentication)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):

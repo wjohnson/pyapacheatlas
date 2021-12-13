@@ -58,7 +58,7 @@ if __name__ == "__main__":
         primary_display_text = term["displayText"]
         term_guid = term["termGuid"]
 
-        search_query = client.search_entities(
+        search_query = client.discovery.search_entities(
             query=f"{primary_display_text}*",
             search_filter={"typeName": "DataSet", "includeSubTypes": True}
         )

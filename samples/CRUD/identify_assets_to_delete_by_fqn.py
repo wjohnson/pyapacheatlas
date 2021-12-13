@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # print(json.dumps(response, indent=2))
 
     # Replace <YOUR_FQN> with the FQN of the data source assets to be deleted
-    assets_to_delete = client.search_entities(
+    assets_to_delete = client.discovery.search_entities(
         "<YOUR_FQN>*",
         search_filter=custom_filter
     )
