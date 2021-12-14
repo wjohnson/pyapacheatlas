@@ -1513,7 +1513,7 @@ class PurviewClient(AtlasClient):
 
         self.glossary = PurviewGlossaryClient(endpoint_url, authentication)
         self.msgraph = MsGraphClient(authentication)
-        self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api/search", authentication)
+        self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):

@@ -47,7 +47,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
                 "Failed to execute autocomplete query. Please provide either a keywords or a well formed JSON body."
             )
 
-        atlas_endpoint = self.endpoint_url + "/autocomplete"
+        atlas_endpoint = self.endpoint_url + "/search/autocomplete"
         postResult = requests.post(
             atlas_endpoint,
             json=req_body,
@@ -60,46 +60,47 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         return results
 
     # TODO: Having auth issues?
-    # def browse(self, entityType=None, api_version="2021-05-01-preview", **kwargs):
-    #     """
-    #     Execute a browse search for Purview based on the entity
+    def browse(self, entityType=None, api_version="2021-05-01-preview", **kwargs):
+        """
+        Execute a browse search for Purview based on the entity against the
+        `/catalog/api/browse endpoint`.
 
-    #     :param str entityType:
-    #         The entity type to browse as the root level entry point. This must
-    #         be a valid Purview built-in or custom type.
-    #     :param str path: The path to browse the next level child entities.
-    #     :param int limit: The number of search results to return.
-    #     :param int offset: The number of search results to skip.
-    #     :param str api_version: The Purview API version to use.
-    #     :return: Search query results with @search.count and value fields.
-    #     :rtype: dict
-    #     """
-    #     req_body = {}
-    #     if "body" in kwargs:
-    #         req_body.update(kwargs["body"])
-    #     elif entityType:
-    #         req_body = {
-    #             "entityType":entityType
-    #         }
-    #         # Additional properties
-    #         for prop in ["limit", "offset"]:
-    #             if prop in kwargs:
-    #                 req_body[prop] = kwargs[prop]
-    #     else:
-    #         RuntimeError("Failed to execute browse query. Please provide either an entityType or a well formed JSON body.")
+        :param str entityType:
+            The entity type to browse as the root level entry point. This must
+            be a valid Purview built-in or custom type.
+        :param str path: The path to browse the next level child entities.
+        :param int limit: The number of search results to return.
+        :param int offset: The number of search results to skip.
+        :param str api_version: The Purview API version to use.
+        :return: Search query results with @search.count and value fields.
+        :rtype: dict
+        """
+        req_body = {}
+        if "body" in kwargs:
+            req_body.update(kwargs["body"])
+        elif entityType:
+            req_body = {"entityType": entityType}
+            # Additional properties
+            for prop in ["limit", "offset"]:
+                if prop in kwargs:
+                    req_body[prop] = kwargs[prop]
+        else:
+            RuntimeError(
+                "Failed to execute browse query. Please provide either an entityType or a well formed JSON body."
+            )
 
-    #     atlas_endpoint = self.endpoint_url + "/browse"
-    #     # TODO: Implement paging with offset and limit
-    #     postResult = requests.post(
-    #         atlas_endpoint,
-    #         json=req_body,
-    #         params={"api-version":api_version},
-    #         headers=self.authentication.get_authentication_headers()
-    #     )
+        atlas_endpoint = self.endpoint_url + "/browse"
+        # TODO: Implement paging with offset and limit
+        postResult = requests.post(
+            atlas_endpoint,
+            json=req_body,
+            params={"api-version": api_version},
+            headers=self.authentication.get_authentication_headers(),
+        )
 
-    #     results = self._handle_response(postResult)
+        results = self._handle_response(postResult)
 
-    #     return results
+        return results
 
     def query(
         self,
@@ -155,7 +156,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
                 "Failed to execute search query. Please provide either a keyword or a well formed JSON body."
             )
 
-        atlas_endpoint = self.endpoint_url + "/query"
+        atlas_endpoint = self.endpoint_url + "/search/query"
         # TODO: Implement paging with offset and limit
         postResult = requests.post(
             atlas_endpoint,
@@ -206,7 +207,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
                 "Failed to execute suggest query. Please provide either a keywords or a well formed JSON body."
             )
 
-        atlas_endpoint = self.endpoint_url + "/suggest"
+        atlas_endpoint = self.endpoint_url + "/search/suggest"
         postResult = requests.post(
             atlas_endpoint,
             json=req_body,

@@ -1,19 +1,24 @@
-# PyApacheAtlas: API Support for Azure Purview and Apache Atlas
+# PyApacheAtlas: A Python SDK for Azure Purview and Apache Atlas
 
-A python package to work with the Azure Purview and Apache Atlas API. Supporting bulk loading, custom lineage, and more from a Pythonic set of classes and Excel templates.
+![PyApacheAtlas Logo](https://repository-images.githubusercontent.com/278894029/9a92fb00-37ee-11eb-8d1a-093914a7ceeb)
+
+PyApacheAtlas lets you work with the Azure Purview and Apache Atlas APIs in a Pythonic way. Supporting bulk loading, custom lineage, custom type definition and more from an SDK and Excel templates / integration.
 
 The package supports programmatic interaction and an Excel template for low-code uploads.
 
-The Excel template provides a means to:
-* Bulk upload entities
+## Using Excel to Accelerate Metadata Uploads
+
+* Bulk upload entities.
+  * Upload entities / assets for built-in or custom types.
   * Supports adding glossary terms to entities.
   * Supports adding classifications to entities.
   * Supports creating relationships between entities (e.g. columns of a table).
-* Creating custom lineage between two existing entities and using the Azure Purview Column Mappings / Lineage feature.
-* Bulk upload of type definitions.
-* Bulk upload of classification definitions (Purview Classification rules are not currently supported).
-* Creating custom table and complex column level lineage in the [Hive Bridge style](https://atlas.apache.org/0.8.3/Bridge-Hive.html).
-  * Supports Azure Purview ColumnMapping Attributes.
+* Creating custom lineage between existing entities.
+* Defining Purview Column Mappings / Column Lineage.
+* Bulk upload custom type definitions.
+* Bulk upload of classification definitions (Purview Classification Rules not supported).
+
+## Using the Pythonic SDK for Purview and Atlas
 
 The PyApacheAtlas package itself supports those operations and more for the advanced user:
 * Programmatically create Entities, Types (Entity, Relationship, etc.).
@@ -31,14 +36,13 @@ The PyApacheAtlas package itself supports those operations and more for the adva
   * Able to create arbitrary relationships between entities.
   * e.g. associating a given column with a table.
 * Deleting types (by name) or entities (by guid).
-* Creating a column lineage scaffolding as in the Hive Bridge Style .
 * Performing "What-If" analysis to check if...
    * Your entities are valid types.
    * Your entities are missing required attributes.
    * Your entities are using undefined attributes.
-* Search (only for Azure Purview advanced search).
-* Authentication to Azure Purview via Service Principal.
-* Authentication using basic authentication of username and password for open source Atlas.
+* Azure Purview's Search: query, autocomplete, suggest, browse.
+* Authentication to Azure Purview using azure-identity and Service Principal
+* Authentication to Apache Atlas using basic authentication of username and password.
 
 ## Quickstart
 
@@ -48,10 +52,29 @@ The PyApacheAtlas package itself supports those operations and more for the adva
 python -m pip install pyapacheatlas
 ```
 
-### Create a Purview Client Connection
+### Using Azure-Identity and the Azure CLI to Connect to Purview
 
-Provides connectivity to your Atlas / Azure Purview service. 
-Supports getting and uploading entities and type defs.
+For connecting to Azure Purview, it's even more convenient to install the [azure-identity](https://pypi.org/project/azure-identity/) package and its support for Managed Identity, Environment Credential, and Azure CLI credential.
+
+If you want to use your Azure CLI credential rather than a service principal, install azure-identity by running `pip install azure-identity` and then run the code below.
+
+```
+from azure.identity import AzureCliCredential
+
+from pyapacheatlas.core import PurviewClient
+
+cred = AzureCliCredential()
+
+# Create a client to connect to your service.
+client = PurviewClient(
+    account_name = "Your-Purview-Account-Name",
+    authentication = cred
+)
+```
+
+### Create a Purview Client Connection Using Service Principal
+
+If you don't want to install any additional packages, you should use the built-in ServicePrincipalAuthentication class.
 
 ```
 from pyapacheatlas.auth import ServicePrincipalAuthentication
@@ -69,11 +92,6 @@ client = PurviewClient(
     authentication = auth
 )
 ```
-
-For users wanting to use the `AtlasClient` and Purview, the Atlas Endpoint for
-Purview is `https://{your_purview_name}.catalog.purview.azure.com/api/atlas/v2`.
-The PurviewClient abstracts away having to know the endpoint url and is
-the better way to use this package with Purview.
 
 ### Create Entities "By Hand"
 
@@ -119,4 +137,4 @@ Learn more about the Excel [features and configuration in the wiki](https://gith
 * Learn more about this package in the [github wiki](https://github.com/wjohnson/pyapacheatlas/wiki/Excel-Template-and-Configuration).
 * The [Apache Atlas REST API](http://atlas.apache.org/api/v2/)
 * The [Purview CLI Package](https://github.com/tayganr/purviewcli) provides CLI support.
-* Purview [REST API Official Docs](https://docs.microsoft.com/en-us/azure/purview/tutorial-using-rest-apis)
+* Purview [REST API Official Docs](https://docs.microsoft.com/en-us/rest/api/purview/)
