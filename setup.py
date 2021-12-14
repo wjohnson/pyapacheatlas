@@ -4,8 +4,6 @@ from pyapacheatlas import __version__
 LONG_DESCRIPTION = """
 # PyApacheAtlas: A Python SDK for Azure Purview and Apache Atlas
 
-![PyApacheAtlas Logo](https://repository-images.githubusercontent.com/278894029/9a92fb00-37ee-11eb-8d1a-093914a7ceeb)
-
 PyApacheAtlas lets you work with the Azure Purview and Apache Atlas APIs in a Pythonic way. Supporting bulk loading, custom lineage, custom type definition and more from an SDK and Excel templates / integration.
 
 The package supports programmatic interaction and an Excel template for low-code uploads.
