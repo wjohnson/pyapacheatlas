@@ -129,7 +129,7 @@ if __name__ == "__main__":
     if args.search:
         total_search_results = 0
         # Execute a search across all entities
-        search_generator = old_client.search_entities(
+        search_generator = old_client.discovery.search_entities(
             query=args.search, limit=100
         )
         batch_size = 100

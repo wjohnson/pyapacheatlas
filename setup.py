@@ -2,22 +2,25 @@ import setuptools
 from pyapacheatlas import __version__
 
 LONG_DESCRIPTION = """
-# PyApacheAtlas: API Support for Azure Purview and Apache Atlas
+# PyApacheAtlas: A Python SDK for Azure Purview and Apache Atlas
 
-A python package to work with the Azure Purview and Apache Atlas API. Supporting bulk loading, custom lineage, and more from a Pythonic set of classes and Excel templates.
+PyApacheAtlas lets you work with the Azure Purview and Apache Atlas APIs in a Pythonic way. Supporting bulk loading, custom lineage, custom type definition and more from an SDK and Excel templates / integration.
 
 The package supports programmatic interaction and an Excel template for low-code uploads.
 
-The Excel template provides a means to:
-* Bulk upload entities
+## Using Excel to Accelerate Metadata Uploads
+
+* Bulk upload entities.
+  * Upload entities / assets for built-in or custom types.
   * Supports adding glossary terms to entities.
   * Supports adding classifications to entities.
   * Supports creating relationships between entities (e.g. columns of a table).
-* Creating custom lineage between two existing entities.
-* Bulk upload of type definitions.
-* Bulk upload of classification definitions (Purview Classification rules are not currently supported).
-* Creating custom table and complex column level lineage in the [Hive Bridge style](https://atlas.apache.org/0.8.3/Bridge-Hive.html).
-  * Supports Azure Purview ColumnMapping Attributes.
+* Creating custom lineage between existing entities.
+* Defining Purview Column Mappings / Column Lineage.
+* Bulk upload custom type definitions.
+* Bulk upload of classification definitions (Purview Classification Rules not supported).
+
+## Using the Pythonic SDK for Purview and Atlas
 
 The PyApacheAtlas package itself supports those operations and more for the advanced user:
 * Programmatically create Entities, Types (Entity, Relationship, etc.).
@@ -35,14 +38,13 @@ The PyApacheAtlas package itself supports those operations and more for the adva
   * Able to create arbitrary relationships between entities.
   * e.g. associating a given column with a table.
 * Deleting types (by name) or entities (by guid).
-* Creating a column lineage scaffolding as in the Hive Bridge Style .
 * Performing "What-If" analysis to check if...
    * Your entities are valid types.
    * Your entities are missing required attributes.
    * Your entities are using undefined attributes.
-* Search (only for Azure Purview advanced search).
-* Authentication to Azure Purview via Service Principal.
-* Authentication using basic authentication of username and password for open source Atlas.
+* Azure Purview's Search: query, autocomplete, suggest, browse.
+* Authentication to Azure Purview using azure-identity and Service Principal
+* Authentication to Apache Atlas using basic authentication of username and password.
 """
 
 def setup_package():
