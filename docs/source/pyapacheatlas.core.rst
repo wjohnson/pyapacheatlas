@@ -9,6 +9,15 @@ pyapacheatlas.core.client module
    :undoc-members:
    :show-inheritance:
 
+pyapacheatlas.core.discovery module
+-----------------------------------
+
+.. automodule:: pyapacheatlas.core.discovery
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 pyapacheatlas.core.entity module
 --------------------------------
 
