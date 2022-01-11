@@ -25,7 +25,7 @@ with the core methods and classes of PyApachAtlas. The sample demonstrate:
 * **Create**
   * Create [classifications on entities](./CRUD/create_entity_and_classification.py).
   * Create [entities and lineage between multiple entities](./CRUD/create_entity_and_lineage.py).
-  * Create [relationships](./create_relationships.py) in a few different ways.
+  * Create [relationships](./CRUD/create_relationships.py) in a few different ways.
 * **Read**
   * Read the [classifications on an entity](./CRUD/read_classification.py).
   * Get an entity by [by Guid or by qualified name and type](./CRUD/read_entity_guid_or_name.py).
