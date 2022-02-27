@@ -238,6 +238,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
                 api_version=kwargs["api_version"],
                 limit=kwargs.get("limit", 1000),
                 offset=offset,
+                **kwargs,
                 **self._requests_args
             )
 
@@ -285,9 +286,27 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         :param int offset: The number of search results to skip.
         :param str api_version: The Purview API version to use.
 
+        Kwargs:
+            :param dict body: An optional fully formed json body. If provided
+            query/keywords, limit, search_filter/filter, and
+            starting_offset/offset will be updated using the values found
+            in the body dictionary. Any additional keys provided in `body`
+            will be passed along as additional kwargs.
+
         :return: The results of your search as a generator.
         :rtype: Iterator(dict)
         """
+        if "body" in kwargs:
+            req_body = kwargs.pop("body")
+            if "keywords" in req_body:
+                query = req_body.pop("keywords")
+            if "limit" in req_body:
+                limit = req_body.pop("limit")
+            if "filter" in req_body:
+                search_filter = req_body.pop("filter")
+            if "offset" in req_body:
+                starting_offset = req_body.pop("offset")
+            kwargs.update(req_body)
         if limit > 1000 or limit < 1:
             raise ValueError(
                 "The limit parameter must be non-zero and less than 1,000."
