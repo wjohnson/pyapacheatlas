@@ -39,26 +39,26 @@ def test_set_relationship_different_ways():
         # the column having the table relationshipAttribute defined on them.
         assert(len(live_table["relationshipAttributes"]["columns"]) == 3)
 
-        relationship = {
-                    "typeName": "hive_table_columns",
-                    "attributes": {},
-                    "guid": -100,
-                    # Ends are either guid or guid + typeName 
-                    # (in case there are ambiguities?)
-                    "end1": {
-                        "guid": assignments["-1"]
-                    },
-                    "end2": {
-                        "guid": assignments["-5"]
-                    }
-                }
+        # relationship = {
+        #             "typeName": "hive_table_columns",
+        #             "attributes": {},
+        #             "guid": -100,
+        #             # Ends are either guid or guid + typeName 
+        #             # (in case there are ambiguities?)
+        #             "end1": {
+        #                 "guid": assignments["-1"]
+        #             },
+        #             "end2": {
+        #                 "guid": assignments["-5"]
+        #             }
+        #         }
 
-        relation_upload = client.upload_relationship(relationship)
+        # relation_upload = client.upload_relationship(relationship)
         # Check that we have one more relationship
         # There are caching issues here :-(
-        time.sleep(10)
-        live_table_post_relationship = client.get_entity(guid=assignments["-1"])["entities"][0]
-        assert(len(live_table["relationshipAttributes"]["columns"]) == 4)
+        # time.sleep(10)
+        # live_table_post_relationship = client.get_entity(guid=assignments["-1"])["entities"][0]
+        # assert(len(live_table["relationshipAttributes"]["columns"]) == 4)
 
     finally:
         # Need to delete all columns BEFORE you delete the table
