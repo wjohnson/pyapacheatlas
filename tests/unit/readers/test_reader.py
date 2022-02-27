@@ -281,7 +281,7 @@ def test_bulk_entity_with_experts_owners():
     json_rows = [
         {"typeName": "demoType", "name": "entityNameABC",
          "qualifiedName": "qualifiedNameofEntityNameABC",
-         "experts": "a;b;", "owners":""
+         "experts": "a;b;"
          },
         {"typeName": "demoType", "name": "entityNameGHI",
          "qualifiedName": "qualifiedNameofEntityNameGHI",
@@ -289,6 +289,10 @@ def test_bulk_entity_with_experts_owners():
          },
         {"typeName": "demoType", "name": "entityNameJKL",
          "qualifiedName": "qualifiedNameofEntityNameJKL",
+         },
+         {"typeName": "demoType", "name": "entityNameMNO",
+         "qualifiedName": "qualifiedNameofEntityNameMNO",
+         "owners": "e;f;"
          }
     ]
 
@@ -298,12 +302,15 @@ def test_bulk_entity_with_experts_owners():
     exp_only = results["entities"][0]["contacts"]
     both = results["entities"][1]["contacts"]
     no_contacts = results["entities"][2]
+    owner_only = results["entities"][3]["contacts"]
 
     assert(len(exp_only["Owner"]) == 0)
     assert(exp_only["Expert"] == [{"id":"a"}, {"id": "b"}])
     assert(both["Owner"] == [{"id":"c"}, {"id": "d"}])
     assert(both["Expert"] == [{"id":"a"}, {"id": "b"}])
     assert("contacts" not in no_contacts)
+    assert(len(owner_only["Expert"]) == 0)
+    assert(owner_only["Owner"] == [{"id":"e"}, {"id": "f"}])
 
 def test_bulk_entity_with_experts_owners_func():
     rc =ReaderConfiguration()
