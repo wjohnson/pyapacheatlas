@@ -33,17 +33,35 @@ class AtlasClient(AtlasBaseClient):
         The method of authentication.
     :type authentication:
         :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
+    
+    Kwargs:
+        :param requests_*: 
+            Kwargs to pass to the underlying `requests` package method call.
+            For example passing `requests_verify = False` will supply `verify=False`
+            to any API call.
     """
 
-    def __init__(self, endpoint_url, authentication=None):
-        super().__init__()
+    def __init__(self, endpoint_url, authentication=None, **kwargs):
         self.authentication = authentication
         self.endpoint_url = endpoint_url
-        self.glossary = GlossaryClient(endpoint_url, authentication)
         self.is_purview = False
         self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
         if re.match(self._purview_url_pattern, self.endpoint_url):
             self.is_purview = True
+        # If requests_verify=False is provided, it will result in
+        # storing verify:False in the _requests_args
+        if "requests_args" not in kwargs:
+            requests_args = AtlasClient._parse_requests_args(**kwargs)
+        else:
+            requests_args = kwargs.pop("requests_args")
+        
+        if "glossary" not in kwargs:
+            self.glossary = GlossaryClient(endpoint_url, authentication, requests_args=requests_args)
+        else:
+            self.glossary = kwargs["glossary"]
+
+        super().__init__(requests_args = requests_args)
+        
 
     def _handle_response(self, resp):
         """
@@ -89,7 +107,9 @@ class AtlasClient(AtlasBaseClient):
             "/entity/bulk?guid={}".format(guid_str)
         deleteEntity = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers())
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
+            )
 
         results = self._handle_response(deleteEntity)
 
@@ -113,7 +133,9 @@ class AtlasClient(AtlasBaseClient):
             f"/relationship/guid/{guid}"
         deleteType = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers())
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
+            )
 
         try:
             deleteType.raise_for_status()
@@ -139,7 +161,9 @@ class AtlasClient(AtlasBaseClient):
             f"/types/typedef/name/{name}"
         deleteType = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers())
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
+            )
 
         try:
             deleteType.raise_for_status()
@@ -198,7 +222,9 @@ class AtlasClient(AtlasBaseClient):
         deleteType = requests.delete(
             atlas_endpoint,
             json=payload,
-            headers=self.authentication.get_authentication_headers())
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
+            )
 
         try:
             deleteType.raise_for_status()
@@ -272,7 +298,8 @@ class AtlasClient(AtlasBaseClient):
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getEntity)
@@ -308,7 +335,8 @@ class AtlasClient(AtlasBaseClient):
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getEntity)
@@ -346,7 +374,8 @@ class AtlasClient(AtlasBaseClient):
                 atlas_endpoint,
                 json=attribute_value,
                 params={"name": attribute_name},
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
         # TODO: Multiple attributes could be supported for guid by looking up
         # the qualified name and type and then re-running the command with
@@ -374,7 +403,8 @@ class AtlasClient(AtlasBaseClient):
                 atlas_endpoint,
                 json=entityInfo,
                 params={"attr:qualifiedName": qualifiedName},
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
         else:
             raise ValueError(
@@ -399,7 +429,8 @@ class AtlasClient(AtlasBaseClient):
             f"/entity/guid/{guid}/classification/{classificationName}"
         getClassification = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
         results = self._handle_response(getClassification)
         return results
@@ -420,7 +451,8 @@ class AtlasClient(AtlasBaseClient):
 
         getClassification = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getClassification)
@@ -449,7 +481,8 @@ class AtlasClient(AtlasBaseClient):
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getEntity)
@@ -471,7 +504,8 @@ class AtlasClient(AtlasBaseClient):
 
         getResponse = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getResponse)
@@ -493,7 +527,8 @@ class AtlasClient(AtlasBaseClient):
 
         getTypeDefs = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getTypeDefs)
@@ -542,7 +577,8 @@ class AtlasClient(AtlasBaseClient):
 
         getTypeDef = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getTypeDef)
@@ -740,7 +776,8 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + "/types/typedefs/headers"
         getHeaders = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
         results = self._handle_response(getHeaders)
 
@@ -796,7 +833,8 @@ class AtlasClient(AtlasBaseClient):
         postBulkClassifications = requests.post(
             atlas_endpoint,
             json=payload,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         try:
@@ -827,7 +865,8 @@ class AtlasClient(AtlasBaseClient):
         postAddMultiClassifications = requests.post(
             atlas_endpoint,
             json=classifications,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         try:
@@ -856,7 +895,8 @@ class AtlasClient(AtlasBaseClient):
         putUpdateMultiClassifications = requests.put(
             atlas_endpoint,
             json=classifications,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         try:
@@ -966,7 +1006,8 @@ class AtlasClient(AtlasBaseClient):
 
         deleteEntityClassification = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         try:
@@ -1092,7 +1133,8 @@ class AtlasClient(AtlasBaseClient):
             # This is just a plain push of new entities
             upload_typedefs_results = requests.post(
                 atlas_endpoint, json=payload,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
             results = self._handle_response(upload_typedefs_results)
         else:
@@ -1115,13 +1157,15 @@ class AtlasClient(AtlasBaseClient):
 
             upload_new = requests.post(
                 atlas_endpoint, json=new_types,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
             results_new = self._handle_response(upload_new)
 
             upload_exist = requests.put(
                 atlas_endpoint, json=existing_types,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
             results_exist = self._handle_response(upload_exist)
 
@@ -1204,7 +1248,8 @@ class AtlasClient(AtlasBaseClient):
                 postBulkEntities = requests.post(
                     atlas_endpoint,
                     json=batch,
-                    headers=self.authentication.get_authentication_headers()
+                    headers=self.authentication.get_authentication_headers(),
+                    **self._requests_args
                 )
                 temp_results = self._handle_response(postBulkEntities)
                 results.append(temp_results)
@@ -1213,7 +1258,8 @@ class AtlasClient(AtlasBaseClient):
             postBulkEntities = requests.post(
                 atlas_endpoint,
                 json=payload,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
 
             results = self._handle_response(postBulkEntities)
@@ -1248,7 +1294,8 @@ class AtlasClient(AtlasBaseClient):
         relationshipResp = requests.post(
             atlas_endpoint,
             json=relationship,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(relationshipResp)
@@ -1267,7 +1314,8 @@ class AtlasClient(AtlasBaseClient):
             postSearchResults = requests.post(
                 atlas_endpoint,
                 json=search_params,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
             results = self._handle_response(postSearchResults)
             return_values = results["value"]
@@ -1357,7 +1405,8 @@ class AtlasClient(AtlasBaseClient):
             atlas_endpoint,
             params={"depth": depth, "width": width, "direction": direction,
                     "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
         results = self._handle_response(getLineageRequest)
         return results
@@ -1498,9 +1547,15 @@ class PurviewClient(AtlasClient):
         The method of authentication.
     :type authentication:
         :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
+    
+    Kwargs:
+        :param requests_*: 
+            Kwargs to pass to the underlying `requests` package method call.
+            For example passing `requests_verify = False` will supply `verify=False`
+            to any API call.
     """
 
-    def __init__(self, account_name, authentication=None):
+    def __init__(self, account_name, authentication=None, **kwargs):
         endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
         if authentication and not isinstance(authentication, AtlasAuthBase):
             # Assuming this is Azure Identity related
@@ -1509,11 +1564,15 @@ class PurviewClient(AtlasClient):
             else:
                 raise Exception(
                     "You probably need to install azure-identity to use this authentication method.")
-        super().__init__(endpoint_url, authentication)
+        if "requests_args" in kwargs:
+            requests_args = kwargs.pop("requests_args")
+        else:
+            requests_args = AtlasBaseClient._parse_requests_args(**kwargs)
 
-        self.glossary = PurviewGlossaryClient(endpoint_url, authentication)
-        self.msgraph = MsGraphClient(authentication)
-        self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication)
+        glossary = PurviewGlossaryClient(endpoint_url, authentication, requests_args = requests_args)
+        self.msgraph = MsGraphClient(authentication, requests_args = requests_args)
+        self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication, requests_args = requests_args)
+        super().__init__(endpoint_url, authentication, glossary = glossary, requests_args = requests_args, **kwargs)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
@@ -1544,7 +1603,8 @@ class PurviewClient(AtlasClient):
             atlas_endpoint,
             params={"direction": direction, "getDerivedLineage": getDerivedLineage,
                     "offset": offset, "limit": limit},
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
         results = self._handle_response(getLineageRequest)
         return results

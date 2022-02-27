@@ -4,8 +4,8 @@ from ..util import AtlasBaseClient
 
 
 class PurviewDiscoveryClient(AtlasBaseClient):
-    def __init__(self, endpoint_url, authentication):
-        super().__init__()
+    def __init__(self, endpoint_url, authentication, **kwargs):
+        super().__init__(**kwargs)
         self.endpoint_url = endpoint_url
         self.authentication = authentication
 
@@ -53,6 +53,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             json=req_body,
             params={"api-version": api_version},
             headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResult)
@@ -96,6 +97,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             json=req_body,
             params={"api-version": api_version},
             headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResult)
@@ -163,6 +165,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             json=req_body,
             params={"api-version": api_version},
             headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResult)
@@ -213,6 +216,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             json=req_body,
             params={"api-version": api_version},
             headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResult)
@@ -234,7 +238,8 @@ class PurviewDiscoveryClient(AtlasBaseClient):
                 api_version=kwargs["api_version"],
                 limit=kwargs.get("limit", 1000),
                 offset=offset,
-                **kwargs
+                **kwargs,
+                **self._requests_args
             )
 
             return_values = results["value"]

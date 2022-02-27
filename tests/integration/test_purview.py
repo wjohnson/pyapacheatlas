@@ -22,6 +22,6 @@ def test_purview_client_integration():
         authentication=oauth
     )
 
-    results = client.get_glossary()
+    results = client.glossary.get_glossary()
 
     assert(results is not None)
