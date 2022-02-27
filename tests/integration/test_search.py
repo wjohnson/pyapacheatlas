@@ -30,7 +30,7 @@ def test_purview_search_iterates_safely():
 
     upload_success = client.upload_entities(ae)    
 
-    search_results = client.search_entities(r"custom_type_entity")
+    search_results = client.discovery.search_entities(r"there_can_be_only_one")
 
     counter = 0
     for entity in search_results:
@@ -57,7 +57,7 @@ def test_purview_search_iterates_safely_over_multiple():
 
     upload_success = client.upload_entities([ae, ae2])    
 
-    search_results = client.search_entities(r"there_can_be_only_two")
+    search_results = client.discovery.search_entities(r"there_can_be_only_two")
 
     counter = 0
     for entity in search_results:
@@ -77,7 +77,7 @@ def test_purview_search_iterates_safely_over_none():
         # So catch the Atlas error and move on
         pass
     
-    search_results = client.search_entities(r"this_should_never_exist")
+    search_results = client.discovery.search_entities(r"this_should_never_exist")
 
     counter = 0
     for entity in search_results:

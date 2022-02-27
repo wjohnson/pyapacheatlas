@@ -9,9 +9,10 @@ class MsGraphException(BaseException):
 
 class MsGraphClient():
 
-    def __init__(self, authentication):
+    def __init__(self, authentication, **kwargs):
         super().__init__()
         self.authentication = authentication
+        self._requests_args = kwargs.get("requests_args", {})
 
     def upn_to_id(self, userPrincipalName, api_version="v1.0"):
         """
@@ -26,7 +27,8 @@ class MsGraphClient():
 
         getUser = requests.get(
             graph_endpoint,
-            headers=self.authentication.get_graph_authentication_headers()
+            headers=self.authentication.get_graph_authentication_headers(),
+            **self._requests_args
         )
 
         try:
@@ -57,7 +59,8 @@ class MsGraphClient():
 
         getUser = requests.get(
             graph_endpoint,
-            headers=self.authentication.get_graph_authentication_headers()
+            headers=self.authentication.get_graph_authentication_headers(),
+            **self._requests_args
         )
 
         try:
