@@ -25,6 +25,11 @@ if __name__ == "__main__":
         help="The config file's section header to be used. Defaults to DEFAULT",
         default="DEFAULT")
     parser.add_argument(
+        "-de", "--include-deprecated",
+        help="Include deprecated tabs in the excel template",
+        action="store_true"
+    )
+    parser.add_argument(
         "--version",
         help="Display the version of your PyApacheAtlas package",
         action="store_true")
@@ -43,6 +48,9 @@ if __name__ == "__main__":
             raise RuntimeError(
                 f"In your config.ini, please specify a {args.config_section} section or update your --config-section parameter.")
         template_config = config[args.config_section]
+    
+    if args.include_deprecated:
+        template_config["include_deprecated"] = args.include_deprecated
 
     if args.make_template:
         ExcelReader.make_template(args.make_template, **template_config)
