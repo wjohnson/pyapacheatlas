@@ -53,8 +53,14 @@ class AtlasAttributeDef():
         Default arguments are chosen assuming you want a single attribute
         """
         super().__init__()
-        self.cardinality = kwargs.get(
-            "cardinality", Cardinality.SINGLE.value)  # Cardinality
+         # Cardinality
+        if "cardinality" in kwargs:
+            if isinstance(kwargs["cardinality"], Cardinality):
+                self.cardinality = kwargs.get("cardinality").value
+            elif isinstance(kwargs["cardinality"], str):
+                self.cardinality = kwargs.get("cardinality")
+        else:
+            self.cardinality = Cardinality.SINGLE.value
         # array of AtlasConstraintDef
         self.constraints = kwargs.get("constraints")
         self.defaultValue = kwargs.get("defaultValue")  # string
