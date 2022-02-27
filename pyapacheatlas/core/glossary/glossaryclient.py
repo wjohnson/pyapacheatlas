@@ -10,10 +10,10 @@ from .term import _CrossPlatformTerm
 
 
 class GlossaryClient(AtlasBaseClient):
-    def __init__(self, endpoint_url, authentication):
-        super().__init__()
+    def __init__(self, endpoint_url, authentication, **kwargs):
         self.endpoint_url = endpoint_url
         self.authentication = authentication
+        super().__init__(**kwargs)
 
     # Glossary
     def _get_glossaries(self, limit=-1, offset=0, sort_order="ASC"):
@@ -36,7 +36,8 @@ class GlossaryClient(AtlasBaseClient):
         getResult = requests.get(
             atlas_endpoint,
             params={"limit": limit, "offset": offset, "sort": sort_order},
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getResult)
@@ -77,7 +78,8 @@ class GlossaryClient(AtlasBaseClient):
                 atlas_endpoint = atlas_endpoint + "/detailed"
             getResult = requests.get(
                 atlas_endpoint,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
             results = self._handle_response(getResult)
         else:
@@ -134,7 +136,8 @@ class GlossaryClient(AtlasBaseClient):
 
             getTerms = requests.get(
                 atlas_endpoint,
-                headers=self.authentication.get_authentication_headers()
+                headers=self.authentication.get_authentication_headers(),
+                **self._requests_args
             )
             results = self._handle_response(getTerms)
         else:
@@ -178,7 +181,8 @@ class GlossaryClient(AtlasBaseClient):
             atlas_endpoint,
             json=payload,
             params=kwargs.get("parameters", {}),
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResp)
@@ -210,7 +214,8 @@ class GlossaryClient(AtlasBaseClient):
             atlas_endpoint,
             json=payload,
             params=kwargs.get("parameters", {}),
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResp)
@@ -245,7 +250,8 @@ class GlossaryClient(AtlasBaseClient):
         getAssignments = requests.get(
             atlas_endpoint,
             params={"limit": limit, "offset": offset, "sort": sort},
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(getAssignments)
@@ -306,7 +312,8 @@ class GlossaryClient(AtlasBaseClient):
         postAssignment = requests.post(
             atlas_endpoint,
             headers=self.authentication.get_authentication_headers(),
-            json=json_entities
+            json=json_entities,
+            **self._requests_args
         )
 
         try:
@@ -394,7 +401,8 @@ class GlossaryClient(AtlasBaseClient):
         deleteAssignment = requests.delete(
             atlas_endpoint,
             headers=self.authentication.get_authentication_headers(),
-            json=json_entities
+            json=json_entities,
+            **self._requests_args
         )
 
         try:
@@ -409,8 +417,8 @@ class GlossaryClient(AtlasBaseClient):
 
 class PurviewGlossaryClient(GlossaryClient):
 
-    def __init__(self, endpoint_url, authentication):
-        super().__init__(endpoint_url, authentication)
+    def __init__(self, endpoint_url, authentication, **kwargs):
+        super().__init__(endpoint_url, authentication, **kwargs)
 
     # Terms section
     def upload_term(self, term, includeTermHierarchy=True, force_update=False, **kwargs):
@@ -517,7 +525,8 @@ class PurviewGlossaryClient(GlossaryClient):
         postResp = requests.post(
             atlas_endpoint,
             files={'file': ("file", open(csv_path, 'rb'))},
-            headers=headers
+            headers=headers,
+            **self._requests_args
         )
 
         results = self._handle_response(postResp)
@@ -543,7 +552,8 @@ class PurviewGlossaryClient(GlossaryClient):
 
         postResp = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         results = self._handle_response(postResp)
@@ -589,7 +599,8 @@ class PurviewGlossaryClient(GlossaryClient):
         postResp = requests.post(
             atlas_endpoint,
             json=guids,
-            headers=self.authentication.get_authentication_headers()
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
         )
 
         # Can't use handle response since it expects json
