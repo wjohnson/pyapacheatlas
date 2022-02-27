@@ -480,6 +480,10 @@ class ExcelReader(Reader):
         :param str columnMapping_sheet: Defaults to "ColumnMapping"
         :param str entityDef_sheet: Defaults to "EntityDefs"
         :param str classificationDef_sheet: Defaults to "ClassificationDefs"
+        :param bool include_deprecated:
+            Set to True if you want to include tabs that have been deprecated.
+            For this release, it includes TablesLineage and
+            FineGrainColumnLineage.
         :param str table_sheet: Defaults to "TablesLineage"
         :param str column_sheet: Defaults to "FineGrainColumnLineage"
         :param str source_prefix:
@@ -495,6 +499,7 @@ class ExcelReader(Reader):
             Defaults to "transformation" and identifies the column that
             represents the transformation for a specific column.
         """
+        include_deprecated = kwargs.get("include_deprecated", False)
         wb = Workbook()
         bulkEntitiesSheet = wb.active
         bulkEntitiesSheet.title = kwargs.get(
@@ -507,10 +512,11 @@ class ExcelReader(Reader):
             kwargs.get("entityDef_sheet", "EntityDefs"))
         classificationDefsSheet = wb.create_sheet(kwargs.get(
             "classificationDef_sheet", "ClassificationDefs"))
-        tablesSheet = wb.create_sheet(
-            kwargs.get("table_sheet", "TablesLineage"))
-        columnsSheet = wb.create_sheet(kwargs.get(
-            "column_sheet", "FineGrainColumnLineage"))
+        if include_deprecated:
+            tablesSheet = wb.create_sheet(
+                kwargs.get("table_sheet", "TablesLineage"))
+            columnsSheet = wb.create_sheet(kwargs.get(
+                "column_sheet", "FineGrainColumnLineage"))
 
         # Supporting changing the default headers on select pages
         header_changes = {}
@@ -546,12 +552,13 @@ class ExcelReader(Reader):
             UpdateLineageHeaders = Reader.TEMPLATE_HEADERS["UpdateLineage"]
             ColumnMappingHeaders = Reader.TEMPLATE_HEADERS["ColumnMapping"]
 
-        ExcelReader._update_sheet_headers(
-            FineGrainColumnLineageHeaders, columnsSheet
-        )
-        ExcelReader._update_sheet_headers(
-            TablesLineageHeaders, tablesSheet
-        )
+        if include_deprecated:
+            ExcelReader._update_sheet_headers(
+                FineGrainColumnLineageHeaders, columnsSheet
+            )
+            ExcelReader._update_sheet_headers(
+                TablesLineageHeaders, tablesSheet
+            )
         ExcelReader._update_sheet_headers(
             Reader.TEMPLATE_HEADERS["EntityDefs"], entityDefsSheet
         )
