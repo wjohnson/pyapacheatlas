@@ -3,6 +3,7 @@ import json
 from pyapacheatlas.core.typedef import (
     AtlasAttributeDef, 
     AtlasStructDef,
+    Cardinality,
     ClassificationTypeDef,
     EntityTypeDef,
     TypeCategory
@@ -51,3 +52,12 @@ def test_add_attributes_later():
 
     assert(len(s.attributeDefs) == 2)
     assert( all( [isinstance(e, dict) for e in s.attributeDefs]))
+
+def test_attributedef_cardinality():
+    str_input = AtlasAttributeDef(name="test", cardinality="BLAH")
+    enum_input =AtlasAttributeDef(name="test", cardinality=Cardinality.SET)
+    no_input = AtlasAttributeDef(name="test")
+
+    assert(str_input.cardinality == "BLAH")
+    assert(enum_input.cardinality == "SET")
+    assert(no_input.cardinality == "SINGLE")
