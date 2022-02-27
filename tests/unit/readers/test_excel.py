@@ -11,14 +11,33 @@ from pyapacheatlas.readers.excel import ExcelConfiguration, ExcelReader
 from pyapacheatlas.scaffolding.column_lineage import column_lineage_scaffold
 
 
-def test_verify_template_sheets():
+def test_verify_all_template_sheets():
+    # Setup
+    temp_path = "./temp_verfiysheets.xlsx"
+    ExcelReader.make_template(temp_path, include_deprecated=True)
+
+    # Expected
+    expected_sheets = set(["FineGrainColumnLineage", "TablesLineage",
+                           "EntityDefs", "BulkEntities",
+                           "UpdateLineage", "ClassificationDefs",
+                           "ColumnMapping"
+                           ])
+
+    wb = load_workbook(temp_path)
+    difference = set(wb.sheetnames).symmetric_difference(expected_sheets)
+    try:
+        assert(len(difference) == 0)
+    finally:
+        wb.close()
+        os.remove(temp_path)
+
+def test_verify_default_template_sheets():
     # Setup
     temp_path = "./temp_verfiysheets.xlsx"
     ExcelReader.make_template(temp_path)
 
     # Expected
-    expected_sheets = set(["FineGrainColumnLineage", "TablesLineage",
-                           "EntityDefs", "BulkEntities",
+    expected_sheets = set(["EntityDefs", "BulkEntities",
                            "UpdateLineage", "ClassificationDefs",
                            "ColumnMapping"
                            ])
@@ -41,7 +60,8 @@ def test_verify_custom_template_sheets():
     entityDef_sheet="delta",
     classificationDef_sheet="epsilon",
     table_sheet="zeta",
-    column_sheet="eta"
+    column_sheet="eta",
+    include_deprecated=True
     )
 
     # Expected
@@ -66,7 +86,8 @@ def test_custom_template_header_prefix():
     source_prefix="alpha",
     target_prefix="beta",
     process_prefix="gamma",
-    column_transformation_name="delta"
+    column_transformation_name="delta",
+    include_deprecated=True
     )
     try:
 
@@ -119,9 +140,9 @@ def setup_workbook_custom_sheet(filepath, sheet_name, headers, json_rows):
     wb.close()
 
 
-def setup_workbook(filepath, sheet_name, max_col, json_rows):
+def setup_workbook(filepath, sheet_name, max_col, json_rows, include_deprecated=False):
     if not os.path.exists(filepath):
-        ExcelReader.make_template(filepath)
+        ExcelReader.make_template(filepath, include_deprecated=include_deprecated)
     wb = load_workbook(filepath)
     active_sheet = wb[sheet_name]
 
@@ -388,7 +409,7 @@ def test_excel_table_lineage():
          ]
     ]
 
-    setup_workbook(temp_filepath, "TablesLineage", max_cols, json_rows)
+    setup_workbook(temp_filepath, "TablesLineage", max_cols, json_rows, include_deprecated=True)
 
     results = reader.parse_table_lineage(temp_filepath)
 
@@ -436,8 +457,8 @@ def test_excel_finegrain_column_lineage():
          None],
     ]
 
-    setup_workbook(temp_filepath, "TablesLineage", max_cols_tl, json_rows)
-    setup_workbook(temp_filepath, "FineGrainColumnLineage", max_cols_cl, json_rows_col)
+    setup_workbook(temp_filepath, "TablesLineage", max_cols_tl, json_rows, include_deprecated=True)
+    setup_workbook(temp_filepath, "FineGrainColumnLineage", max_cols_cl, json_rows_col, include_deprecated=True)
 
     atlas_types = column_lineage_scaffold("demo")
 
