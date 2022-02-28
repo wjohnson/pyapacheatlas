@@ -238,7 +238,6 @@ class PurviewDiscoveryClient(AtlasBaseClient):
                 api_version=kwargs["api_version"],
                 limit=kwargs.get("limit", 1000),
                 offset=offset,
-                **kwargs,
                 **self._requests_args
             )
 
