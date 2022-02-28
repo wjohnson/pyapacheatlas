@@ -61,12 +61,17 @@ There are four key features of the PyApacheAtlas package with respect to the Exc
   * You want to create a "process entity" that represents the process that ties the two tables together.
   * In addition, you want to use the Azure Purview Column Mapping / Column Lineage UI feature.
   * You'll do this across the `UpdateLineage` and `ColumnMapping` tabs.
+* **Create Entities and Lineage From Scratch**
+  * [Custom Table and Column Lineage](./excel_custom_table_column_lineage.py)
+  * You want to create your tables with schema and assign lineage between those tables.
+  * You'll do this across the `BulkEntities` and `UpdateLineage` tabs.
 * **Creating Custom DataSet Types**
   * [Custom Type Excel Sample](./excel_custom_type_and_entity_upload.py)
   * You have a custom dataset type you want to create with many attributes.
   * You want to upload an entity using that custom type as well.
-* **Hive Bridge Style Table and Column Lineage**
-  * [Custom Table and Column Lineage Excel Sample](./excel_custom_table_column_lineage.py)
+* **(Deprecated) Hive Bridge Style Table and Column Lineage**
+  * [Hive Style Table and Column Lineage Excel Sample](./hive_style_table_column_lineage.py)
+  * Deprecation Warning: This example uses deprecated features which will be removed eventually.
   * You are willing to use a custom type to capture more data about lineage.
   * You are interested in capturing more complex column level lineage.
   * None of the entities you want to upload exist in your catalog.
