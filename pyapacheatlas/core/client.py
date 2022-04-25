@@ -1,7 +1,7 @@
 from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
 from .discovery.purview import PurviewDiscoveryClient
-from .typedef import BaseTypeDef
+from .typedef import BaseTypeDef, TypeCategory
 from .msgraph import MsGraphClient
 from .entity import AtlasClassification, AtlasEntity
 from ..auth.base import AtlasAuthBase
@@ -113,6 +113,59 @@ class AtlasClient(AtlasBaseClient):
 
         results = self._handle_response(deleteEntity)
 
+        return results
+
+    def delete_businessMetadata(self, guid, businessMetadata, force_update=True):
+        """
+        Delete one or many business attributes based on the guid. Provide a
+        businessMetadata dictionary that has a key for the businessmetadata
+        type def name and the value is a dictionary with keys of each
+        attribute you want to remove. The values inside the nested dict
+        should be an empty string ('').
+
+        If I have a business metadata typedef of 'operations`, with attributes
+        'expenseCode' and 'criticality' and I want to delete criticality, my
+        businessMetadata might be:
+        ```
+        {
+            'operations': {
+                'criticality': ''
+          }
+        }
+        ```
+
+        :param str guid:
+            The guid for the entity that you want to remove business metadata.
+        :param dict(str, dict) businessMetadata:
+            The business metadata you want to delete with key of the
+            businessMetadata type def and value of a dictionary with
+            keys for each attribute you want removed and value is an empty
+            string.
+        :param bool force_update:
+            Defaults to True.
+        :return:
+            A dictionary indicating success. Failure will raise an AtlasException.
+        :rtype: dict
+        """
+        results = None
+
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/businessmetadata"
+        deleteBizMeta = requests.delete(
+            atlas_endpoint,
+            headers=self.authentication.get_authentication_headers(),
+            params={"isOverwrite":force_update},
+            json=businessMetadata,
+            **self._requests_args
+            )
+
+        try:
+            deleteBizMeta.raise_for_status()
+        except requests.RequestException:
+            raise Exception(deleteBizMeta.text)
+
+        results = {
+            "message": f"Successfully deleted businessMetadata on entity with guid {guid}"}
         return results
 
     def delete_relationship(self, guid):
@@ -783,7 +836,10 @@ class AtlasClient(AtlasBaseClient):
 
         output = dict()
         for typedef in results:
-            active_category = typedef["category"].lower()+"Defs"
+            if typedef["category"].lower() == TypeCategory.BUSINESSMETADATA.value.lower():
+                active_category = "businessMetadataDefs"
+            else:
+                active_category = typedef["category"].lower()+"Defs"
             if active_category not in output:
                 output[active_category] = []
 
@@ -1155,19 +1211,23 @@ class AtlasClient(AtlasBaseClient):
                     else:
                         new_types[cat].append(t)
 
-            upload_new = requests.post(
-                atlas_endpoint, json=new_types,
-                headers=self.authentication.get_authentication_headers(),
-                **self._requests_args
-            )
-            results_new = self._handle_response(upload_new)
+            results_new = {}
+            if new_types and sum([len(defs) for defs in new_types.values()]) > 0:
+                upload_new = requests.post(
+                    atlas_endpoint, json=new_types,
+                    headers=self.authentication.get_authentication_headers(),
+                    **self._requests_args
+                )
+                results_new = self._handle_response(upload_new)
 
-            upload_exist = requests.put(
-                atlas_endpoint, json=existing_types,
-                headers=self.authentication.get_authentication_headers(),
-                **self._requests_args
-            )
-            results_exist = self._handle_response(upload_exist)
+            results_exist = {}
+            if existing_types and sum([len(defs) for defs in existing_types.values()]) > 0:
+                upload_exist = requests.put(
+                    atlas_endpoint, json=existing_types,
+                    headers=self.authentication.get_authentication_headers(),
+                    **self._requests_args
+                )
+                results_exist = self._handle_response(upload_exist)
 
             # Merge the results
             results = results_new
@@ -1411,7 +1471,6 @@ class AtlasClient(AtlasBaseClient):
         results = self._handle_response(getLineageRequest)
         return results
 
-    @PurviewLimitation
     def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
         """
         Delete the given labels for one entity. Provide a list of strings that
@@ -1469,7 +1528,6 @@ class AtlasClient(AtlasBaseClient):
         results = {"message": f"Successfully deleted labels for {action}"}
         return results
 
-    @PurviewLimitation
     def update_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None, force_update=False):
         """
         Update the given labels for one entity. Provide a list of strings that
@@ -1533,6 +1591,58 @@ class AtlasClient(AtlasBaseClient):
         action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
         results = {"message": f"Successfully {verb} labels for {action}"}
         return results
+
+    def update_businessMetadata(self, guid, businessMetadata, force_update=False):
+        """
+        Update the business metadata. Provide a businessMetadata dictionary
+        that has a key for the businessmetadata type def name and the value
+        is a dictionary with keys of each attribute you want to add/update.
+
+        If I have a business metadata typedef of 'operations`, with attributes
+        'expenseCode' and 'criticality', my businessMetadata might be:
+        ```
+        {
+            'operations': {
+                'expenseCode': '123',
+                'criticality': 'low'
+          }
+        }
+        ```
+        :param str guid:
+            The guid for the entity that you want to update business metadata.
+        :param dict(str, dict) businessMetadata:
+            The business metadata you want to update with key of the
+            businessMetadata type def and value of a dictionary with
+            keys for each attribute you want removed and value
+        :param bool force_update:
+            Defaults to False where you are only overwriting the business
+            attributes you specify in businessMetadata. Set to True to
+            overwrite all existing business metadata attributes with the value
+            you provided.
+        :return:
+            A dict containing a message indicating success. Otherwise
+            it will raise an AtlasException.
+        :rtype: dict(str, str)
+        """
+        atlas_endpoint= self.endpoint_url + f"/entity/guid/{guid}/businessmetadata"
+        updateBizMeta = requests.post(
+            atlas_endpoint,
+            params={"isOverwrite":force_update},
+            json=businessMetadata,
+            headers=self.authentication.get_authentication_headers(),
+            **self._requests_args
+        )
+
+        # Can't use _handle_response since it expects json returned
+        try:
+            updateBizMeta.raise_for_status()
+        except requests.RequestException as e:
+            if isinstance(updateBizMeta, dict) and "errorCode" in updateBizMeta:
+                raise AtlasException(updateBizMeta.text)
+            else:
+                raise requests.RequestException(updateBizMeta.text)
+
+        return {"message": f"Successfully updated business metadata for {guid}"}
 
 
 class PurviewClient(AtlasClient):
