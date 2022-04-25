@@ -19,4 +19,8 @@ If you are interested in using the built-in Excel functionality, see the [excel 
   * Update an [entity with a term by discovering related terms](./update_entities_with_term.py) through search.
 * **Delete**
   * Delete an entity [by Guid or by qualified name and type](./delete_entity.py).
-  * Delete a [classification from an entity](./delete_classification.py).
+  * Delete a [classification from an entity](./delete_classification_from_entity.py).
+* **Advanced Features**
+  * Create, Read, Update, Delete [Business Metadata](./crud_business_metadata.py).
+  * Create, Read, Update, Delete [Custom Attributes](./crud_custom_attributes.py).
+  * Create, Read, Update, Delete [Custom Labels](./crud_custom_labels.py).
