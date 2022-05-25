@@ -1651,6 +1651,9 @@ class PurviewClient(AtlasClient):
     service. Simplifies the requirements for knowing the endpoint url and
     requires only the Purview account name.
 
+    See also:
+    https://docs.microsoft.com/en-us/rest/api/purview/
+
     :param str account_name:
         Your Purview account name.
     :param authentication:
@@ -1688,6 +1691,9 @@ class PurviewClient(AtlasClient):
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
         """
         Returns immediate next level lineage info about entity with pagination
+
+        See also:
+        https://docs.microsoft.com/en-us/rest/api/purview/catalogdataplane/lineage
 
         :param str guid: The guid of the entity for which you want to
             retrieve lineage.
