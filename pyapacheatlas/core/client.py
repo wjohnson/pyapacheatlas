@@ -1,4 +1,5 @@
 from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
+from .collections.purview import PurviewCollectionsClient
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
 from .discovery.purview import PurviewDiscoveryClient
 from .typedef import BaseTypeDef, TypeCategory
@@ -1683,6 +1684,7 @@ class PurviewClient(AtlasClient):
             requests_args = AtlasBaseClient._parse_requests_args(**kwargs)
 
         glossary = PurviewGlossaryClient(endpoint_url, authentication, requests_args = requests_args)
+        self.collections = PurviewCollectionsClient(endpoint_url, authentication)
         self.msgraph = MsGraphClient(authentication, requests_args = requests_args)
         self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication, requests_args = requests_args)
         super().__init__(endpoint_url, authentication, glossary = glossary, requests_args = requests_args, **kwargs)
