@@ -58,7 +58,7 @@ For connecting to Azure Purview, it's even more convenient to install the [azure
 
 If you want to use your Azure CLI credential rather than a service principal, install azure-identity by running `pip install azure-identity` and then run the code below.
 
-```
+```python
 from azure.identity import AzureCliCredential
 
 from pyapacheatlas.core import PurviewClient
@@ -76,7 +76,7 @@ client = PurviewClient(
 
 If you don't want to install any additional packages, you should use the built-in ServicePrincipalAuthentication class.
 
-```
+```python
 from pyapacheatlas.auth import ServicePrincipalAuthentication
 from pyapacheatlas.core import PurviewClient
 
@@ -97,7 +97,7 @@ client = PurviewClient(
 
 You can also create your own entities by hand with the helper `AtlasEntity` class.
 
-```
+```python
 from pyapacheatlas.core import AtlasEntity
 
 # Get All Type Defs
