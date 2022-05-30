@@ -1,4 +1,4 @@
-from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
+from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly, _handle_response
 from .collections.purview import PurviewCollectionsClient
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
 from .discovery.purview import PurviewDiscoveryClient
@@ -6,8 +6,6 @@ from .typedef import BaseTypeDef, TypeCategory
 from .msgraph import MsGraphClient
 from .entity import AtlasClassification, AtlasEntity
 from ..auth.base import AtlasAuthBase
-import json
-from json.decoder import JSONDecodeError
 import logging
 import re
 import requests
@@ -62,29 +60,6 @@ class AtlasClient(AtlasBaseClient):
             self.glossary = kwargs["glossary"]
 
         super().__init__(requests_args = requests_args)
-        
-
-    def _handle_response(self, resp):
-        """
-        Safely handle an Atlas Response and return the results if valid.
-
-        :param Response resp: The response from the request method.
-        :return: A dict containing the results.
-        :rtype: dict
-        """
-
-        try:
-            results = json.loads(resp.text)
-            resp.raise_for_status()
-        except JSONDecodeError:
-            raise ValueError("Error in parsing: {}".format(resp.text))
-        except requests.RequestException as e:
-            if "errorCode" in results:
-                raise AtlasException(resp.text)
-            else:
-                raise requests.RequestException(resp.text)
-
-        return results
 
     def delete_entity(self, guid):
         """
@@ -112,7 +87,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
             )
 
-        results = self._handle_response(deleteEntity)
+        results = _handle_response(deleteEntity)
 
         return results
 
@@ -356,7 +331,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getEntity)
+        results = _handle_response(getEntity)
 
         return results
 
@@ -393,7 +368,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getEntity)
+        results = _handle_response(getEntity)
 
         return results
 
@@ -464,7 +439,7 @@ class AtlasClient(AtlasBaseClient):
             raise ValueError(
                 "The provided combination of arguments is not supported. Either provide a guid or type name and qualified name")
 
-        results = self._handle_response(putEntity)
+        results = _handle_response(putEntity)
 
         return results
 
@@ -486,7 +461,7 @@ class AtlasClient(AtlasBaseClient):
             headers=self.authentication.get_authentication_headers(),
             **self._requests_args
         )
-        results = self._handle_response(getClassification)
+        results = _handle_response(getClassification)
         return results
 
     def get_entity_classifications(self, guid):
@@ -509,7 +484,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getClassification)
+        results = _handle_response(getClassification)
 
         return results
 
@@ -539,7 +514,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getEntity)
+        results = _handle_response(getEntity)
 
         return results
 
@@ -562,7 +537,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getResponse)
+        results = _handle_response(getResponse)
 
         return results
 
@@ -585,7 +560,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getTypeDefs)
+        results = _handle_response(getTypeDefs)
 
         return results
 
@@ -635,7 +610,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(getTypeDef)
+        results = _handle_response(getTypeDef)
 
         return results
 
@@ -833,7 +808,7 @@ class AtlasClient(AtlasBaseClient):
             headers=self.authentication.get_authentication_headers(),
             **self._requests_args
         )
-        results = self._handle_response(getHeaders)
+        results = _handle_response(getHeaders)
 
         output = dict()
         for typedef in results:
@@ -1193,7 +1168,7 @@ class AtlasClient(AtlasBaseClient):
                 headers=self.authentication.get_authentication_headers(),
                 **self._requests_args
             )
-            results = self._handle_response(upload_typedefs_results)
+            results = _handle_response(upload_typedefs_results)
         else:
             # Look up all entities by their header
             types_from_client = self._get_typedefs_header()
@@ -1219,7 +1194,7 @@ class AtlasClient(AtlasBaseClient):
                     headers=self.authentication.get_authentication_headers(),
                     **self._requests_args
                 )
-                results_new = self._handle_response(upload_new)
+                results_new = _handle_response(upload_new)
 
             results_exist = {}
             if existing_types and sum([len(defs) for defs in existing_types.values()]) > 0:
@@ -1228,7 +1203,7 @@ class AtlasClient(AtlasBaseClient):
                     headers=self.authentication.get_authentication_headers(),
                     **self._requests_args
                 )
-                results_exist = self._handle_response(upload_exist)
+                results_exist = _handle_response(upload_exist)
 
             # Merge the results
             results = results_new
@@ -1312,7 +1287,7 @@ class AtlasClient(AtlasBaseClient):
                     headers=self.authentication.get_authentication_headers(),
                     **self._requests_args
                 )
-                temp_results = self._handle_response(postBulkEntities)
+                temp_results = _handle_response(postBulkEntities)
                 results.append(temp_results)
 
         else:
@@ -1323,7 +1298,7 @@ class AtlasClient(AtlasBaseClient):
                 **self._requests_args
             )
 
-            results = self._handle_response(postBulkEntities)
+            results = _handle_response(postBulkEntities)
 
         return results
 
@@ -1359,7 +1334,7 @@ class AtlasClient(AtlasBaseClient):
             **self._requests_args
         )
 
-        results = self._handle_response(relationshipResp)
+        results = _handle_response(relationshipResp)
 
         return results
 
@@ -1378,7 +1353,7 @@ class AtlasClient(AtlasBaseClient):
                 headers=self.authentication.get_authentication_headers(),
                 **self._requests_args
             )
-            results = self._handle_response(postSearchResults)
+            results = _handle_response(postSearchResults)
             return_values = results["value"]
             return_count = len(return_values)
 
@@ -1469,7 +1444,7 @@ class AtlasClient(AtlasBaseClient):
             headers=self.authentication.get_authentication_headers(),
             **self._requests_args
         )
-        results = self._handle_response(getLineageRequest)
+        results = _handle_response(getLineageRequest)
         return results
 
     def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
@@ -1684,7 +1659,7 @@ class PurviewClient(AtlasClient):
             requests_args = AtlasBaseClient._parse_requests_args(**kwargs)
 
         glossary = PurviewGlossaryClient(endpoint_url, authentication, requests_args = requests_args)
-        self.collections = PurviewCollectionsClient(endpoint_url, authentication)
+        self.collections = PurviewCollectionsClient(f"https://{account_name.lower()}.purview.azure.com/", authentication, requests_args = requests_args)
         self.msgraph = MsGraphClient(authentication, requests_args = requests_args)
         self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication, requests_args = requests_args)
         super().__init__(endpoint_url, authentication, glossary = glossary, requests_args = requests_args, **kwargs)
@@ -1724,7 +1699,7 @@ class PurviewClient(AtlasClient):
             headers=self.authentication.get_authentication_headers(),
             **self._requests_args
         )
-        results = self._handle_response(getLineageRequest)
+        results = _handle_response(getLineageRequest)
         return results
 
     def import_terms(self, csv_path, glossary_name="Glossary", glossary_guid=None):
