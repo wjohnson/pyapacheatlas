@@ -361,3 +361,25 @@ def batch_dependent_entities(entities, batch_size=1000):
         output_batches.append(sub_output_batch)
 
     return output_batches
+
+def _handle_response(resp):
+    """
+    Safely handle an Atlas Response and return the results if valid.
+
+    :param Response resp: The response from the request method.
+    :return: A dict containing the results.
+    :rtype: dict
+    """
+
+    try:
+        results = json.loads(resp.text)
+        resp.raise_for_status()
+    except JSONDecodeError:
+        raise ValueError("Error in parsing: {}".format(resp.text))
+    except requests.RequestException as e:
+        if "errorCode" in results:
+            raise AtlasException(resp.text)
+        else:
+            raise requests.RequestException(resp.text)
+
+    return results
