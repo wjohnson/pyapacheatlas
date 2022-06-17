@@ -76,7 +76,13 @@ jobs:
         TAG_VERSION=$(echo $GITHUB_REF | sed 's#.*/##')
         if [[ "$TAG_VERSION" == "$CODE_VERSION" ]]; then echo "Match"; else echo "No Match" && exit 1; fi
         echo ::set-output name=package_version::$TAG_VERSION
-      id: vnum      
+      id: vnum
+
+    - name: Upload Package Artifact for Github
+      uses: actions/upload-artifact@v3
+      with:
+        name: PythonDistributions
+        path: ./dist/
 
     - name: Publish to Test PyPI
       if: github.event_name == 'release' && github.event.action == 'created'
