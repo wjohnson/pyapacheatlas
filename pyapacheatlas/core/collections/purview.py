@@ -1,6 +1,4 @@
 import logging
-from sys import api_version
-from turtle import update
 from typing import List, Union
 
 from ..entity import AtlasEntity
