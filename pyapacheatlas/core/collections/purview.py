@@ -59,7 +59,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
             atlas_endpoint,
             json = payload,
             params = {"api-version": api_version},
-            headers = self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
         results = _handle_response(singleEntityResponse)
@@ -109,7 +109,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
                     atlas_endpoint,
                     json=batch,
                     params = {"api-version": api_version},
-                    headers=self.authentication.get_authentication_headers(),
+                    headers = self.generate_request_headers(),
                     **self._requests_args
                 )
                 temp_results = _handle_response(postBulkEntities)
@@ -120,7 +120,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
                 atlas_endpoint,
                 json=payload,
                 params = {"api-version": api_version},
-                headers=self.authentication.get_authentication_headers(),
+                headers = self.generate_request_headers(),
                 **self._requests_args
             )
 
@@ -195,7 +195,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
             atlas_endpoint,
             json = {"entityGuids":guids},
             params = {"api-version": api_version},
-            headers = self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
         results = _handle_response(singleEntityResponse)
@@ -211,7 +211,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
                 return
             collectionsListGet = requests.get(
                 updated_endpoint,
-                headers = self.authentication.get_authentication_headers(),
+                headers = self.generate_request_headers(),
                 **self._requests_args
             )
 

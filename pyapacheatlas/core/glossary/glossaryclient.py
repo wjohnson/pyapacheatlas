@@ -36,7 +36,7 @@ class GlossaryClient(AtlasBaseClient):
         getResult = requests.get(
             atlas_endpoint,
             params={"limit": limit, "offset": offset, "sort": sort_order},
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -78,7 +78,7 @@ class GlossaryClient(AtlasBaseClient):
                 atlas_endpoint = atlas_endpoint + "/detailed"
             getResult = requests.get(
                 atlas_endpoint,
-                headers=self.authentication.get_authentication_headers(),
+                headers = self.generate_request_headers(),
                 **self._requests_args
             )
             results = self._handle_response(getResult)
@@ -136,7 +136,7 @@ class GlossaryClient(AtlasBaseClient):
 
             getTerms = requests.get(
                 atlas_endpoint,
-                headers=self.authentication.get_authentication_headers(),
+                headers = self.generate_request_headers(),
                 **self._requests_args
             )
             results = self._handle_response(getTerms)
@@ -181,7 +181,7 @@ class GlossaryClient(AtlasBaseClient):
             atlas_endpoint,
             json=payload,
             params=kwargs.get("parameters", {}),
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -214,7 +214,7 @@ class GlossaryClient(AtlasBaseClient):
             atlas_endpoint,
             json=payload,
             params=kwargs.get("parameters", {}),
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -250,7 +250,7 @@ class GlossaryClient(AtlasBaseClient):
         getAssignments = requests.get(
             atlas_endpoint,
             params={"limit": limit, "offset": offset, "sort": sort},
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -311,7 +311,7 @@ class GlossaryClient(AtlasBaseClient):
 
         postAssignment = requests.post(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             json=json_entities,
             **self._requests_args
         )
@@ -400,7 +400,7 @@ class GlossaryClient(AtlasBaseClient):
 
         deleteAssignment = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             json=json_entities,
             **self._requests_args
         )
@@ -516,7 +516,7 @@ class PurviewGlossaryClient(GlossaryClient):
             raise ValueError(
                 "Either glossary_name or glossary_guid must be defined.")
 
-        headers = self.authentication.get_authentication_headers()
+        headers = self.generate_request_headers()
         # Pop the default of application/json so that request can fill in the
         # multipart/form-data; boundary=xxxx that is automatically generated
         # when using the files argument.
@@ -552,7 +552,7 @@ class PurviewGlossaryClient(GlossaryClient):
 
         postResp = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -599,7 +599,7 @@ class PurviewGlossaryClient(GlossaryClient):
         postResp = requests.post(
             atlas_endpoint,
             json=guids,
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 

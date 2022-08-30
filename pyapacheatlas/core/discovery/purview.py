@@ -52,7 +52,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             atlas_endpoint,
             json=req_body,
             params={"api-version": api_version},
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -96,7 +96,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             atlas_endpoint,
             json=req_body,
             params={"api-version": api_version},
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -164,7 +164,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             atlas_endpoint,
             json=req_body,
             params={"api-version": api_version},
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -215,7 +215,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             atlas_endpoint,
             json=req_body,
             params={"api-version": api_version},
-            headers=self.authentication.get_authentication_headers(),
+            headers = self.generate_request_headers(),
             **self._requests_args
         )
 
