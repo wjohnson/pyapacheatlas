@@ -1,3 +1,4 @@
+from .. import __version__
 from functools import wraps
 import json
 from json import JSONDecodeError
@@ -14,7 +15,7 @@ class AtlasBaseClient():
         else:
             self._requests_args = {}
         super().__init__()
-    
+
     @staticmethod
     def _parse_requests_args(**kwargs):
         output = dict()
@@ -44,6 +45,11 @@ class AtlasBaseClient():
                 raise requests.RequestException(resp.text)
 
         return results
+
+    def generate_request_headers(self):
+        auth = {} if self.authentication is None else self.authentication.get_authentication_headers()
+        useragent = {"User-Agent": "pyapacheatlas/{0} {1}".format(__version__, requests.utils.default_headers().get("User-Agent"))}
+        return dict(**auth, **useragent)
 
 
 class AtlasException(BaseException):
@@ -312,7 +318,7 @@ def batch_dependent_entities(entities, batch_size=1000):
     maximized_batches = []
 
     # Greedily maximize
-    while(len(ordered_sets) > 0):
+    while (len(ordered_sets) > 0):
         # Take the first (presumably the smallest) and start building it up
         principal_set = ordered_sets.pop(0)
         # We then need to have a list of the sets that will be deleted / merged
@@ -361,6 +367,7 @@ def batch_dependent_entities(entities, batch_size=1000):
         output_batches.append(sub_output_batch)
 
     return output_batches
+
 
 def _handle_response(resp):
     """
