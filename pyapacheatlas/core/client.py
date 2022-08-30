@@ -6,6 +6,7 @@ from .typedef import BaseTypeDef, TypeCategory
 from .msgraph import MsGraphClient
 from .entity import AtlasClassification, AtlasEntity
 from ..auth.base import AtlasAuthBase
+from .. import __version__
 import logging
 import re
 import requests
@@ -83,7 +84,7 @@ class AtlasClient(AtlasBaseClient):
             "/entity/bulk?guid={}".format(guid_str)
         deleteEntity = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
             )
 
@@ -129,7 +130,7 @@ class AtlasClient(AtlasBaseClient):
             f"/entity/guid/{guid}/businessmetadata"
         deleteBizMeta = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             params={"isOverwrite":force_update},
             json=businessMetadata,
             **self._requests_args
@@ -162,7 +163,7 @@ class AtlasClient(AtlasBaseClient):
             f"/relationship/guid/{guid}"
         deleteType = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
             )
 
@@ -190,7 +191,7 @@ class AtlasClient(AtlasBaseClient):
             f"/types/typedef/name/{name}"
         deleteType = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
             )
 
@@ -251,7 +252,7 @@ class AtlasClient(AtlasBaseClient):
         deleteType = requests.delete(
             atlas_endpoint,
             json=payload,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
             )
 
@@ -327,7 +328,7 @@ class AtlasClient(AtlasBaseClient):
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -364,7 +365,7 @@ class AtlasClient(AtlasBaseClient):
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -403,7 +404,7 @@ class AtlasClient(AtlasBaseClient):
                 atlas_endpoint,
                 json=attribute_value,
                 params={"name": attribute_name},
-                headers=self.authentication.get_authentication_headers(),
+                headers=self.generate_request_headers(),
                 **self._requests_args
             )
         # TODO: Multiple attributes could be supported for guid by looking up
@@ -432,7 +433,7 @@ class AtlasClient(AtlasBaseClient):
                 atlas_endpoint,
                 json=entityInfo,
                 params={"attr:qualifiedName": qualifiedName},
-                headers=self.authentication.get_authentication_headers(),
+                headers=self.generate_request_headers(),
                 **self._requests_args
             )
         else:
@@ -458,7 +459,7 @@ class AtlasClient(AtlasBaseClient):
             f"/entity/guid/{guid}/classification/{classificationName}"
         getClassification = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
         results = _handle_response(getClassification)
@@ -480,7 +481,7 @@ class AtlasClient(AtlasBaseClient):
 
         getClassification = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -510,7 +511,7 @@ class AtlasClient(AtlasBaseClient):
         getEntity = requests.get(
             atlas_endpoint,
             params=parameters,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -533,7 +534,7 @@ class AtlasClient(AtlasBaseClient):
 
         getResponse = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -556,7 +557,7 @@ class AtlasClient(AtlasBaseClient):
 
         getTypeDefs = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -606,7 +607,7 @@ class AtlasClient(AtlasBaseClient):
 
         getTypeDef = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -805,7 +806,7 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + "/types/typedefs/headers"
         getHeaders = requests.get(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
         results = _handle_response(getHeaders)
@@ -865,7 +866,7 @@ class AtlasClient(AtlasBaseClient):
         postBulkClassifications = requests.post(
             atlas_endpoint,
             json=payload,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -897,7 +898,7 @@ class AtlasClient(AtlasBaseClient):
         postAddMultiClassifications = requests.post(
             atlas_endpoint,
             json=classifications,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -927,7 +928,7 @@ class AtlasClient(AtlasBaseClient):
         putUpdateMultiClassifications = requests.put(
             atlas_endpoint,
             json=classifications,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -1038,7 +1039,7 @@ class AtlasClient(AtlasBaseClient):
 
         deleteEntityClassification = requests.delete(
             atlas_endpoint,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -1165,7 +1166,7 @@ class AtlasClient(AtlasBaseClient):
             # This is just a plain push of new entities
             upload_typedefs_results = requests.post(
                 atlas_endpoint, json=payload,
-                headers=self.authentication.get_authentication_headers(),
+                headers=self.generate_request_headers(),
                 **self._requests_args
             )
             results = _handle_response(upload_typedefs_results)
@@ -1191,7 +1192,7 @@ class AtlasClient(AtlasBaseClient):
             if new_types and sum([len(defs) for defs in new_types.values()]) > 0:
                 upload_new = requests.post(
                     atlas_endpoint, json=new_types,
-                    headers=self.authentication.get_authentication_headers(),
+                    headers=self.generate_request_headers(),
                     **self._requests_args
                 )
                 results_new = _handle_response(upload_new)
@@ -1200,7 +1201,7 @@ class AtlasClient(AtlasBaseClient):
             if existing_types and sum([len(defs) for defs in existing_types.values()]) > 0:
                 upload_exist = requests.put(
                     atlas_endpoint, json=existing_types,
-                    headers=self.authentication.get_authentication_headers(),
+                    headers=self.generate_request_headers(),
                     **self._requests_args
                 )
                 results_exist = _handle_response(upload_exist)
@@ -1284,7 +1285,7 @@ class AtlasClient(AtlasBaseClient):
                 postBulkEntities = requests.post(
                     atlas_endpoint,
                     json=batch,
-                    headers=self.authentication.get_authentication_headers(),
+                    headers=self.generate_request_headers(),
                     **self._requests_args
                 )
                 temp_results = _handle_response(postBulkEntities)
@@ -1294,7 +1295,7 @@ class AtlasClient(AtlasBaseClient):
             postBulkEntities = requests.post(
                 atlas_endpoint,
                 json=payload,
-                headers=self.authentication.get_authentication_headers(),
+                headers=self.generate_request_headers(),
                 **self._requests_args
             )
 
@@ -1330,7 +1331,7 @@ class AtlasClient(AtlasBaseClient):
         relationshipResp = requests.post(
             atlas_endpoint,
             json=relationship,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -1350,7 +1351,7 @@ class AtlasClient(AtlasBaseClient):
             postSearchResults = requests.post(
                 atlas_endpoint,
                 json=search_params,
-                headers=self.authentication.get_authentication_headers(),
+                headers=self.generate_request_headers(),
                 **self._requests_args
             )
             results = _handle_response(postSearchResults)
@@ -1441,7 +1442,7 @@ class AtlasClient(AtlasBaseClient):
             atlas_endpoint,
             params={"depth": depth, "width": width, "direction": direction,
                     "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
         results = _handle_response(getLineageRequest)
@@ -1489,7 +1490,7 @@ class AtlasClient(AtlasBaseClient):
             atlas_endpoint,
             params=parameters,
             json=labels,
-            headers=self.authentication.get_authentication_headers())
+            headers=self.generate_request_headers())
 
         # Can't use _handle_response since it expects json returned
         try:
@@ -1546,14 +1547,14 @@ class AtlasClient(AtlasBaseClient):
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
-                headers=self.authentication.get_authentication_headers())
+                headers=self.generate_request_headers())
             verb = "overwrote"
         else:
             updateResp = requests.put(
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
-                headers=self.authentication.get_authentication_headers())
+                headers=self.generate_request_headers())
 
         # Can't use _handle_response since it expects json returned
         try:
@@ -1605,7 +1606,7 @@ class AtlasClient(AtlasBaseClient):
             atlas_endpoint,
             params={"isOverwrite":force_update},
             json=businessMetadata,
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
 
@@ -1696,7 +1697,7 @@ class PurviewClient(AtlasClient):
             atlas_endpoint,
             params={"direction": direction, "getDerivedLineage": getDerivedLineage,
                     "offset": offset, "limit": limit},
-            headers=self.authentication.get_authentication_headers(),
+            headers=self.generate_request_headers(),
             **self._requests_args
         )
         results = _handle_response(getLineageRequest)
@@ -1806,3 +1807,8 @@ class PurviewClient(AtlasClient):
             "PurviewClient.upload_term is being deprecated. Please use PurviewClient.glossary.upload_term instead.")
         results = self.glossary.upload_term(term, includeTermHierarchy)
         return results
+
+    def generate_request_headers(self):
+        auth = self.authentication.get_authentication_headers()
+        useragent = {"User-Agent": "pyapacheatlas/{0} {1}".format(__version__, requests.utils.default_headers().get("User-Agent"))}
+        return dict(**auth, **useragent)
