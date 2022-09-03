@@ -361,12 +361,10 @@ class AtlasClient(AtlasBaseClient):
                 f"/entity/guid/{guid}"
             attribute_name = list(attributes.keys())[0]
             attribute_value = attributes[attribute_name]
-            putEntity = requests.put(
+            putEntity = self._put_http(
                 atlas_endpoint,
                 json=attribute_value,
-                params={"name": attribute_name},
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                params={"name": attribute_name}
             )
         # TODO: Multiple attributes could be supported for guid by looking up
         # the qualified name and type and then re-running the command with
@@ -390,20 +388,16 @@ class AtlasClient(AtlasBaseClient):
             entityInfo = {"entity": entity,
                           "referredEntities": get_response["referredEntities"]}
 
-            putEntity = requests.put(
+            putEntity = self._put_http(
                 atlas_endpoint,
                 json=entityInfo,
-                params={"attr:qualifiedName": qualifiedName},
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                params={"attr:qualifiedName": qualifiedName}
             )
         else:
             raise ValueError(
                 "The provided combination of arguments is not supported. Either provide a guid or type name and qualified name")
 
-        results = _handle_response(putEntity)
-
-        return results
+        return putEntity.body
 
     def get_entity_classification(self, guid, classificationName):
         """
@@ -858,19 +852,13 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classifications"
 
-        putUpdateMultiClassifications = requests.put(
+        putUpdateMultiClassifications = self._put_http(
             atlas_endpoint,
-            json=classifications,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=classifications
         )
 
-        try:
-            putUpdateMultiClassifications.raise_for_status()
-        except requests.RequestException:
-            raise Exception(putUpdateMultiClassifications.text)
-
-        results = [c["typeName"] for c in classifications]
+        if putUpdateMultiClassifications.is_successful:
+            results = [c["typeName"] for c in classifications]
         return results
 
     @PurviewLimitation
@@ -1128,12 +1116,11 @@ class AtlasClient(AtlasBaseClient):
 
             results_exist = {}
             if existing_types and sum([len(defs) for defs in existing_types.values()]) > 0:
-                upload_exist = requests.put(
-                    atlas_endpoint, json=existing_types,
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                upload_exist = self._put_http(
+                    atlas_endpoint,
+                    json=existing_types
                 )
-                results_exist = _handle_response(upload_exist)
+                results_exist = upload_exist.body
 
             # Merge the results
             results = results_new
@@ -1466,26 +1453,20 @@ class AtlasClient(AtlasBaseClient):
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
-                headers = self.generate_request_headers())
+            )
             verb = "overwrote"
         else:
-            updateResp = requests.put(
+            updateResp = self._put_http(
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
-                headers = self.generate_request_headers())
+            )
 
         # Can't use _handle_response since it expects json returned
-        try:
-            updateResp.raise_for_status()
-        except requests.RequestException as e:
-            if "errorCode" in updateResp:
-                raise AtlasException(updateResp.text)
-            else:
-                raise requests.RequestException(updateResp.text)
+        if updateResp.is_successful:
+            action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
+            results = {"message": f"Successfully {verb} labels for {action}"}
 
-        action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
-        results = {"message": f"Successfully {verb} labels for {action}"}
         return results
 
     def update_businessMetadata(self, guid, businessMetadata, force_update=False):

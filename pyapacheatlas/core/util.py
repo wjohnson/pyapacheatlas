@@ -105,8 +105,18 @@ class AtlasBaseClient():
             **self._requests_args
         ))
     
-    def _put_http(self, url:str, data):
-        return None
+    def _put_http(self, url:str, params:dict=None, json:Union[list, dict]=None):
+        extra_args = {}
+        if json:
+            extra_args["json"]=json
+        if params:
+            extra_args["params"]=params
+        return AtlasResponse(requests.put(
+            url,
+            headers = self.generate_request_headers(),
+            **extra_args,
+            **self._requests_args
+        ))
 
     def generate_request_headers(self):
         auth = {} if self.authentication is None else self.authentication.get_authentication_headers()
