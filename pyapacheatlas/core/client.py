@@ -1,3 +1,4 @@
+from operator import is_
 from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly, _handle_response
 from .collections.purview import PurviewCollectionsClient
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
@@ -72,7 +73,6 @@ class AtlasClient(AtlasBaseClient):
             mutatedEntities, and partialUpdatedEntities (list).
         :rtype: dict(str, Union(dict,list))
         """
-        results = None
 
         if isinstance(guid, list):
             guid_str = '&guid='.join(guid)
@@ -81,15 +81,11 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
-        deleteEntity = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteEntity = self._delete_http(
+            atlas_endpoint
             )
 
-        results = _handle_response(deleteEntity)
-
-        return results
+        return deleteEntity.body
 
     def delete_businessMetadata(self, guid, businessMetadata, force_update=True):
         """
@@ -127,21 +123,15 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/businessmetadata"
-        deleteBizMeta = requests.delete(
+        deleteBizMeta = self._delete_http(
             atlas_endpoint,
-            headers = self.generate_request_headers(),
             params={"isOverwrite":force_update},
-            json=businessMetadata,
-            **self._requests_args
+            json=businessMetadata
             )
 
-        try:
-            deleteBizMeta.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteBizMeta.text)
-
-        results = {
-            "message": f"Successfully deleted businessMetadata on entity with guid {guid}"}
+        if deleteBizMeta.is_successful:
+            results = {
+                "message": f"Successfully deleted businessMetadata on entity with guid {guid}"}
         return results
 
     def delete_relationship(self, guid):
@@ -160,19 +150,13 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             f"/relationship/guid/{guid}"
-        deleteType = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteRelationship = self._delete_http(
+            atlas_endpoint
             )
 
-        try:
-            deleteType.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteType.text)
-
-        results = {
-            "message": f"Successfully deleted relationship with guid {guid}"}
+        if deleteRelationship.is_successful:
+            results = {
+                "message": f"Successfully deleted relationship with guid {guid}"}
         return results
 
     def delete_type(self, name):
@@ -188,18 +172,11 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             f"/types/typedef/name/{name}"
-        deleteType = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteType = self._delete_http(
+            atlas_endpoint
             )
-
-        try:
-            deleteType.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteType.text)
-
-        results = {"message": f"successfully delete {name}"}
+        if deleteType.is_successful:
+            results = {"message": f"successfully delete {name}"}
         return results
 
     def delete_typedefs(self, **kwargs):
@@ -248,19 +225,12 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             "/types/typedefs"
-        deleteType = requests.delete(
+        deleteType = self._delete_http(
             atlas_endpoint,
-            json=payload,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=payload
             )
-
-        try:
-            deleteType.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteType.text)
-
-        results = {"message": f"Successfully deleted type(s)"}
+        if deleteType.is_successful:
+            results = {"message": f"Successfully deleted type(s)"}
         return results
 
     def get_entity(self, guid=None, qualifiedName=None, typeName=None, ignoreRelationships=False, minExtInfo=False):
@@ -324,16 +294,12 @@ class AtlasClient(AtlasBaseClient):
         # Support the adding or removing of relationships and extra info
         parameters.update(
             {"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
-        getEntity = requests.get(
+        getEntity = self._get_http(
             atlas_endpoint,
-            params=parameters,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=parameters
         )
 
-        results = _handle_response(getEntity)
-
-        return results
+        return getEntity.body
 
     def get_single_entity(self, guid=None, ignoreRelationships=False, minExtInfo=False):
         """
@@ -361,16 +327,12 @@ class AtlasClient(AtlasBaseClient):
         # Support the adding or removing of relationships and extra info
         parameters.update(
             {"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
-        getEntity = requests.get(
+        getEntity = self._get_http(
             atlas_endpoint,
-            params=parameters,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=parameters
         )
 
-        results = _handle_response(getEntity)
-
-        return results
+        return getEntity.body
 
     def partial_update_entity(self, guid=None, typeName=None, qualifiedName=None, attributes={}):
         """
@@ -399,12 +361,10 @@ class AtlasClient(AtlasBaseClient):
                 f"/entity/guid/{guid}"
             attribute_name = list(attributes.keys())[0]
             attribute_value = attributes[attribute_name]
-            putEntity = requests.put(
+            putEntity = self._put_http(
                 atlas_endpoint,
                 json=attribute_value,
-                params={"name": attribute_name},
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                params={"name": attribute_name}
             )
         # TODO: Multiple attributes could be supported for guid by looking up
         # the qualified name and type and then re-running the command with
@@ -428,20 +388,16 @@ class AtlasClient(AtlasBaseClient):
             entityInfo = {"entity": entity,
                           "referredEntities": get_response["referredEntities"]}
 
-            putEntity = requests.put(
+            putEntity = self._put_http(
                 atlas_endpoint,
                 json=entityInfo,
-                params={"attr:qualifiedName": qualifiedName},
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                params={"attr:qualifiedName": qualifiedName}
             )
         else:
             raise ValueError(
                 "The provided combination of arguments is not supported. Either provide a guid or type name and qualified name")
 
-        results = _handle_response(putEntity)
-
-        return results
+        return putEntity.body
 
     def get_entity_classification(self, guid, classificationName):
         """
@@ -456,13 +412,10 @@ class AtlasClient(AtlasBaseClient):
         """
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classification/{classificationName}"
-        getClassification = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getClassification = self._get_http(
+            atlas_endpoint
         )
-        results = _handle_response(getClassification)
-        return results
+        return getClassification.body
 
     def get_entity_classifications(self, guid):
         """
@@ -478,15 +431,11 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classifications"
 
-        getClassification = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getClassification = self._get_http(
+            atlas_endpoint
         )
 
-        results = _handle_response(getClassification)
-
-        return results
+        return getClassification.body
 
     def get_entity_header(self, guid=None):
         """
@@ -501,22 +450,17 @@ class AtlasClient(AtlasBaseClient):
             array of classifications, and an array of glossary term headers.
         :rtype: dict
         """
-        results = None
         parameters = {}
 
         atlas_endpoint = self.endpoint_url + \
             "/entity/guid/{}/header".format(guid)
 
-        getEntity = requests.get(
+        getEntity = self._get_http(
             atlas_endpoint,
-            params=parameters,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=parameters
         )
 
-        results = _handle_response(getEntity)
-
-        return results
+        return getEntity.body
 
     def get_relationship(self, guid):
         """
@@ -528,18 +472,13 @@ class AtlasClient(AtlasBaseClient):
             attributes.
         :rtype: dict(str, dict)
         """
-        results = None
         atlas_endpoint = self.endpoint_url + f"/relationship/guid/{guid}"
 
-        getResponse = requests.get(
+        getResponse = self._get_http(
             atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
         )
 
-        results = _handle_response(getResponse)
-
-        return results
+        return getResponse.body
 
     def get_all_typedefs(self):
         """
@@ -551,18 +490,13 @@ class AtlasClient(AtlasBaseClient):
             {"entityDefs", "relationshipDefs"}.
         :rtype: dict(str, list(dict))
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
-        getTypeDefs = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getTypeDefs = self._get_http(
+            atlas_endpoint
         )
 
-        results = _handle_response(getTypeDefs)
-
-        return results
+        return getTypeDefs.body
 
     def get_typedef(self, type_category=None, guid=None, name=None):
         """
@@ -604,15 +538,11 @@ class AtlasClient(AtlasBaseClient):
         else:
             raise ValueError("One of guid or name must be defined.")
 
-        getTypeDef = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getTypeDef = self._get_http(
+            atlas_endpoint
         )
 
-        results = _handle_response(getTypeDef)
-
-        return results
+        return getTypeDef.body
 
     def get_glossary(self, name="Glossary", guid=None, detailed=False):
         """
@@ -803,12 +733,10 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict(str, list(str))
         """
         atlas_endpoint = self.endpoint_url + "/types/typedefs/headers"
-        getHeaders = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getHeaders = self._get_http(
+            atlas_endpoint
         )
-        results = _handle_response(getHeaders)
+        results = getHeaders.body
 
         output = dict()
         for typedef in results:
@@ -862,21 +790,15 @@ class AtlasClient(AtlasBaseClient):
             "entityGuids": entityGuids
         }
 
-        postBulkClassifications = requests.post(
+        postBulkClassifications = self._post_http(
             atlas_endpoint,
-            json=payload,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=payload
         )
 
-        try:
-            postBulkClassifications.raise_for_status()
-        except requests.RequestException:
-            raise AtlasException(postBulkClassifications.text)
-
-        results = {"message": f"Successfully assigned {classification_name}",
-                   "entityGuids": entityGuids
-                   }
+        if postBulkClassifications.is_successful:
+            results = {"message": f"Successfully assigned {classification_name}",
+                    "entityGuids": entityGuids
+                    }
         return results
 
     def _classify_entity_adds(self, guid, classifications):
@@ -894,19 +816,14 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classifications"
 
-        postAddMultiClassifications = requests.post(
+        postAddMultiClassifications = self._post_http(
             atlas_endpoint,
-            json=classifications,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=classifications
         )
 
-        try:
-            postAddMultiClassifications.raise_for_status()
-        except requests.RequestException:
-            raise Exception(postAddMultiClassifications.text)
+        if postAddMultiClassifications.is_successful:
+            results = [c["typeName"] for c in classifications]
 
-        results = [c["typeName"] for c in classifications]
         return results
 
     def _classify_entity_updates(self, guid, classifications):
@@ -924,19 +841,13 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classifications"
 
-        putUpdateMultiClassifications = requests.put(
+        putUpdateMultiClassifications = self._put_http(
             atlas_endpoint,
-            json=classifications,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=classifications
         )
 
-        try:
-            putUpdateMultiClassifications.raise_for_status()
-        except requests.RequestException:
-            raise Exception(putUpdateMultiClassifications.text)
-
-        results = [c["typeName"] for c in classifications]
+        if putUpdateMultiClassifications.is_successful:
+            results = [c["typeName"] for c in classifications]
         return results
 
     @PurviewLimitation
@@ -1036,18 +947,12 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classification/{classificationName}"
 
-        deleteEntityClassification = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteEntityClassification = self._delete_http(
+            atlas_endpoint
         )
 
-        try:
-            deleteEntityClassification.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteEntityClassification.text)
-
-        results = {"message":
+        if deleteEntityClassification.is_successful:
+            results = {"message":
                    f"Successfully removed classification: {classificationName} from {guid}.",
                    "guid": guid,
                    }
@@ -1163,12 +1068,11 @@ class AtlasClient(AtlasBaseClient):
 
         if not force_update:
             # This is just a plain push of new entities
-            upload_typedefs_results = requests.post(
-                atlas_endpoint, json=payload,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+            upload_typedefs_results = self._post_http(
+                atlas_endpoint,
+                json=payload
             )
-            results = _handle_response(upload_typedefs_results)
+            results = upload_typedefs_results.body
         else:
             # Look up all entities by their header
             types_from_client = self._get_typedefs_header()
@@ -1182,28 +1086,28 @@ class AtlasClient(AtlasBaseClient):
                 existing_types[cat] = []
                 new_types[cat] = []
                 for t in typelist:
-                    if t["name"] in types_from_client[cat]:
+                    if cat not in types_from_client:
+                        new_types[cat].append(t)
+                    elif t["name"] in types_from_client[cat]:
                         existing_types[cat].append(t)
                     else:
                         new_types[cat].append(t)
 
             results_new = {}
             if new_types and sum([len(defs) for defs in new_types.values()]) > 0:
-                upload_new = requests.post(
-                    atlas_endpoint, json=new_types,
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                upload_new = self._post_http(
+                    atlas_endpoint,
+                    json=new_types
                 )
-                results_new = _handle_response(upload_new)
+                results_new = upload_new.body
 
             results_exist = {}
             if existing_types and sum([len(defs) for defs in existing_types.values()]) > 0:
-                upload_exist = requests.put(
-                    atlas_endpoint, json=existing_types,
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                upload_exist = self._put_http(
+                    atlas_endpoint,
+                    json=existing_types
                 )
-                results_exist = _handle_response(upload_exist)
+                results_exist = upload_exist.body
 
             # Merge the results
             results = results_new
@@ -1281,24 +1185,20 @@ class AtlasClient(AtlasBaseClient):
             for batch_id, batch in enumerate(batches):
                 batch_size = len(batch["entities"])
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
-                postBulkEntities = requests.post(
+                postBulkEntities = self._post_http(
                     atlas_endpoint,
-                    json=batch,
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                    json=batch
                 )
-                temp_results = _handle_response(postBulkEntities)
+                temp_results = postBulkEntities.body
                 results.append(temp_results)
 
         else:
-            postBulkEntities = requests.post(
+            postBulkEntities = self._post_http(
                 atlas_endpoint,
-                json=payload,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                json=payload
             )
 
-            results = _handle_response(postBulkEntities)
+            results = postBulkEntities.body
 
         return results
 
@@ -1327,16 +1227,12 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + "/relationship"
 
         # TODO: Handling Updates instead of just creates
-        relationshipResp = requests.post(
+        relationshipResp = self._post_http(
             atlas_endpoint,
-            json=relationship,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=relationship
         )
 
-        results = _handle_response(relationshipResp)
-
-        return results
+        return relationshipResp.body
 
     # TODO: Remove at 1.0.0 release
     def _search_generator(self, search_params, starting_offset=0):
@@ -1347,13 +1243,11 @@ class AtlasClient(AtlasBaseClient):
         offset = starting_offset
 
         while True:
-            postSearchResults = requests.post(
+            postSearchResults = self._post_http(
                 atlas_endpoint,
-                json=search_params,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                json=search_params
             )
-            results = _handle_response(postSearchResults)
+            results = postSearchResults.body
             return_values = results["value"]
             return_count = len(return_values)
 
@@ -1437,15 +1331,13 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/lineage/{guid}"
 
-        getLineageRequest = requests.get(
+        getLineageRequest = self._get_http(
             atlas_endpoint,
             params={"depth": depth, "width": width, "direction": direction,
-                    "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+                    "includeParent": includeParent, "getDerivedLineage": getDerivedLineage}
         )
-        results = _handle_response(getLineageRequest)
-        return results
+
+        return getLineageRequest.body
 
     def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
         """
@@ -1485,23 +1377,15 @@ class AtlasClient(AtlasBaseClient):
             raise ValueError(
                 "Either guid or typeName and qualifiedName must be defined.")
 
-        deleteResp = requests.delete(
+        deleteLabelResp = self._delete_http(
             atlas_endpoint,
             params=parameters,
-            json=labels,
-            headers = self.generate_request_headers())
+            json=labels
+        )
 
-        # Can't use _handle_response since it expects json returned
-        try:
-            deleteResp.raise_for_status()
-        except requests.RequestException as e:
-            if "errorCode" in deleteResp:
-                raise AtlasException(deleteResp.text)
-            else:
-                raise requests.RequestException(deleteResp.text)
-
-        action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
-        results = {"message": f"Successfully deleted labels for {action}"}
+        if deleteLabelResp.is_successful:
+            action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
+            results = {"message": f"Successfully deleted labels for {action}"}
         return results
 
     def update_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None, force_update=False):
@@ -1542,30 +1426,24 @@ class AtlasClient(AtlasBaseClient):
 
         verb = "added"
         if force_update:
-            updateResp = requests.post(
+            updateResp = self._post_http(
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
-                headers = self.generate_request_headers())
+            )
             verb = "overwrote"
         else:
-            updateResp = requests.put(
+            updateResp = self._put_http(
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
-                headers = self.generate_request_headers())
+            )
 
         # Can't use _handle_response since it expects json returned
-        try:
-            updateResp.raise_for_status()
-        except requests.RequestException as e:
-            if "errorCode" in updateResp:
-                raise AtlasException(updateResp.text)
-            else:
-                raise requests.RequestException(updateResp.text)
+        if updateResp.is_successful:
+            action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
+            results = {"message": f"Successfully {verb} labels for {action}"}
 
-        action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
-        results = {"message": f"Successfully {verb} labels for {action}"}
         return results
 
     def update_businessMetadata(self, guid, businessMetadata, force_update=False):
@@ -1601,22 +1479,13 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict(str, str)
         """
         atlas_endpoint= self.endpoint_url + f"/entity/guid/{guid}/businessmetadata"
-        updateBizMeta = requests.post(
+        updateBizMeta = self._post_http(
             atlas_endpoint,
             params={"isOverwrite":force_update},
-            json=businessMetadata,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=businessMetadata
         )
 
-        # Can't use _handle_response since it expects json returned
-        try:
-            updateBizMeta.raise_for_status()
-        except requests.RequestException as e:
-            if isinstance(updateBizMeta, dict) and "errorCode" in updateBizMeta:
-                raise AtlasException(updateBizMeta.text)
-            else:
-                raise requests.RequestException(updateBizMeta.text)
+        # If we made it past here, it's successful!
 
         return {"message": f"Successfully updated business metadata for {guid}"}
 
@@ -1692,15 +1561,13 @@ class PurviewClient(AtlasClient):
             f"/lineage/{guid}/next"
 
         # TODO: Implement paging with offset and limit
-        getLineageRequest = requests.get(
+        getLineageRequest = self._get_http(
             atlas_endpoint,
             params={"direction": direction, "getDerivedLineage": getDerivedLineage,
-                    "offset": offset, "limit": limit},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+                    "offset": offset, "limit": limit}
         )
-        results = _handle_response(getLineageRequest)
-        return results
+
+        return getLineageRequest.body
 
     def import_terms(self, csv_path, glossary_name="Glossary", glossary_guid=None):
         """

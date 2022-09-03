@@ -55,15 +55,13 @@ class PurviewCollectionsClient(AtlasBaseClient):
         else:
             raise ValueError("entity should be an AtlasEntity or dict")
 
-        singleEntityResponse = requests.post(
+        singleEntityResponse = self._post_http(
             atlas_endpoint,
             json = payload,
-            params = {"api-version": api_version},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params = {"api-version": api_version}
         )
-        results = _handle_response(singleEntityResponse)
-        return results
+
+        return singleEntityResponse.body
 
     def upload_entities(
         self,
@@ -105,28 +103,22 @@ class PurviewCollectionsClient(AtlasBaseClient):
             for batch_id, batch in enumerate(batches):
                 batch_size = len(batch["entities"])
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
-                postBulkEntities = requests.post(
+                postBulkEntities = self._post_http(
                     atlas_endpoint,
                     json=batch,
-                    params = {"api-version": api_version},
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                    params = {"api-version": api_version}
                 )
-                temp_results = _handle_response(postBulkEntities)
+                temp_results = postBulkEntities.body
                 results.append(temp_results)
 
         else:
-            postBulkEntities = requests.post(
+            postBulkEntities = self._post_http(
                 atlas_endpoint,
                 json=payload,
-                params = {"api-version": api_version},
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                params = {"api-version": api_version}
             )
 
-            results = _handle_response(postBulkEntities)
-
-        return results
+        return postBulkEntities.body
     
     # TODO: This is duplication with the AtlasClient and should eventually be removed
     @staticmethod
@@ -191,15 +183,13 @@ class PurviewCollectionsClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + f"catalog/api/collections/{collection}/entity/moveHere"
 
-        singleEntityResponse = requests.post(
+        moveEntityResponse = self._post_http(
             atlas_endpoint,
             json = {"entityGuids":guids},
-            params = {"api-version": api_version},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params = {"api-version": api_version}
         )
-        results = _handle_response(singleEntityResponse)
-        return results
+
+        return moveEntityResponse.body
 
     def _list_collections_generator(self, initial_endpoint):
         """
@@ -209,13 +199,11 @@ class PurviewCollectionsClient(AtlasBaseClient):
         while True:
             if updated_endpoint is None:
                 return
-            collectionsListGet = requests.get(
-                updated_endpoint,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+            collectionsListGet = self._get_http(
+                updated_endpoint
             )
 
-            results = _handle_response(collectionsListGet)
+            results = collectionsListGet.body
 
             return_values = results["value"]
             return_count = len(return_values)
@@ -251,3 +239,45 @@ class PurviewCollectionsClient(AtlasBaseClient):
         collection_generator = self._list_collections_generator(atlas_endpoint)
 
         return collection_generator
+    
+    def create_or_update_collection(
+        self,
+        name:str,
+        friendlyName:str,
+        parentCollectionName:str,
+        description:str=None,
+        api_version : str = "2019-11-01-preview",
+    ):
+        """
+        Create or update a collection. This method currently does not support
+        providing a custom collection admin as it requires the metadata policy
+        API.
+
+        For more details: https://docs.microsoft.com/en-us/rest/api/purview/accountdataplane/collections/create-or-update-collection?tabs=HTTP
+
+        :param str name: A unique id for this collection.
+        :param str friendlyName: A friendly name for the collection, visible to users.
+        :param str parentCollectionName: The id for the parent collection.
+        :param str description: Description for the collection
+
+        :return: The current status of the collection.
+        :rtype: dict
+        """
+        payload = {
+            "friendlyName":friendlyName,
+            "parentCollection":{
+                "referenceName":parentCollectionName,
+                "type":"CollectionReference"
+            }
+        }
+        if description:
+            payload["description"] = description
+
+        collection_endpoint = self.endpoint_url + f"collections/{name}"
+        cruCollection = self._put_http(
+            collection_endpoint,
+            params={"api-version": api_version},
+            json=payload
+        )
+
+        return cruCollection.body

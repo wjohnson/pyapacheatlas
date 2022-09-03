@@ -48,17 +48,13 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             )
 
         atlas_endpoint = self.endpoint_url + "/search/autocomplete"
-        postResult = requests.post(
+        postResult = self._post_http(
             atlas_endpoint,
             json=req_body,
-            params={"api-version": api_version},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params={"api-version": api_version}
         )
 
-        results = self._handle_response(postResult)
-
-        return results
+        return postResult.body
 
     # TODO: Having auth issues?
     def browse(self, entityType=None, api_version="2021-05-01-preview", **kwargs):
@@ -92,17 +88,13 @@ class PurviewDiscoveryClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + "/browse"
         # TODO: Implement paging with offset and limit
-        postResult = requests.post(
+        postResult = self._post_http(
             atlas_endpoint,
             json=req_body,
-            params={"api-version": api_version},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params={"api-version": api_version}
         )
 
-        results = self._handle_response(postResult)
-
-        return results
+        return postResult.body
 
     def query(
         self,
@@ -160,17 +152,13 @@ class PurviewDiscoveryClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + "/search/query"
         # TODO: Implement paging with offset and limit
-        postResult = requests.post(
+        postResult = self._post_http(
             atlas_endpoint,
             json=req_body,
-            params={"api-version": api_version},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params={"api-version": api_version}
         )
 
-        results = self._handle_response(postResult)
-
-        return results
+        return postResult.body
 
     def suggest(
         self, keywords=None, filter=None, api_version="2021-05-01-preview", **kwargs
@@ -211,17 +199,13 @@ class PurviewDiscoveryClient(AtlasBaseClient):
             )
 
         atlas_endpoint = self.endpoint_url + "/search/suggest"
-        postResult = requests.post(
+        postResult = self._post_http(
             atlas_endpoint,
             json=req_body,
-            params={"api-version": api_version},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params={"api-version": api_version}
         )
 
-        results = self._handle_response(postResult)
-
-        return results
+        return postResult.body
 
     def _search_generator(self, **kwargs):
         """
