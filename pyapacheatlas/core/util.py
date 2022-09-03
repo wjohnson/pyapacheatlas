@@ -1,3 +1,4 @@
+from typing import Union
 from .. import __version__
 from functools import wraps
 import json
@@ -26,6 +27,7 @@ class AtlasResponse():
         self.body=None
         self.status_code = response.status_code
         self.method = response.request.method
+        self.is_successful = 200 <= response.status_code < 400
         try:
             response.raise_for_status()
             if response.status_code != 204 and response.text and response.text != "":
@@ -90,8 +92,18 @@ class AtlasBaseClient():
     def _post_http(self, url:str, data={}, params:dict = {}, **kwargs):
         return None
     
-    def _delete_http(self, url:str, data):
-        return None
+    def _delete_http(self, url:str, params:dict=None, json:Union[list, dict]=None):
+        extra_args = {}
+        if json:
+            extra_args["json"]=json
+        if params:
+            extra_args["params"]=params
+        return AtlasResponse(requests.delete(
+            url,
+            headers = self.generate_request_headers(),
+            **extra_args,
+            **self._requests_args
+        ))
     
     def _put_http(self, url:str, data):
         return None

@@ -1,3 +1,4 @@
+from operator import is_
 from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly, _handle_response
 from .collections.purview import PurviewCollectionsClient
 from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
@@ -72,7 +73,6 @@ class AtlasClient(AtlasBaseClient):
             mutatedEntities, and partialUpdatedEntities (list).
         :rtype: dict(str, Union(dict,list))
         """
-        results = None
 
         if isinstance(guid, list):
             guid_str = '&guid='.join(guid)
@@ -81,15 +81,11 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
-        deleteEntity = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteEntity = self._delete_http(
+            atlas_endpoint
             )
 
-        results = _handle_response(deleteEntity)
-
-        return results
+        return deleteEntity.body
 
     def delete_businessMetadata(self, guid, businessMetadata, force_update=True):
         """
@@ -127,21 +123,15 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/businessmetadata"
-        deleteBizMeta = requests.delete(
+        deleteBizMeta = self._delete_http(
             atlas_endpoint,
-            headers = self.generate_request_headers(),
             params={"isOverwrite":force_update},
-            json=businessMetadata,
-            **self._requests_args
+            json=businessMetadata
             )
 
-        try:
-            deleteBizMeta.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteBizMeta.text)
-
-        results = {
-            "message": f"Successfully deleted businessMetadata on entity with guid {guid}"}
+        if deleteBizMeta.is_successful:
+            results = {
+                "message": f"Successfully deleted businessMetadata on entity with guid {guid}"}
         return results
 
     def delete_relationship(self, guid):
@@ -160,19 +150,13 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             f"/relationship/guid/{guid}"
-        deleteType = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteRelationship = self._delete_http(
+            atlas_endpoint
             )
 
-        try:
-            deleteType.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteType.text)
-
-        results = {
-            "message": f"Successfully deleted relationship with guid {guid}"}
+        if deleteRelationship.is_successful:
+            results = {
+                "message": f"Successfully deleted relationship with guid {guid}"}
         return results
 
     def delete_type(self, name):
@@ -188,18 +172,11 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             f"/types/typedef/name/{name}"
-        deleteType = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteType = self._delete_http(
+            atlas_endpoint
             )
-
-        try:
-            deleteType.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteType.text)
-
-        results = {"message": f"successfully delete {name}"}
+        if deleteType.is_successful:
+            results = {"message": f"successfully delete {name}"}
         return results
 
     def delete_typedefs(self, **kwargs):
@@ -248,19 +225,12 @@ class AtlasClient(AtlasBaseClient):
 
         atlas_endpoint = self.endpoint_url + \
             "/types/typedefs"
-        deleteType = requests.delete(
+        deleteType = self._delete_http(
             atlas_endpoint,
-            json=payload,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=payload
             )
-
-        try:
-            deleteType.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteType.text)
-
-        results = {"message": f"Successfully deleted type(s)"}
+        if deleteType.is_successful:
+            results = {"message": f"Successfully deleted type(s)"}
         return results
 
     def get_entity(self, guid=None, qualifiedName=None, typeName=None, ignoreRelationships=False, minExtInfo=False):
@@ -1000,18 +970,12 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classification/{classificationName}"
 
-        deleteEntityClassification = requests.delete(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        deleteEntityClassification = self._delete_http(
+            atlas_endpoint
         )
 
-        try:
-            deleteEntityClassification.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteEntityClassification.text)
-
-        results = {"message":
+        if deleteEntityClassification.is_successful:
+            results = {"message":
                    f"Successfully removed classification: {classificationName} from {guid}.",
                    "guid": guid,
                    }
@@ -1447,23 +1411,15 @@ class AtlasClient(AtlasBaseClient):
             raise ValueError(
                 "Either guid or typeName and qualifiedName must be defined.")
 
-        deleteResp = requests.delete(
+        deleteLabelResp = self._delete_http(
             atlas_endpoint,
             params=parameters,
-            json=labels,
-            headers = self.generate_request_headers())
+            json=labels
+        )
 
-        # Can't use _handle_response since it expects json returned
-        try:
-            deleteResp.raise_for_status()
-        except requests.RequestException as e:
-            if "errorCode" in deleteResp:
-                raise AtlasException(deleteResp.text)
-            else:
-                raise requests.RequestException(deleteResp.text)
-
-        action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
-        results = {"message": f"Successfully deleted labels for {action}"}
+        if deleteLabelResp.is_successful:
+            action = f"guid: {guid}" if guid else f"type:{typeName} qualifiedName:{qualifiedName}"
+            results = {"message": f"Successfully deleted labels for {action}"}
         return results
 
     def update_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None, force_update=False):
