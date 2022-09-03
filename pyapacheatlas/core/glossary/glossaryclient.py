@@ -386,20 +386,14 @@ class GlossaryClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/glossary/terms/{termGuid}/assignedEntities"
 
-        deleteAssignment = requests.delete(
+        deleteAssignment = self._delete_http(
             atlas_endpoint,
-            headers = self.generate_request_headers(),
-            json=json_entities,
-            **self._requests_args
+            json=json_entities
         )
 
-        try:
-            deleteAssignment.raise_for_status()
-        except requests.RequestException:
-            raise Exception(deleteAssignment.text)
-
-        results = {
-            "message": f"Successfully deleted assigned term from entities."}
+        if deleteAssignment.is_successful:
+            results = {
+                "message": f"Successfully deleted assigned term from entities."}
         return results
 
 
