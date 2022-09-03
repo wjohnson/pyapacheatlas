@@ -33,16 +33,12 @@ class GlossaryClient(AtlasBaseClient):
         logging.debug("Retreiving all glossaries from catalog")
 
         # TODO: Implement paging with offset and limit
-        getResult = requests.get(
+        getResult = self._get_http(
             atlas_endpoint,
-            params={"limit": limit, "offset": offset, "sort": sort_order},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params={"limit": limit, "offset": offset, "sort": sort_order}
         )
 
-        results = self._handle_response(getResult)
-
-        return results
+        return getResult.body
 
     def get_glossary(self, name="Glossary", guid=None, detailed=False):
         """
@@ -76,12 +72,10 @@ class GlossaryClient(AtlasBaseClient):
             atlas_endpoint = self.endpoint_url + "/glossary/{}".format(guid)
             if detailed:
                 atlas_endpoint = atlas_endpoint + "/detailed"
-            getResult = requests.get(
-                atlas_endpoint,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+            getResult = self._get_http(
+                atlas_endpoint
             )
-            results = self._handle_response(getResult)
+            results = getResult.body
         else:
             logging.debug(f"Retreiving a Glossary based on name: {name}")
             all_glossaries = self._get_glossaries()
@@ -134,12 +128,10 @@ class GlossaryClient(AtlasBaseClient):
             atlas_endpoint = self.endpoint_url + \
                 "/glossary/term/{}".format(guid)
 
-            getTerms = requests.get(
-                atlas_endpoint,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+            getTerms = self._get_http(
+                atlas_endpoint
             )
-            results = self._handle_response(getTerms)
+            results = getTerms.body
         else:
             terms_in_glossary = self.get_glossary(
                 name=glossary_name, guid=glossary_guid)
@@ -235,7 +227,6 @@ class GlossaryClient(AtlasBaseClient):
         :return: A list of Atlas relationships between the given term and entities.
         :rtype: list(dict)
         """
-        results = None
 
         if termName:
             _discoveredTerm = self.get_term(
@@ -247,15 +238,12 @@ class GlossaryClient(AtlasBaseClient):
             f"/glossary/terms/{termGuid}/assignedEntities"
 
         # TODO: Implement paging with a generator
-        getAssignments = requests.get(
+        getAssignments = self._get_http(
             atlas_endpoint,
-            params={"limit": limit, "offset": offset, "sort": sort},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params={"limit": limit, "offset": offset, "sort": sort}
         )
 
-        results = self._handle_response(getAssignments)
-        return results
+        return getAssignments.body
 
     def assignTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary", glossary_guid=None):
         """
@@ -546,19 +534,14 @@ class PurviewGlossaryClient(GlossaryClient):
             number of errors.
         :rtype: dict
         """
-        results = None
         atlas_endpoint = self.endpoint_url + \
             f"/glossary/terms/import/{operation_guid}"
 
-        postResp = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getStatusResponse = self._get_http(
+            atlas_endpoint
         )
 
-        results = self._handle_response(postResp)
-
-        return results
+        return getStatusResponse.body
 
     def export_terms(self, guids, csv_path, glossary_name="Glossary", glossary_guid=None):
         """

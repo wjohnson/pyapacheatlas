@@ -324,16 +324,12 @@ class AtlasClient(AtlasBaseClient):
         # Support the adding or removing of relationships and extra info
         parameters.update(
             {"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
-        getEntity = requests.get(
+        getEntity = self._get_http(
             atlas_endpoint,
-            params=parameters,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=parameters
         )
 
-        results = _handle_response(getEntity)
-
-        return results
+        return getEntity.body
 
     def get_single_entity(self, guid=None, ignoreRelationships=False, minExtInfo=False):
         """
@@ -361,16 +357,12 @@ class AtlasClient(AtlasBaseClient):
         # Support the adding or removing of relationships and extra info
         parameters.update(
             {"ignoreRelationships": ignoreRelationships, "minExtInfo": minExtInfo})
-        getEntity = requests.get(
+        getEntity = self._get_http(
             atlas_endpoint,
-            params=parameters,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=parameters
         )
 
-        results = _handle_response(getEntity)
-
-        return results
+        return getEntity.body
 
     def partial_update_entity(self, guid=None, typeName=None, qualifiedName=None, attributes={}):
         """
@@ -456,13 +448,10 @@ class AtlasClient(AtlasBaseClient):
         """
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classification/{classificationName}"
-        getClassification = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getClassification = self._get_http(
+            atlas_endpoint
         )
-        results = _handle_response(getClassification)
-        return results
+        return getClassification.body
 
     def get_entity_classifications(self, guid):
         """
@@ -478,15 +467,11 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classifications"
 
-        getClassification = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getClassification = self._get_http(
+            atlas_endpoint
         )
 
-        results = _handle_response(getClassification)
-
-        return results
+        return getClassification.body
 
     def get_entity_header(self, guid=None):
         """
@@ -501,22 +486,17 @@ class AtlasClient(AtlasBaseClient):
             array of classifications, and an array of glossary term headers.
         :rtype: dict
         """
-        results = None
         parameters = {}
 
         atlas_endpoint = self.endpoint_url + \
             "/entity/guid/{}/header".format(guid)
 
-        getEntity = requests.get(
+        getEntity = self._get_http(
             atlas_endpoint,
-            params=parameters,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=parameters
         )
 
-        results = _handle_response(getEntity)
-
-        return results
+        return getEntity.body
 
     def get_relationship(self, guid):
         """
@@ -528,18 +508,13 @@ class AtlasClient(AtlasBaseClient):
             attributes.
         :rtype: dict(str, dict)
         """
-        results = None
         atlas_endpoint = self.endpoint_url + f"/relationship/guid/{guid}"
 
-        getResponse = requests.get(
+        getResponse = self._get_http(
             atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
         )
 
-        results = _handle_response(getResponse)
-
-        return results
+        return getResponse.body
 
     def get_all_typedefs(self):
         """
@@ -551,18 +526,13 @@ class AtlasClient(AtlasBaseClient):
             {"entityDefs", "relationshipDefs"}.
         :rtype: dict(str, list(dict))
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/types/typedefs"
 
-        getTypeDefs = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getTypeDefs = self._get_http(
+            atlas_endpoint
         )
 
-        results = _handle_response(getTypeDefs)
-
-        return results
+        return getTypeDefs.body
 
     def get_typedef(self, type_category=None, guid=None, name=None):
         """
@@ -604,15 +574,11 @@ class AtlasClient(AtlasBaseClient):
         else:
             raise ValueError("One of guid or name must be defined.")
 
-        getTypeDef = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getTypeDef = self._get_http(
+            atlas_endpoint
         )
 
-        results = _handle_response(getTypeDef)
-
-        return results
+        return getTypeDef.body
 
     def get_glossary(self, name="Glossary", guid=None, detailed=False):
         """
@@ -803,12 +769,10 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict(str, list(str))
         """
         atlas_endpoint = self.endpoint_url + "/types/typedefs/headers"
-        getHeaders = requests.get(
-            atlas_endpoint,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+        getHeaders = self._get_http(
+            atlas_endpoint
         )
-        results = _handle_response(getHeaders)
+        results = getHeaders.body
 
         output = dict()
         for typedef in results:
@@ -1437,15 +1401,13 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/lineage/{guid}"
 
-        getLineageRequest = requests.get(
+        getLineageRequest = self._get_http(
             atlas_endpoint,
             params={"depth": depth, "width": width, "direction": direction,
-                    "includeParent": includeParent, "getDerivedLineage": getDerivedLineage},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+                    "includeParent": includeParent, "getDerivedLineage": getDerivedLineage}
         )
-        results = _handle_response(getLineageRequest)
-        return results
+
+        return getLineageRequest.body
 
     def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
         """
@@ -1692,15 +1654,13 @@ class PurviewClient(AtlasClient):
             f"/lineage/{guid}/next"
 
         # TODO: Implement paging with offset and limit
-        getLineageRequest = requests.get(
+        getLineageRequest = self._get_http(
             atlas_endpoint,
             params={"direction": direction, "getDerivedLineage": getDerivedLineage,
-                    "offset": offset, "limit": limit},
-            headers = self.generate_request_headers(),
-            **self._requests_args
+                    "offset": offset, "limit": limit}
         )
-        results = _handle_response(getLineageRequest)
-        return results
+
+        return getLineageRequest.body
 
     def import_terms(self, csv_path, glossary_name="Glossary", glossary_guid=None):
         """
