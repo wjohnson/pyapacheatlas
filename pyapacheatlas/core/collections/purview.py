@@ -209,13 +209,11 @@ class PurviewCollectionsClient(AtlasBaseClient):
         while True:
             if updated_endpoint is None:
                 return
-            collectionsListGet = requests.get(
-                updated_endpoint,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+            collectionsListGet = self._get_http(
+                updated_endpoint
             )
 
-            results = _handle_response(collectionsListGet)
+            results = collectionsListGet.body
 
             return_values = results["value"]
             return_count = len(return_values)

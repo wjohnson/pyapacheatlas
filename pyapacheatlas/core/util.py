@@ -7,8 +7,41 @@ import warnings
 
 import requests
 
+class AtlasResponse():
+    """
+    Interface for a response from Atlas.  Consists of a:
+    
+    * body: The text or json returned from Atlas.
+    * status_code: The status code returned by the HTTP Response
+    * method: The method used to make the HTTP Request
+
+    Raises a `ValueError` if a non 204 status code's 
+    Raises a `AtlasException` if 'errorCode' appears in the response text and
+        a 4xx or 5xx status code is returned.
+    Raises a `requests.RequestException` if 'errorCode' does not appear in the
+        response text and a 4xx or 5xx status code is returned.
+    """
+    
+    def __init__(self, response, **kwargs):
+        self.body=None
+        self.status_code = response.status_code
+        self.method = response.request.method
+        try:
+            response.raise_for_status()
+            if response.status_code != 204 and response.text and response.text != "":
+                self.body = json.loads(response.text)
+        except JSONDecodeError:
+            raise ValueError("Error in parsing: {}".format(response.text))
+        except requests.RequestException as e:
+            if "errorCode" in response.text:
+                raise AtlasException(response.text)
+            else:
+                raise requests.RequestException(response.text)
+
 
 class AtlasBaseClient():
+    _USER_AGENT = {"User-Agent": "pyapacheatlas/{0} {1}".format(__version__, requests.utils.default_headers().get("User-Agent"))}
+
     def __init__(self, **kwargs):
         if "requests_args" in kwargs:
             self._requests_args = kwargs["requests_args"]
@@ -45,11 +78,27 @@ class AtlasBaseClient():
                 raise requests.RequestException(resp.text)
 
         return results
+    
+    def _get_http(self, url:str, params:dict=None, **kwargs) -> AtlasResponse:
+        return AtlasResponse(requests.get(
+            url,
+            params=params,
+            headers = self.generate_request_headers(),
+            **self._requests_args
+        ))
+
+    def _post_http(self, url:str, data={}, params:dict = {}, **kwargs):
+        return None
+    
+    def _delete_http(self, url:str, data):
+        return None
+    
+    def _put_http(self, url:str, data):
+        return None
 
     def generate_request_headers(self):
         auth = {} if self.authentication is None else self.authentication.get_authentication_headers()
-        useragent = {"User-Agent": "pyapacheatlas/{0} {1}".format(__version__, requests.utils.default_headers().get("User-Agent"))}
-        return dict(**auth, **useragent)
+        return dict(**auth, **self._USER_AGENT)
 
 
 class AtlasException(BaseException):
