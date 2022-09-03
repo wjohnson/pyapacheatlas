@@ -169,17 +169,13 @@ class GlossaryClient(AtlasBaseClient):
             raise TypeError(
                 f"The type {type(term)} is not supported. Please use a dict, AtlasGlossaryTerm, or PurviewGlossaryTerm")
 
-        postResp = requests.post(
+        postResp = self._post_http(
             atlas_endpoint,
             json=payload,
-            params=kwargs.get("parameters", {}),
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=kwargs.get("parameters", {})
         )
 
-        results = self._handle_response(postResp)
-
-        return results
+        return postResp.body
 
     def upload_terms(self, terms, force_update=False, **kwargs):
         """
@@ -202,17 +198,13 @@ class GlossaryClient(AtlasBaseClient):
         payload = [t.to_json() if isinstance(
             t, _CrossPlatformTerm) else t for t in terms]
 
-        postResp = requests.post(
+        postResp = self._post_http(
             atlas_endpoint,
             json=payload,
-            params=kwargs.get("parameters", {}),
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            params=kwargs.get("parameters", {})
         )
 
-        results = self._handle_response(postResp)
-
-        return results
+        return postResp.body
 
     # assignTerm section
     def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC", glossary_guid=None):
@@ -297,19 +289,13 @@ class GlossaryClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/glossary/terms/{termGuid}/assignedEntities"
 
-        postAssignment = requests.post(
+        postAssignment = self._post_http(
             atlas_endpoint,
-            headers = self.generate_request_headers(),
-            json=json_entities,
-            **self._requests_args
+            json=json_entities
         )
 
-        try:
-            postAssignment.raise_for_status()
-        except requests.RequestException:
-            raise Exception(postAssignment.text)
-
-        results = {"message": f"Successfully assigned term to entities."}
+        if postAssignment.is_successful:
+            results = {"message": f"Successfully assigned term to entities."}
         return results
 
     def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary", glossary_guid=None):
@@ -361,6 +347,12 @@ class GlossaryClient(AtlasBaseClient):
                         if ra.get("guid", "") == termGuid
                     ]
                     json_entities.extend(_temp_payload)
+            # Support arbitrary dictionary
+            # This comes first since GlossaryClient.get_termAssignedEntities
+            # returns a relationshipAttribute but it doesn't include meanings
+            elif isinstance(e, dict) and "guid" in e and "relationshipGuid" in e:
+                json_entities.append(
+                    {"guid": e["guid"], "relationshipGuid": e["relationshipGuid"]})
             # Support response from Atlas parsing
             elif isinstance(e, dict) and "guid" in e and "relationshipAttributes" in e:
                 _temp_payload = [
@@ -370,10 +362,7 @@ class GlossaryClient(AtlasBaseClient):
                     if ra.get("guid", "") == termGuid
                 ]
                 json_entities.extend(_temp_payload)
-            # Support arbitrary dictionary
-            elif isinstance(e, dict) and "guid" in e and "relationshipGuid" in e:
-                json_entities.append(
-                    {"guid": e["guid"], "relationshipGuid": e["relationshipGuid"]})
+            
             else:
                 warnings.warn(
                     f"{str(e)} does not contain a guid or relationshipGuid and will be skipped.",
@@ -395,7 +384,28 @@ class GlossaryClient(AtlasBaseClient):
             results = {
                 "message": f"Successfully deleted assigned term from entities."}
         return results
+    
+    def delete_term(self, termGuid):
+        """
+        Delete a term based on the termGuid
+        :param str termGuid: The guid for the term. Ignored if using termName.
+        
+        :return: A dictionary indicating success or failure.
+        :rtype: dict
+        """
+        results = None
+        atlas_endpoint = self.endpoint_url + f"/glossary/term/{termGuid}"
 
+        delete_term_resp = self._delete_http(
+            atlas_endpoint
+        )
+
+        if delete_term_resp.is_successful:
+            results = {
+                "message": f"Successfully deleted term with guid {termGuid}.",
+                "guid": termGuid
+            }
+        return results
 
 class PurviewGlossaryClient(GlossaryClient):
 
@@ -487,33 +497,23 @@ class PurviewGlossaryClient(GlossaryClient):
             `import_terms_status` to get the status of the import operation.
         :rtype: dict
         """
-        results = None
         if glossary_guid:
             atlas_endpoint = self.endpoint_url + \
-                f"/glossary/{glossary_guid}/terms/import?&includeTermHierarchy=True"
+                f"/api/glossary/{glossary_guid}/terms/import?&includeTermHierarchy=True"
         elif glossary_name:
             atlas_endpoint = self.endpoint_url + \
-                f"/glossary/name/{glossary_name}/terms/import?&includeTermHierarchy=True"
+                f"/api/glossary/name/{glossary_name}/terms/import?&includeTermHierarchy=True"
         else:
             raise ValueError(
                 "Either glossary_name or glossary_guid must be defined.")
 
-        headers = self.generate_request_headers()
-        # Pop the default of application/json so that request can fill in the
-        # multipart/form-data; boundary=xxxx that is automatically generated
-        # when using the files argument.
-        headers.pop("Content-Type")
-
-        postResp = requests.post(
+        print(atlas_endpoint)
+        postResp = self._post_http(
             atlas_endpoint,
-            files={'file': ("file", open(csv_path, 'rb'))},
-            headers=headers,
-            **self._requests_args
+            files={'file': ("file", open(csv_path, 'rb'))}
         )
 
-        results = self._handle_response(postResp)
-
-        return results
+        return postResp.body
 
     def import_terms_status(self, operation_guid):
         """
@@ -573,23 +573,14 @@ class PurviewGlossaryClient(GlossaryClient):
         atlas_endpoint = self.endpoint_url + \
             f"/glossary/{glossary_guid}/terms/export"
 
-        postResp = requests.post(
+        postResp = self._post_http(
             atlas_endpoint,
             json=guids,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            responseNotJson=True
         )
 
-        # Can't use handle response since it expects json
-        try:
-            postResp.raise_for_status()
-        except requests.RequestException as e:
-            if "errorCode" in postResp:
-                raise AtlasException(postResp.text)
-            else:
-                raise requests.RequestException(postResp.text)
-
-        with open(csv_path, 'wb') as fp:
-            fp.write(postResp.content)
+        if postResp.is_successful:
+            with open(csv_path, 'wb') as fp:
+                fp.write(postResp.body)
 
         return None
