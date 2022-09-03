@@ -1110,7 +1110,9 @@ class AtlasClient(AtlasBaseClient):
                 existing_types[cat] = []
                 new_types[cat] = []
                 for t in typelist:
-                    if t["name"] in types_from_client[cat]:
+                    if cat not in types_from_client:
+                        new_types[cat].append(t)
+                    elif t["name"] in types_from_client[cat]:
                         existing_types[cat].append(t)
                     else:
                         new_types[cat].append(t)
