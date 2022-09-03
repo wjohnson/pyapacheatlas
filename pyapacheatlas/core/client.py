@@ -790,21 +790,15 @@ class AtlasClient(AtlasBaseClient):
             "entityGuids": entityGuids
         }
 
-        postBulkClassifications = requests.post(
+        postBulkClassifications = self._post_http(
             atlas_endpoint,
-            json=payload,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=payload
         )
 
-        try:
-            postBulkClassifications.raise_for_status()
-        except requests.RequestException:
-            raise AtlasException(postBulkClassifications.text)
-
-        results = {"message": f"Successfully assigned {classification_name}",
-                   "entityGuids": entityGuids
-                   }
+        if postBulkClassifications.is_successful:
+            results = {"message": f"Successfully assigned {classification_name}",
+                    "entityGuids": entityGuids
+                    }
         return results
 
     def _classify_entity_adds(self, guid, classifications):
@@ -822,19 +816,14 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/classifications"
 
-        postAddMultiClassifications = requests.post(
+        postAddMultiClassifications = self._post_http(
             atlas_endpoint,
-            json=classifications,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=classifications
         )
 
-        try:
-            postAddMultiClassifications.raise_for_status()
-        except requests.RequestException:
-            raise Exception(postAddMultiClassifications.text)
+        if postAddMultiClassifications.is_successful:
+            results = [c["typeName"] for c in classifications]
 
-        results = [c["typeName"] for c in classifications]
         return results
 
     def _classify_entity_updates(self, guid, classifications):
@@ -1079,12 +1068,11 @@ class AtlasClient(AtlasBaseClient):
 
         if not force_update:
             # This is just a plain push of new entities
-            upload_typedefs_results = requests.post(
-                atlas_endpoint, json=payload,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+            upload_typedefs_results = self._post_http(
+                atlas_endpoint,
+                json=payload
             )
-            results = _handle_response(upload_typedefs_results)
+            results = upload_typedefs_results.body
         else:
             # Look up all entities by their header
             types_from_client = self._get_typedefs_header()
@@ -1107,12 +1095,11 @@ class AtlasClient(AtlasBaseClient):
 
             results_new = {}
             if new_types and sum([len(defs) for defs in new_types.values()]) > 0:
-                upload_new = requests.post(
-                    atlas_endpoint, json=new_types,
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                upload_new = self._post_http(
+                    atlas_endpoint,
+                    json=new_types
                 )
-                results_new = _handle_response(upload_new)
+                results_new = upload_new.body
 
             results_exist = {}
             if existing_types and sum([len(defs) for defs in existing_types.values()]) > 0:
@@ -1198,24 +1185,20 @@ class AtlasClient(AtlasBaseClient):
             for batch_id, batch in enumerate(batches):
                 batch_size = len(batch["entities"])
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
-                postBulkEntities = requests.post(
+                postBulkEntities = self._post_http(
                     atlas_endpoint,
-                    json=batch,
-                    headers = self.generate_request_headers(),
-                    **self._requests_args
+                    json=batch
                 )
-                temp_results = _handle_response(postBulkEntities)
+                temp_results = postBulkEntities.body
                 results.append(temp_results)
 
         else:
-            postBulkEntities = requests.post(
+            postBulkEntities = self._post_http(
                 atlas_endpoint,
-                json=payload,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                json=payload
             )
 
-            results = _handle_response(postBulkEntities)
+            results = postBulkEntities.body
 
         return results
 
@@ -1244,16 +1227,12 @@ class AtlasClient(AtlasBaseClient):
         atlas_endpoint = self.endpoint_url + "/relationship"
 
         # TODO: Handling Updates instead of just creates
-        relationshipResp = requests.post(
+        relationshipResp = self._post_http(
             atlas_endpoint,
-            json=relationship,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=relationship
         )
 
-        results = _handle_response(relationshipResp)
-
-        return results
+        return relationshipResp.body
 
     # TODO: Remove at 1.0.0 release
     def _search_generator(self, search_params, starting_offset=0):
@@ -1264,13 +1243,11 @@ class AtlasClient(AtlasBaseClient):
         offset = starting_offset
 
         while True:
-            postSearchResults = requests.post(
+            postSearchResults = self._post_http(
                 atlas_endpoint,
-                json=search_params,
-                headers = self.generate_request_headers(),
-                **self._requests_args
+                json=search_params
             )
-            results = _handle_response(postSearchResults)
+            results = postSearchResults.body
             return_values = results["value"]
             return_count = len(return_values)
 
@@ -1449,7 +1426,7 @@ class AtlasClient(AtlasBaseClient):
 
         verb = "added"
         if force_update:
-            updateResp = requests.post(
+            updateResp = self._post_http(
                 atlas_endpoint,
                 params=parameters,
                 json=labels,
@@ -1502,22 +1479,13 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict(str, str)
         """
         atlas_endpoint= self.endpoint_url + f"/entity/guid/{guid}/businessmetadata"
-        updateBizMeta = requests.post(
+        updateBizMeta = self._post_http(
             atlas_endpoint,
             params={"isOverwrite":force_update},
-            json=businessMetadata,
-            headers = self.generate_request_headers(),
-            **self._requests_args
+            json=businessMetadata
         )
 
-        # Can't use _handle_response since it expects json returned
-        try:
-            updateBizMeta.raise_for_status()
-        except requests.RequestException as e:
-            if isinstance(updateBizMeta, dict) and "errorCode" in updateBizMeta:
-                raise AtlasException(updateBizMeta.text)
-            else:
-                raise requests.RequestException(updateBizMeta.text)
+        # If we made it past here, it's successful!
 
         return {"message": f"Successfully updated business metadata for {guid}"}
 

@@ -16,6 +16,8 @@ class AtlasResponse():
     * status_code: The status code returned by the HTTP Response
     * method: The method used to make the HTTP Request
 
+    Takes an option responseNotJson to just read the content.
+
     Raises a `ValueError` if a non 204 status code's 
     Raises a `AtlasException` if 'errorCode' appears in the response text and
         a 4xx or 5xx status code is returned.
@@ -31,7 +33,10 @@ class AtlasResponse():
         try:
             response.raise_for_status()
             if response.status_code != 204 and response.text and response.text != "":
-                self.body = json.loads(response.text)
+                if "responseNotJson" in kwargs and kwargs["responseNotJson"]:
+                    self.body = response.content
+                else:
+                    self.body = json.loads(response.text)
         except JSONDecodeError:
             raise ValueError("Error in parsing: {}".format(response.text))
         except requests.RequestException as e:
@@ -89,8 +94,23 @@ class AtlasBaseClient():
             **self._requests_args
         ))
 
-    def _post_http(self, url:str, data={}, params:dict = {}, **kwargs):
-        return None
+    def _post_http(self, url:str, params:dict=None, json:Union[list, dict]=None, files:dict=None, **kwargs):
+        extra_args = {}
+        if json:
+            extra_args["json"]=json
+        if params:
+            extra_args["params"]=params
+        if files:
+            extra_args["files"]=files
+        response_args = {}
+        if "responseNotJson" in kwargs:
+            response_args["responseNotJson"] = kwargs["responseNotJson"]
+        return AtlasResponse(requests.post(
+            url,
+            headers = self.generate_request_headers(),
+            **extra_args,
+            **self._requests_args
+        ), **response_args)
     
     def _delete_http(self, url:str, params:dict=None, json:Union[list, dict]=None):
         extra_args = {}
@@ -269,8 +289,6 @@ def batch_dependent_entities(entities, batch_size=1000):
     original_index = {}
 
     sets = []
-
-    print(f"Number of entities: {len(entities)}")
 
     for idx, entity in enumerate(entities):
         candidate_sets = []
