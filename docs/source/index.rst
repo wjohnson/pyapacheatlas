@@ -10,12 +10,9 @@ Welcome to PyApacheAtlas's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modules.rst
-   pyapacheatlas.rst
-   pyapacheatlas.auth.rst
-   pyapacheatlas.core.rst
-   pyapacheatlas.readers.rst
-   pyapacheatlas.scaffolding.rst
+   readers/index.rst
+   auth/index.rst
+   core/index.rst
 
 Indices and tables
 ==================

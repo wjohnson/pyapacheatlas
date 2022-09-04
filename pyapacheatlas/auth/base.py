@@ -14,6 +14,7 @@ class AtlasAuthBase(ABC):
     def get_authentication_headers(self, **kwargs):
         """
         Provide the authentication headers for HTTP requests.
+
         :return: The authorization headers.
         :rtype: dict(str, str)
         """
