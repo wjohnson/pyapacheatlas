@@ -7,6 +7,7 @@ entities using PyApacheAtlas.
 If you are interested in using the built-in Excel functionality, see the [excel samples](../excel/README.md).
 
 * **Create**
+  * Create [custom classification definitions](./create_classification_type_definition.py)
   * Create [classifications on entities](./create_entity_and_classification.py).
   * Create [entities and lineage between multiple entities](./create_entity_and_lineage.py).
   * Create [relationships](./create_relationships.py) in a few different ways.
