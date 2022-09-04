@@ -63,27 +63,52 @@ class AtlasClient(AtlasBaseClient):
 
         super().__init__(requests_args = requests_args)
 
-    def delete_entity(self, guid):
+    def delete_entity(self, guid=None, qualifiedName=None, typeName=None):
         """
-        Delete one or many guids from your Apache Atlas server.
+        Delete one or many entities from your Apache Atlas server.
 
-        :param guid: The guid or guids you want to remove.
-        :type guid: Union(str,list(str))
+        You can provide a single guid or a list of guids. You can provide a
+        single typeName and a single qualified name.  typeName and qualifiedName
+        must be provided together. If guid and qualifiedName and typeName are
+        all provided, guid is ignored.
+
+        :param guid:
+            The guid or guids you want to delete. Not used if using typeName
+            and qualifiedName.
+        :type guid: Union(str, list(str))
+        :param qualifiedName:
+            The qualified name of the entity you want to delete. Must provide
+            typeName if using qualifiedName. You may search for multiple
+            qualified names under the same type. Ignored if using guid
+            parameter.
+        :type qualifiedName: Union(str, list(str))
+        :param str typeName:
+            The type name of the entity you want to delete. Must provide
+            qualifiedName if using typeName. Ignored if using guid parameter.
         :return:
             An EntityMutationResponse containing guidAssignments,
             mutatedEntities, and partialUpdatedEntities (list).
         :rtype: dict(str, Union(dict,list))
         """
+        parameters = {}
+        # This only works for one single qualified name
+        if qualifiedName and typeName:
+            qualifiedName_params = {"attr:qualifiedName": qualifiedName}
+            atlas_endpoint = self.endpoint_url + \
+                f"/entity/uniqueAttribute/type/{typeName}"
+            parameters.update(qualifiedName_params)
 
-        if isinstance(guid, list):
-            guid_str = '&guid='.join(guid)
         else:
-            guid_str = guid
-
-        atlas_endpoint = self.endpoint_url + \
+            if isinstance(guid, list):
+                guid_str = '&guid='.join(guid)
+            else:
+                guid_str = guid
+            atlas_endpoint = self.endpoint_url + \
             "/entity/bulk?guid={}".format(guid_str)
+
         deleteEntity = self._delete_http(
-            atlas_endpoint
+            atlas_endpoint,
+            params=parameters
             )
 
         return deleteEntity.body

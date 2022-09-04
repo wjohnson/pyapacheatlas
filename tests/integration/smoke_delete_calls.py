@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from azure.identity import AzureCliCredential
 from pyapacheatlas.core import AtlasEntity, AtlasProcess, PurviewClient
@@ -97,6 +98,14 @@ if __name__ == "__main__":
 
     resp = client.delete_entity(list(entity_upload_results["guidAssignments"].values()))
     check_resp("delete_entity", resp)
+
+    ae = AtlasEntity("i", "DataSet", "myi", "-1")
+    _ = client.upload_entities([ae])
+
+    time.sleep(10)
+
+    resp = client.delete_entity(qualifiedName="myi", typeName="DataSet")
+    print(json.dumps(resp,indent=2))
     
     # TODO delete_entity_labels
 
