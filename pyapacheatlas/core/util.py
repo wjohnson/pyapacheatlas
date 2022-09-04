@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 from .. import __version__
 from functools import wraps
 import json
@@ -87,14 +87,22 @@ class AtlasBaseClient():
         return results
     
     def _get_http(self, url:str, params:dict=None, **kwargs) -> AtlasResponse:
+        """
+        :kwargs dict headers_include:Additional headers to include.
+        :kwargs List[str] headers_include:Additional headers to include.
+        """
         return AtlasResponse(requests.get(
             url,
             params=params,
-            headers = self.generate_request_headers(),
+            headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
             **self._requests_args
         ))
 
-    def _post_http(self, url:str, params:dict=None, json:Union[list, dict]=None, files:dict=None, **kwargs):
+    def _post_http(self, url:str, params:dict=None, json:Union[list, dict]=None, files:dict=None, **kwargs) -> AtlasResponse:
+        """
+        :kwargs dict headers_include:Additional headers to include.
+        :kwargs List[str] headers_include:Additional headers to include.
+        """
         extra_args = {}
         if json:
             extra_args["json"]=json
@@ -105,14 +113,21 @@ class AtlasBaseClient():
         response_args = {}
         if "responseNotJson" in kwargs:
             response_args["responseNotJson"] = kwargs["responseNotJson"]
-        return AtlasResponse(requests.post(
-            url,
-            headers = self.generate_request_headers(),
-            **extra_args,
-            **self._requests_args
-        ), **response_args)
+        return AtlasResponse(
+            requests.post(
+                url,
+                headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
+                **extra_args,
+                **self._requests_args
+            ),
+            **response_args
+        )
     
-    def _delete_http(self, url:str, params:dict=None, json:Union[list, dict]=None):
+    def _delete_http(self, url:str, params:dict=None, json:Union[list, dict]=None, **kwargs) -> AtlasResponse:
+        """
+        :kwargs dict headers_include:Additional headers to include.
+        :kwargs List[str] headers_include:Additional headers to include.
+        """
         extra_args = {}
         if json:
             extra_args["json"]=json
@@ -120,12 +135,16 @@ class AtlasBaseClient():
             extra_args["params"]=params
         return AtlasResponse(requests.delete(
             url,
-            headers = self.generate_request_headers(),
+            headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
             **extra_args,
             **self._requests_args
         ))
     
-    def _put_http(self, url:str, params:dict=None, json:Union[list, dict]=None):
+    def _put_http(self, url:str, params:dict=None, json:Union[list, dict]=None, **kwargs) -> AtlasResponse:
+        """
+        :kwargs dict headers_include:Additional headers to include.
+        :kwargs List[str] headers_include:Additional headers to include.
+        """
         extra_args = {}
         if json:
             extra_args["json"]=json
@@ -133,13 +152,20 @@ class AtlasBaseClient():
             extra_args["params"]=params
         return AtlasResponse(requests.put(
             url,
-            headers = self.generate_request_headers(),
+            headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
             **extra_args,
             **self._requests_args
         ))
 
-    def generate_request_headers(self):
+    def generate_request_headers(self,include:dict={}, exclude:List[str]=[]):
         auth = {} if self.authentication is None else self.authentication.get_authentication_headers()
+
+        if include:
+            auth.update(include)
+        if exclude:
+            for key in exclude:
+                if key in auth:
+                    auth.pop(key)
         return dict(**auth, **self._USER_AGENT)
 
 

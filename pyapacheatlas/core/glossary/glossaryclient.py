@@ -499,18 +499,18 @@ class PurviewGlossaryClient(GlossaryClient):
         """
         if glossary_guid:
             atlas_endpoint = self.endpoint_url + \
-                f"/api/glossary/{glossary_guid}/terms/import?&includeTermHierarchy=True"
+                f"/glossary/{glossary_guid}/terms/import?&includeTermHierarchy=True"
         elif glossary_name:
             atlas_endpoint = self.endpoint_url + \
-                f"/api/glossary/name/{glossary_name}/terms/import?&includeTermHierarchy=True"
+                f"/glossary/name/{glossary_name}/terms/import?&includeTermHierarchy=True"
         else:
             raise ValueError(
                 "Either glossary_name or glossary_guid must be defined.")
 
-        print(atlas_endpoint)
         postResp = self._post_http(
             atlas_endpoint,
-            files={'file': ("file", open(csv_path, 'rb'))}
+            files={'file': ("file", open(csv_path, 'rb'))},
+            headers_exclude = ["Content-Type"]
         )
 
         return postResp.body
