@@ -46,7 +46,8 @@ class AtlasClient(AtlasBaseClient):
         self.endpoint_url = endpoint_url
         self.is_purview = False
         self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
-        if re.match(self._purview_url_pattern, self.endpoint_url):
+        self._purview_url_pattern_modern = r"https:\/\/[a-z0-9-]*?\.(purview.azure.com)"
+        if re.match(self._purview_url_pattern, self.endpoint_url) or re.match(self._purview_url_pattern_modern, self.endpoint_url):
             self.is_purview = True
         # If requests_verify=False is provided, it will result in
         # storing verify:False in the _requests_args
@@ -1514,7 +1515,7 @@ class PurviewClient(AtlasClient):
     """
 
     def __init__(self, account_name, authentication=None, **kwargs):
-        endpoint_url = f"https://{account_name.lower()}.catalog.purview.azure.com/api/atlas/v2"
+        endpoint_url = f"https://{account_name.lower()}.purview.azure.com/catalog/api/atlas/v2"
         if authentication and not isinstance(authentication, AtlasAuthBase):
             # Assuming this is Azure Identity related
             if _AZ_IDENTITY_INSTALLED:

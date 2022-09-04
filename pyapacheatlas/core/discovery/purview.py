@@ -10,7 +10,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         self.authentication = authentication
 
     def autocomplete(
-        self, keywords=None, filter=None, api_version="2021-05-01-preview", **kwargs
+        self, keywords=None, filter=None, api_version="2022-03-01-preview", **kwargs
     ):
         """
         Execute an autocomplete search request on Azure Purview's
@@ -57,7 +57,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         return postResult.body
 
     # TODO: Having auth issues?
-    def browse(self, entityType=None, api_version="2021-05-01-preview", **kwargs):
+    def browse(self, entityType=None, api_version="2022-03-01-preview", **kwargs):
         """
         Execute a browse search for Purview based on the entity against the
         `/catalog/api/browse endpoint`.
@@ -102,7 +102,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         filter=None,
         facets=None,
         taxonomySetting=None,
-        api_version="2021-05-01-preview",
+        api_version="2022-03-01-preview",
         **kwargs
     ):
         """
@@ -161,7 +161,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         return postResult.body
 
     def suggest(
-        self, keywords=None, filter=None, api_version="2021-05-01-preview", **kwargs
+        self, keywords=None, filter=None, api_version="2022-03-01-preview", **kwargs
     ):
         """
         Execute a sugest search request on Azure Purview's
@@ -250,11 +250,11 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         limit=50,
         search_filter=None,
         starting_offset=0,
-        api_version="2021-05-01-preview",
+        api_version="2022-03-01-preview",
         **kwargs
     ):
         """
-        Search entities based on a query and automaticall handles limits and
+        Search entities based on a query and automatically handles limits and
         offsets to page through results.
 
         The limit provides how many records are returned in each batch with a

@@ -14,7 +14,7 @@ def test_purview_client():
 
     client = PurviewClient("DEMO")
 
-    assert(client.endpoint_url == "https://demo.catalog.purview.azure.com/api/atlas/v2")
+    assert(client.endpoint_url == "https://demo.purview.azure.com/catalog/api/atlas/v2")
     assert(client.is_purview)
 
 def test_purview_only_decorator():
