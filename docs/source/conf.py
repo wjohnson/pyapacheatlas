@@ -18,11 +18,11 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'PyApacheAtlas'
-copyright = '2021, Will Johnson'
+copyright = '2022, Will Johnson'
 author = 'Will Johnson'
 
 # The full version, including alpha/beta/rc tags
-release = '0.13.0'
+release = '0.14.0'
 
 
 # -- General configuration ---------------------------------------------------

@@ -18,13 +18,12 @@ class AtlasResponse():
 
     Takes an option responseNotJson to just read the content.
 
-    Raises a `ValueError` if a non 204 status code's 
-    Raises a `AtlasException` if 'errorCode' appears in the response text and
-        a 4xx or 5xx status code is returned.
-    Raises a `requests.RequestException` if 'errorCode' does not appear in the
-        response text and a 4xx or 5xx status code is returned.
+    * Raises a `ValueError` if a non 204 status code's.
+    * Raises a `AtlasException` if 'errorCode' appears in the response text and a 4xx or 5xx status code is returned.
+    * Raises a `requests.RequestException` if 'errorCode' does not appear in the response text and a 4xx or 5xx status code is returned.
+
     """
-    
+
     def __init__(self, response, **kwargs):
         self.body=None
         self.status_code = response.status_code

@@ -124,13 +124,14 @@ class AtlasClient(AtlasBaseClient):
         If I have a business metadata typedef of 'operations`, with attributes
         'expenseCode' and 'criticality' and I want to delete criticality, my
         businessMetadata might be:
-        ```
-        {
-            'operations': {
-                'criticality': ''
-          }
-        }
-        ```
+
+        .. code-block:: python
+            
+            {
+                'operations': {
+                    'criticality': ''
+                }
+            }
 
         :param str guid:
             The guid for the entity that you want to remove business metadata.
@@ -141,9 +142,11 @@ class AtlasClient(AtlasBaseClient):
             string.
         :param bool force_update:
             Defaults to True.
+
         :return:
             A dictionary indicating success. Failure will raise an AtlasException.
         :rtype: dict
+
         """
         results = None
 
@@ -1480,14 +1483,16 @@ class AtlasClient(AtlasBaseClient):
 
         If I have a business metadata typedef of 'operations`, with attributes
         'expenseCode' and 'criticality', my businessMetadata might be:
-        ```
-        {
-            'operations': {
-                'expenseCode': '123',
-                'criticality': 'low'
-          }
-        }
-        ```
+        
+        .. code-block:: python
+
+            {
+                'operations': {
+                    'expenseCode': '123',
+                    'criticality': 'low'
+                }
+            }
+
         :param str guid:
             The guid for the entity that you want to update business metadata.
         :param dict(str, dict) businessMetadata:
@@ -1499,10 +1504,12 @@ class AtlasClient(AtlasBaseClient):
             attributes you specify in businessMetadata. Set to True to
             overwrite all existing business metadata attributes with the value
             you provided.
+
         :return:
             A dict containing a message indicating success. Otherwise
             it will raise an AtlasException.
         :rtype: dict(str, str)
+
         """
         atlas_endpoint= self.endpoint_url + f"/entity/guid/{guid}/businessmetadata"
         updateBizMeta = self._post_http(

@@ -275,7 +275,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
         :param str api_version: The Purview API version to use.
 
         Kwargs:
-            :param dict body: An optional fully formed json body. If provided
+            :kwarg dict body: An optional fully formed json body. If provided
             query/keywords, limit, search_filter/filter, and
             starting_offset/offset will be updated using the values found
             in the body dictionary. Any additional keys provided in `body`
@@ -283,6 +283,7 @@ class PurviewDiscoveryClient(AtlasBaseClient):
 
         :return: The results of your search as a generator.
         :rtype: Iterator(dict)
+
         """
         if "body" in kwargs:
             req_body = kwargs.pop("body")
