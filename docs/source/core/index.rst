@@ -10,11 +10,11 @@ easier to work with Microsoft Purview's collections and Microsoft Graph APIs.
    :maxdepth: 1
    :caption: Atlas and Microsoft Purview:
 
-   client
+   client/index
    entity
    typedef
    discovery
-   glossary
+   glossary/index
 
 .. toctree::
    :maxdepth: 1
