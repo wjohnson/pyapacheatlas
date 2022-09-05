@@ -7,3 +7,8 @@ Atlas Discovery / Search Methods
    :toctree: api/
 
    PurviewDiscoveryClient
+   PurviewDiscoveryClient.autocomplete
+   PurviewDiscoveryClient.browse
+   PurviewDiscoveryClient.query
+   PurviewDiscoveryClient.suggest
+   PurviewDiscoveryClient.search_entities

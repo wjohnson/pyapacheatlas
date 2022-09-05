@@ -20,9 +20,7 @@ to your Microsoft Purview or Apache Atlas.
    Reader.parse_entity_defs
    Reader.parse_finegrain_column_lineage
    Reader.parse_table_lineage
-   Reader.parse_table_finegrain_column_lineages
    Reader.parse_update_lineage
    Reader.parse_column_mapping
-   Reader.parse_update_lineage_with_mappings
    Reader.parse_classification_defs
    Reader.make_template
