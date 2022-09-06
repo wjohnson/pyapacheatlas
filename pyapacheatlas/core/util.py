@@ -102,8 +102,8 @@ class AtlasBaseClient():
         ))
 
     def _post_http(self, url: str, params: dict = None,
-        json: Union[list, dict] = None, files: dict = None, 
-        **kwargs) -> AtlasResponse:
+                   json: Union[list, dict] = None, files: dict = None, 
+                   **kwargs) -> AtlasResponse:
         """
         :kwargs dict headers_include:Additional headers to include.
         :kwargs List[str] headers_include:Additional headers to include.

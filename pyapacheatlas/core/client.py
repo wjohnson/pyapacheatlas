@@ -45,8 +45,8 @@ class AtlasClient(AtlasBaseClient):
         self.is_purview = False
         self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
         self._purview_url_pattern_modern = r"https:\/\/[a-z0-9-]*?\.(purview.azure.com)"
-        if (re.match(self._purview_url_pattern, self.endpoint_url) or 
-            re.match(self._purview_url_pattern_modern, self.endpoint_url)):
+        if (re.match(self._purview_url_pattern, self.endpoint_url) or
+                re.match(self._purview_url_pattern_modern, self.endpoint_url)):
             self.is_purview = True
         # If requests_verify=False is provided, it will result in
         # storing verify:False in the _requests_args
@@ -700,7 +700,8 @@ class AtlasClient(AtlasBaseClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "AtlasClient.delete_assignedTerm is being deprecated. Please use AtlasClient.glossary.delete_assignedTerm instead.")
+            "AtlasClient.delete_assignedTerm is being deprecated."
+            "Please use AtlasClient.glossary.delete_assignedTerm instead.")
         results = self.glossary.delete_assignedTerm(
             entities, termGuid, termName, glossary_name)
         return results
@@ -723,8 +724,8 @@ class AtlasClient(AtlasBaseClient):
         # TODO: Remove at 1.0.0 release
         warnings.warn(
             ("AtlasClient.get_termAssignedEntities is being deprecated. "
-            "Please use AtlasClient.glossary.get_termAssignedEntities "
-            "instead."))
+             "Please use AtlasClient.glossary.get_termAssignedEntities "
+             "instead."))
         results = self.glossary.get_termAssignedEntities(
             termGuid, termName, glossary_name, limit, offset, sort)
         return results
@@ -1336,7 +1337,7 @@ class AtlasClient(AtlasBaseClient):
         return search_generator
 
     def get_entity_lineage(self, guid, depth=3, width=10, direction="BOTH",
-        includeParent=False, getDerivedLineage=False):
+                           includeParent=False, getDerivedLineage=False):
         """
         Gets lineage info about the specified entity by guid.
 
@@ -1370,7 +1371,7 @@ class AtlasClient(AtlasBaseClient):
         return getLineageRequest.body
 
     def delete_entity_labels(self, labels, guid=None, typeName=None,
-        qualifiedName=None):
+                             qualifiedName=None):
         """
         Delete the given labels for one entity. Provide a list of strings that
         should be removed. You can either provide the guid of the entity or
@@ -1420,7 +1421,7 @@ class AtlasClient(AtlasBaseClient):
         return results
 
     def update_entity_labels(self, labels, guid=None, typeName=None,
-        qualifiedName=None, force_update=False):
+                             qualifiedName=None, force_update=False):
         """
         Update the given labels for one entity. Provide a list of strings that
         should be added. You can either provide the guid of the entity or
@@ -1568,16 +1569,16 @@ class PurviewClient(AtlasClient):
         glossary = PurviewGlossaryClient(
             endpoint_url, authentication, requests_args=requests_args)
         self.collections = PurviewCollectionsClient(
-            f"https://{account_name.lower()}.purview.azure.com/", 
-                authentication, requests_args=requests_args)
+            f"https://{account_name.lower()}.purview.azure.com/",
+            authentication, requests_args=requests_args)
         self.msgraph = MsGraphClient(
             authentication, requests_args=requests_args)
         self.discovery = PurviewDiscoveryClient(
-            f"https://{account_name.lower()}.purview.azure.com/catalog/api", 
-                authentication, requests_args=requests_args)
+            f"https://{account_name.lower()}.purview.azure.com/catalog/api",
+            authentication, requests_args=requests_args)
         super().__init__(endpoint_url, authentication,
-                        glossary=glossary, requests_args=requests_args, 
-                        **kwargs)
+                         glossary=glossary, requests_args=requests_args, 
+                         **kwargs)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
@@ -1665,7 +1666,7 @@ class PurviewClient(AtlasClient):
         # TODO: Remove at 1.0.0 release
         warnings.warn(
             ("PurviewClient.import_terms_status is being deprecated. Please "
-            "use PurviewClient.glossary.import_terms_status instead."))
+             "use PurviewClient.glossary.import_terms_status instead."))
         results = self.glossary.import_terms_status(operation_guid)
         return results
 

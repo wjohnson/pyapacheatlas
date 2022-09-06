@@ -205,7 +205,7 @@ class GlossaryClient(AtlasBaseClient):
 
     # assignTerm section
     def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary",
-        limit=-1, offset=0, sort="ASC", glossary_guid=None):
+                                 limit=-1, offset=0, sort="ASC", glossary_guid=None):
         """
         Page through the assigned entities for the given term.
 
