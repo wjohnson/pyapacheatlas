@@ -2,10 +2,8 @@ import logging
 import json
 import warnings
 
-import requests
-
 from ..entity import AtlasEntity
-from ..util import AtlasBaseClient, AtlasException
+from ..util import AtlasBaseClient
 from .term import _CrossPlatformTerm
 
 
@@ -28,7 +26,6 @@ class GlossaryClient(AtlasBaseClient):
         :return: The requested glossaries with the term headers.
         :rtype: list(dict)
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/glossary"
         logging.debug("Retreiving all glossaries from catalog")
 
@@ -156,7 +153,7 @@ class GlossaryClient(AtlasBaseClient):
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded term's current state.
-        :rtype: dict        
+        :rtype: dict
         """
         payload = {}
         atlas_endpoint = self.endpoint_url + "/glossary/term"
@@ -184,16 +181,16 @@ class GlossaryClient(AtlasBaseClient):
         Provide a list of AtlasGlossaryTerms or dictionaries.
 
         :param terms: The terms to be uploaded.
-        :type terms: list(Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`, :class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict))
+        :type terms: list(Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`,
+            :class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict))
         :param bool force_update: Currently not used.
 
         Kwargs:
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded term's current state.
-        :rtype: dict        
+        :rtype: dict
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/glossary/terms"
         payload = [t.to_json() if isinstance(
             t, _CrossPlatformTerm) else t for t in terms]
@@ -207,7 +204,8 @@ class GlossaryClient(AtlasBaseClient):
         return postResp.body
 
     # assignTerm section
-    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC", glossary_guid=None):
+    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary",
+                                 limit=-1, offset=0, sort="ASC", glossary_guid=None):
         """
         Page through the assigned entities for the given term.
 
@@ -265,7 +263,7 @@ class GlossaryClient(AtlasBaseClient):
         # Assumes the AtlasEntity does not have guid defined
         json_entities = []
         for e in entities:
-            if isinstance(e, AtlasEntity) and e.guid != None:
+            if isinstance(e, AtlasEntity) and e.guid is not None:
                 json_entities.append({"guid": e.guid})
             elif isinstance(e, dict) and "guid" in e:
                 json_entities.append({"guid": e["guid"]})
@@ -283,7 +281,7 @@ class GlossaryClient(AtlasBaseClient):
             _discoveredTerm = self.get_term(
                 name=termName, glossary_name=glossary_name,
                 glossary_guid=glossary_guid
-                )
+            )
             termGuid = _discoveredTerm["guid"]
 
         atlas_endpoint = self.endpoint_url + \
@@ -295,7 +293,7 @@ class GlossaryClient(AtlasBaseClient):
         )
 
         if postAssignment.is_successful:
-            results = {"message": f"Successfully assigned term to entities."}
+            results = {"message": "Successfully assigned term to entities."}
         return results
 
     def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary", glossary_guid=None):
@@ -338,7 +336,7 @@ class GlossaryClient(AtlasBaseClient):
         json_entities = []
         for e in entities:
             # Support AtlasEntity
-            if isinstance(e, AtlasEntity) and e.guid != None:
+            if isinstance(e, AtlasEntity) and e.guid is not None:
                 if "meanings" in e.relationshipAttributes:
                     _temp_payload = [
                         {"guid": e.guid,
@@ -362,7 +360,7 @@ class GlossaryClient(AtlasBaseClient):
                     if ra.get("guid", "") == termGuid
                 ]
                 json_entities.extend(_temp_payload)
-            
+
             else:
                 warnings.warn(
                     f"{str(e)} does not contain a guid or relationshipGuid and will be skipped.",
@@ -382,14 +380,14 @@ class GlossaryClient(AtlasBaseClient):
 
         if deleteAssignment.is_successful:
             results = {
-                "message": f"Successfully deleted assigned term from entities."}
+                "message": "Successfully deleted assigned term from entities."}
         return results
-    
+
     def delete_term(self, termGuid):
         """
         Delete a term based on the termGuid
         :param str termGuid: The guid for the term. Ignored if using termName.
-        
+
         :return: A dictionary indicating success or failure.
         :rtype: dict
         """
@@ -407,6 +405,7 @@ class GlossaryClient(AtlasBaseClient):
             }
         return results
 
+
 class PurviewGlossaryClient(GlossaryClient):
 
     def __init__(self, endpoint_url, authentication, **kwargs):
@@ -417,7 +416,7 @@ class PurviewGlossaryClient(GlossaryClient):
         """
         Upload a single term to Azure Purview. If you plan on uploading many
         terms programmatically, you might look at
-        `PurviewClient.glossary.upload_terms` or 
+        `PurviewClient.glossary.upload_terms` or
         `PurviewClient.glossary.import_terms`.
 
         Provide a PurviewGlossaryTerm or dictionary.
@@ -431,7 +430,7 @@ class PurviewGlossaryClient(GlossaryClient):
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded term's current state.
-        :rtype: dict        
+        :rtype: dict
         """
         return super().upload_term(
             term,
@@ -459,7 +458,7 @@ class PurviewGlossaryClient(GlossaryClient):
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded terms' current states.
-        :rtype: dict        
+        :rtype: dict
         """
         return super().upload_terms(
             terms,
@@ -510,7 +509,7 @@ class PurviewGlossaryClient(GlossaryClient):
         postResp = self._post_http(
             atlas_endpoint,
             files={'file': ("file", open(csv_path, 'rb'))},
-            headers_exclude = ["Content-Type"]
+            headers_exclude=["Content-Type"]
         )
 
         return postResp.body
@@ -569,7 +568,6 @@ class PurviewGlossaryClient(GlossaryClient):
             raise ValueError(
                 "Either glossary_name or glossary_guid must be defined.")
 
-        results = None
         atlas_endpoint = self.endpoint_url + \
             f"/glossary/{glossary_guid}/terms/export"
 

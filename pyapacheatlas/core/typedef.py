@@ -53,7 +53,7 @@ class AtlasAttributeDef():
         Default arguments are chosen assuming you want a single attribute
         """
         super().__init__()
-         # Cardinality
+        # Cardinality
         if "cardinality" in kwargs:
             if isinstance(kwargs["cardinality"], Cardinality):
                 self.cardinality = kwargs.get("cardinality").value
@@ -455,7 +455,7 @@ class ParentEndDef(AtlasRelationshipEndDef):
     """
     A helper for creating a Parent end def (e.g. EndDef1 that is a container).
     The goal being to simplify and reduce the margin of error when creating
-    containing relationships. This should be used in EndDef1 when the 
+    containing relationships. This should be used in EndDef1 when the
     relationshipCategory is COMPOSITION or AGGREGATION.
 
     Defaults to cardinality of SET and isContainer=True.
@@ -473,7 +473,7 @@ class ChildEndDef(AtlasRelationshipEndDef):
     """
     A helper for creating a Child end def (e.g. EndDef2 that is a single).
     The goal being to simplify and reduce the margin of error when creating
-    containing relationships. This should be used in EndDef2 when the 
+    containing relationships. This should be used in EndDef2 when the
     relationshipCategory is COMPOSITION or AGGREGATION.
 
     Defaults to cardinality of SINGLE and isContainer=False.

@@ -1,5 +1,3 @@
-import warnings
-
 from .util import AtlasUnInit
 
 
@@ -231,7 +229,7 @@ class AtlasEntity():
                 relationships_to_add[k] = val
             # Add all the relationships
             self.relationshipAttributes.update(relationships_to_add)
-        except Exception as e:
+        except Exception:
             if relationshipAttributes_was_uninitialized:
                 self.relationshipAttributes = AtlasUnInit()
 
@@ -504,7 +502,7 @@ class AtlasClassification():
         super().__init__()
         if entityStatus not in ["ACTIVE", "PURGED", "DELETED"]:
             raise ValueError(
-                f"entityStatus must be one of ACTIVE, PURGED, or DELETED.")
+                "entityStatus must be one of ACTIVE, PURGED, or DELETED.")
         self.typeName = typeName
         self.entityStatus = entityStatus
         self.propagate = propagate
