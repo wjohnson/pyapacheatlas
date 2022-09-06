@@ -231,7 +231,8 @@ class PurviewDiscoveryClient(AtlasBaseClient):
 
             offset = offset + return_count
 
-            # if the new offset is larger than the total result count, we'll just return to avoid an additional call to the service.
+            # if the new offset is larger than the total result count, we'll just
+            # return to avoid an additional call to the service.
             # This can increase the performance when the total call number is small
             if offset > results['@search.count']:
                 return

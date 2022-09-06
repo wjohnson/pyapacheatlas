@@ -21,7 +21,8 @@ class AtlasResponse():
 
     * Raises a `ValueError` if a non 204 status code's.
     * Raises a `AtlasException` if 'errorCode' appears in the response text and a 4xx or 5xx status code is returned.
-    * Raises a `requests.RequestException` if 'errorCode' does not appear in the response text and a 4xx or 5xx status code is returned.
+    * Raises a `requests.RequestException` if 'errorCode' does not appear in
+    the response text and a 4xx or 5xx status code is returned.
 
     """
 
@@ -39,7 +40,7 @@ class AtlasResponse():
                     self.body = json.loads(response.text)
         except JSONDecodeError:
             raise ValueError("Error in parsing: {}".format(response.text))
-        except requests.RequestException as e:
+        except requests.RequestException:
             if "errorCode" in response.text:
                 raise AtlasException(response.text)
             else:
@@ -79,7 +80,7 @@ class AtlasBaseClient():
             resp.raise_for_status()
         except JSONDecodeError:
             raise ValueError("Error in parsing: {}".format(resp.text))
-        except requests.RequestException as e:
+        except requests.RequestException:
             if "errorCode" in results:
                 raise AtlasException(resp.text)
             else:
@@ -100,7 +101,9 @@ class AtlasBaseClient():
             **self._requests_args
         ))
 
-    def _post_http(self, url: str, params: dict = None, json: Union[list, dict] = None, files: dict = None, **kwargs) -> AtlasResponse:
+    def _post_http(self, url: str, params: dict = None,
+        json: Union[list, dict] = None, files: dict = None, 
+        **kwargs) -> AtlasResponse:
         """
         :kwargs dict headers_include:Additional headers to include.
         :kwargs List[str] headers_include:Additional headers to include.
@@ -300,7 +303,7 @@ def batch_dependent_entities(entities, batch_size=1000):
 
     This algorithm handles uploading multiple entities that are dependent on
     each other. For example, if A depends on B and B depends on C then the
-    three entities will guaranteed be in the same batch. 
+    three entities will guaranteed be in the same batch.
 
     Dependencies can be specified in either direction. For example a table
     may not have any relationship attribute dependencies. However, several
@@ -308,7 +311,7 @@ def batch_dependent_entities(entities, batch_size=1000):
     function.
 
     :param list(dict) entities: A list of AtlasEntities to be uploaded as dicts
-    :param int batch_size: 
+    :param int batch_size:
     :return:
         A list of lists that organize the entities into batches of max
         `batch_size` and are in "most independent" to "least independent"
@@ -340,7 +343,7 @@ def batch_dependent_entities(entities, batch_size=1000):
         # No
         if len(entity_pointsTo) == 0:
             # Already Seen?
-            #### Yes: Continue
+            # Yes: Continue
             if entity_id in index:
                 continue
             # No: Independent Set; Mark as Seen
@@ -446,7 +449,8 @@ def batch_dependent_entities(entities, batch_size=1000):
 
         # If the set is SO large blow up
         if len(principal_set) > batch_size:
-            raise ValueError("You have a group of dependent entities that exceed your max batch size. Total dependency group size: {}".format(
+            raise ValueError("You have a group of dependent entities that "
+            "exceed your max batch size. Total dependency group size: {}".format(
                 len(principal_set)))
         # If the set is equal to the batch size, add it to the maximized batch
         # no need to process further because we don't need to look at the next
@@ -503,7 +507,7 @@ def _handle_response(resp):
         resp.raise_for_status()
     except JSONDecodeError:
         raise ValueError("Error in parsing: {}".format(resp.text))
-    except requests.RequestException as e:
+    except requests.RequestException:
         if "errorCode" in results:
             raise AtlasException(resp.text)
         else:

@@ -45,7 +45,8 @@ class AtlasClient(AtlasBaseClient):
         self.is_purview = False
         self._purview_url_pattern = r"https:\/\/[a-z0-9-]*?\.(catalog\.purview.azure.com)"
         self._purview_url_pattern_modern = r"https:\/\/[a-z0-9-]*?\.(purview.azure.com)"
-        if re.match(self._purview_url_pattern, self.endpoint_url) or re.match(self._purview_url_pattern_modern, self.endpoint_url):
+        if (re.match(self._purview_url_pattern, self.endpoint_url) or 
+            re.match(self._purview_url_pattern_modern, self.endpoint_url)):
             self.is_purview = True
         # If requests_verify=False is provided, it will result in
         # storing verify:False in the _requests_args
@@ -258,7 +259,7 @@ class AtlasClient(AtlasBaseClient):
             json=payload
         )
         if deleteType.is_successful:
-            results = {"message": f"Successfully deleted type(s)"}
+            results = {"message": "Successfully deleted type(s)"}
         return results
 
     def get_entity(self, guid=None, qualifiedName=None, typeName=None, ignoreRelationships=False, minExtInfo=False):
@@ -293,7 +294,6 @@ class AtlasClient(AtlasBaseClient):
             entities and accessible with the "entities" key.
         :rtype: dict(str, Union(list(dict),dict))
         """
-        results = None
         parameters = {}
 
         if isinstance(guid, list):
@@ -346,7 +346,6 @@ class AtlasClient(AtlasBaseClient):
             and "entity" keys.
         :rtype: dict(str, Union(list(dict),dict))
         """
-        results = None
         parameters = {}
 
         atlas_endpoint = self.endpoint_url + \
@@ -423,7 +422,8 @@ class AtlasClient(AtlasBaseClient):
             )
         else:
             raise ValueError(
-                "The provided combination of arguments is not supported. Either provide a guid or type name and qualified name")
+                "The provided combination of arguments is not supported. "
+                "Either provide a guid or type name and qualified name")
 
         return putEntity.body
 
@@ -544,7 +544,6 @@ class AtlasClient(AtlasBaseClient):
         :return: A dictionary representing an Atlas{TypeCategory}Def.
         :rtype: dict
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/types/"
 
         # If we are using type category
@@ -723,7 +722,9 @@ class AtlasClient(AtlasBaseClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "AtlasClient.get_termAssignedEntities is being deprecated. Please use AtlasClient.glossary.get_termAssignedEntities instead.")
+            ("AtlasClient.get_termAssignedEntities is being deprecated. "
+            "Please use AtlasClient.glossary.get_termAssignedEntities "
+            "instead."))
         results = self.glossary.get_termAssignedEntities(
             termGuid, termName, glossary_name, limit, offset, sort)
         return results
@@ -899,7 +900,7 @@ class AtlasClient(AtlasBaseClient):
         :param classifications:
             The list of AtlasClassification object you want to apply to the
             entities.
-        :type classification: 
+        :type classification:
             Union(dict, :class:`~pyapacheatlas.core.entity.AtlasClassification`)
         :param bool force_update: Mark as True if any of your classifications
             may already exist on the given entity.
@@ -1251,7 +1252,6 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict
         """
         # TODO Include a Do Not Overwrite call
-        results = None
         atlas_endpoint = self.endpoint_url + "/relationship"
 
         # TODO: Handling Updates instead of just creates
@@ -1310,7 +1310,8 @@ class AtlasClient(AtlasBaseClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "PurviewClient.search_entities is being deprecated. Please use PurviewClient.discovery.search_entities instead.")
+            "PurviewClient.search_entities is being deprecated. "
+            "Please use PurviewClient.discovery.search_entities instead.")
 
         if limit > 1000 or limit < 1:
             raise ValueError(
@@ -1334,7 +1335,8 @@ class AtlasClient(AtlasBaseClient):
 
         return search_generator
 
-    def get_entity_lineage(self, guid, depth=3, width=10, direction="BOTH", includeParent=False, getDerivedLineage=False):
+    def get_entity_lineage(self, guid, depth=3, width=10, direction="BOTH",
+        includeParent=False, getDerivedLineage=False):
         """
         Gets lineage info about the specified entity by guid.
 
@@ -1367,7 +1369,8 @@ class AtlasClient(AtlasBaseClient):
 
         return getLineageRequest.body
 
-    def delete_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None):
+    def delete_entity_labels(self, labels, guid=None, typeName=None,
+        qualifiedName=None):
         """
         Delete the given labels for one entity. Provide a list of strings that
         should be removed. You can either provide the guid of the entity or
@@ -1416,7 +1419,8 @@ class AtlasClient(AtlasBaseClient):
             results = {"message": f"Successfully deleted labels for {action}"}
         return results
 
-    def update_entity_labels(self, labels, guid=None, typeName=None, qualifiedName=None, force_update=False):
+    def update_entity_labels(self, labels, guid=None, typeName=None,
+        qualifiedName=None, force_update=False):
         """
         Update the given labels for one entity. Provide a list of strings that
         should be added. You can either provide the guid of the entity or
@@ -1512,7 +1516,7 @@ class AtlasClient(AtlasBaseClient):
         """
         atlas_endpoint = self.endpoint_url + \
             f"/entity/guid/{guid}/businessmetadata"
-        updateBizMeta = self._post_http(
+        _ = self._post_http(
             atlas_endpoint,
             params={"isOverwrite": force_update},
             json=businessMetadata
@@ -1540,10 +1544,10 @@ class PurviewClient(AtlasClient):
         :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
 
     Kwargs:
-        :param requests_*: 
+        :param requests_*:
             Kwargs to pass to the underlying `requests` package method call.
-            For example passing `requests_verify = False` will supply `verify=False`
-            to any API call.
+            For example passing `requests_verify = False` will supply
+            `verify=False` to any API call.
     """
 
     def __init__(self, account_name, authentication=None, **kwargs):
@@ -1554,7 +1558,8 @@ class PurviewClient(AtlasClient):
                 authentication = AzCredentialWrapper(authentication)
             else:
                 raise Exception(
-                    "You probably need to install azure-identity to use this authentication method.")
+                    "You probably need to install azure-identity to use this "
+                    "authentication method.")
         if "requests_args" in kwargs:
             requests_args = kwargs.pop("requests_args")
         else:
@@ -1563,13 +1568,16 @@ class PurviewClient(AtlasClient):
         glossary = PurviewGlossaryClient(
             endpoint_url, authentication, requests_args=requests_args)
         self.collections = PurviewCollectionsClient(
-            f"https://{account_name.lower()}.purview.azure.com/", authentication, requests_args=requests_args)
+            f"https://{account_name.lower()}.purview.azure.com/", 
+                authentication, requests_args=requests_args)
         self.msgraph = MsGraphClient(
             authentication, requests_args=requests_args)
         self.discovery = PurviewDiscoveryClient(
-            f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication, requests_args=requests_args)
+            f"https://{account_name.lower()}.purview.azure.com/catalog/api", 
+                authentication, requests_args=requests_args)
         super().__init__(endpoint_url, authentication,
-                         glossary=glossary, requests_args=requests_args, **kwargs)
+                        glossary=glossary, requests_args=requests_args, 
+                        **kwargs)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):
@@ -1631,7 +1639,8 @@ class PurviewClient(AtlasClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "PurviewClient.import_terms is being deprecated. Please use PurviewClient.glossary.import_terms instead.")
+            "PurviewClient.import_terms is being deprecated. "
+            "Please use PurviewClient.glossary.import_terms instead.")
         results = self.glossary.import_terms(
             csv_path, glossary_name, glossary_guid)
         return results
@@ -1655,7 +1664,8 @@ class PurviewClient(AtlasClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "PurviewClient.import_terms_status is being deprecated. Please use PurviewClient.glossary.import_terms_status instead.")
+            ("PurviewClient.import_terms_status is being deprecated. Please "
+            "use PurviewClient.glossary.import_terms_status instead."))
         results = self.glossary.import_terms_status(operation_guid)
         return results
 
@@ -1681,7 +1691,8 @@ class PurviewClient(AtlasClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "PurviewClient.export_terms is being deprecated. Please use PurviewClient.glossary.export_terms instead.")
+            "PurviewClient.export_terms is being deprecated. "
+            "Please use PurviewClient.glossary.export_terms instead.")
         results = self.glossary.export_terms(
             guids, csv_path, glossary_name, glossary_guid)
         return results
@@ -1708,6 +1719,7 @@ class PurviewClient(AtlasClient):
         """
         # TODO: Remove at 1.0.0 release
         warnings.warn(
-            "PurviewClient.upload_term is being deprecated. Please use PurviewClient.glossary.upload_term instead.")
+            "PurviewClient.upload_term is being deprecated. Please use "
+            "PurviewClient.glossary.upload_term instead.")
         results = self.glossary.upload_term(term, includeTermHierarchy)
         return results

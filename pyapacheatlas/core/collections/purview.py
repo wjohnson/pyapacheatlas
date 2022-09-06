@@ -256,7 +256,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
         providing a custom collection admin as it requires the metadata policy
         API.
 
-        For more details: https://docs.microsoft.com/en-us/rest/api/purview/accountdataplane/collections/create-or-update-collection?tabs=HTTP
+        For more details:
+        https://docs.microsoft.com/en-us/rest/api/purview/accountdataplane/collections/create-or-update-collection?tabs=HTTP
 
         :param str name: A unique id for this collection.
         :param str friendlyName: A friendly name for the collection, visible to users.

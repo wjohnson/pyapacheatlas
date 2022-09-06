@@ -153,7 +153,7 @@ class GlossaryClient(AtlasBaseClient):
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded term's current state.
-        :rtype: dict        
+        :rtype: dict
         """
         payload = {}
         atlas_endpoint = self.endpoint_url + "/glossary/term"
@@ -181,14 +181,15 @@ class GlossaryClient(AtlasBaseClient):
         Provide a list of AtlasGlossaryTerms or dictionaries.
 
         :param terms: The terms to be uploaded.
-        :type terms: list(Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`, :class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict))
+        :type terms: list(Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`,
+            :class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict))
         :param bool force_update: Currently not used.
 
         Kwargs:
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded term's current state.
-        :rtype: dict        
+        :rtype: dict
         """
         atlas_endpoint = self.endpoint_url + "/glossary/terms"
         payload = [t.to_json() if isinstance(
@@ -203,7 +204,8 @@ class GlossaryClient(AtlasBaseClient):
         return postResp.body
 
     # assignTerm section
-    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary", limit=-1, offset=0, sort="ASC", glossary_guid=None):
+    def get_termAssignedEntities(self, termGuid=None, termName=None, glossary_name="Glossary",
+        limit=-1, offset=0, sort="ASC", glossary_guid=None):
         """
         Page through the assigned entities for the given term.
 
@@ -291,7 +293,7 @@ class GlossaryClient(AtlasBaseClient):
         )
 
         if postAssignment.is_successful:
-            results = {"message": f"Successfully assigned term to entities."}
+            results = {"message": "Successfully assigned term to entities."}
         return results
 
     def delete_assignedTerm(self, entities, termGuid=None, termName=None, glossary_name="Glossary", glossary_guid=None):
@@ -334,7 +336,7 @@ class GlossaryClient(AtlasBaseClient):
         json_entities = []
         for e in entities:
             # Support AtlasEntity
-            if isinstance(e, AtlasEntity) and e.guid != None:
+            if isinstance(e, AtlasEntity) and e.guid is not None:
                 if "meanings" in e.relationshipAttributes:
                     _temp_payload = [
                         {"guid": e.guid,
@@ -414,7 +416,7 @@ class PurviewGlossaryClient(GlossaryClient):
         """
         Upload a single term to Azure Purview. If you plan on uploading many
         terms programmatically, you might look at
-        `PurviewClient.glossary.upload_terms` or 
+        `PurviewClient.glossary.upload_terms` or
         `PurviewClient.glossary.import_terms`.
 
         Provide a PurviewGlossaryTerm or dictionary.
@@ -428,7 +430,7 @@ class PurviewGlossaryClient(GlossaryClient):
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded term's current state.
-        :rtype: dict        
+        :rtype: dict
         """
         return super().upload_term(
             term,
@@ -456,7 +458,7 @@ class PurviewGlossaryClient(GlossaryClient):
             :param dict parameters: The parameters to pass into the url.
 
         :return: The uploaded terms' current states.
-        :rtype: dict        
+        :rtype: dict
         """
         return super().upload_terms(
             terms,

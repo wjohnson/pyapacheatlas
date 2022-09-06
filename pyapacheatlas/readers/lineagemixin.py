@@ -525,12 +525,14 @@ class LineageMixIn():
 
                     else:
                         warnings.warn(
-                            f"Input '{input_qn}' is repeated in Process '{process_qual_name}'. Only the earliest entry is kept.")
+                            f"Input '{input_qn}' is repeated in Process '{process_qual_name}'."
+                            " Only the earliest entry is kept.")
                 elif isinstance(inputs, list):
                     # We have an empty list, as the input, meaning destroy the input
                     if len(temp_in) > 0:
                         warnings.warn(
-                            f"Process '{process_qual_name}' has conflicting inputs and N/A values and will possibly be overwritten.")
+                            f"Process '{process_qual_name}' has conflicting inputs"
+                            " and N/A values and will possibly be overwritten.")
                     temp_proc.inputs(inputs)
 
                 if outputs:
@@ -540,12 +542,14 @@ class LineageMixIn():
                         temp_proc.outputs = temp_out
                     else:
                         warnings.warn(
-                            f"Output '{output_qn}' is repeated in Process '{process_qual_name}'. Only the earliest entry is kept.")
+                            f"Output '{output_qn}' is repeated in Process '{process_qual_name}'."
+                            " Only the earliest entry is kept.")
                 elif isinstance(outputs, list):
                     # We have an empty list, as the output, meaning destroy the output
                     if len(temp_out) > 0:
                         warnings.warn(
-                            f"Process '{process_qual_name}' has conflicting outputs and N/A values and will possibly be overwritten.")
+                            f"Process '{process_qual_name}' has conflicting outputs"
+                            " and N/A values and will possibly be overwritten.")
                     temp_proc.outputs = outputs
 
             else:
@@ -597,7 +601,8 @@ class LineageMixIn():
             except KeyError:
                 raise Exception(
                     "This row does not contain all of the required fields (" +
-                    ', '.join([f"{tp} column", f"{tp} qualifiedName", f"{sp} column", f"{sp} column", f"{pp} name", f"{tp} typeName", f"{pp} qualifiedName"]) + '): ' +
+                    ', '.join([f"{tp} column", f"{tp} qualifiedName", f"{sp} column", f"{sp} column",
+                        f"{pp} name", f"{tp} typeName", f"{pp} qualifiedName"]) + '): ' +
                     json.dumps(row)
                 )
 
