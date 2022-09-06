@@ -8,10 +8,11 @@ import warnings
 
 import requests
 
+
 class AtlasResponse():
     """
     Interface for a response from Atlas.  Consists of a:
-    
+
     * body: The text or json returned from Atlas.
     * status_code: The status code returned by the HTTP Response
     * method: The method used to make the HTTP Request
@@ -25,7 +26,7 @@ class AtlasResponse():
     """
 
     def __init__(self, response, **kwargs):
-        self.body=None
+        self.body = None
         self.status_code = response.status_code
         self.method = response.request.method
         self.is_successful = 200 <= response.status_code < 400
@@ -46,7 +47,8 @@ class AtlasResponse():
 
 
 class AtlasBaseClient():
-    _USER_AGENT = {"User-Agent": "pyapacheatlas/{0} {1}".format(__version__, requests.utils.default_headers().get("User-Agent"))}
+    _USER_AGENT = {"User-Agent": "pyapacheatlas/{0} {1}".format(
+        __version__, requests.utils.default_headers().get("User-Agent"))}
 
     def __init__(self, **kwargs):
         if "requests_args" in kwargs:
@@ -84,8 +86,8 @@ class AtlasBaseClient():
                 raise requests.RequestException(resp.text)
 
         return results
-    
-    def _get_http(self, url:str, params:dict=None, **kwargs) -> AtlasResponse:
+
+    def _get_http(self, url: str, params: dict = None, **kwargs) -> AtlasResponse:
         """
         :kwargs dict headers_include:Additional headers to include.
         :kwargs List[str] headers_include:Additional headers to include.
@@ -93,70 +95,74 @@ class AtlasBaseClient():
         return AtlasResponse(requests.get(
             url,
             params=params,
-            headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
+            headers=self.generate_request_headers(kwargs.get(
+                "headers_include"), kwargs.get("headers_exclude")),
             **self._requests_args
         ))
 
-    def _post_http(self, url:str, params:dict=None, json:Union[list, dict]=None, files:dict=None, **kwargs) -> AtlasResponse:
+    def _post_http(self, url: str, params: dict = None, json: Union[list, dict] = None, files: dict = None, **kwargs) -> AtlasResponse:
         """
         :kwargs dict headers_include:Additional headers to include.
         :kwargs List[str] headers_include:Additional headers to include.
         """
         extra_args = {}
         if json:
-            extra_args["json"]=json
+            extra_args["json"] = json
         if params:
-            extra_args["params"]=params
+            extra_args["params"] = params
         if files:
-            extra_args["files"]=files
+            extra_args["files"] = files
         response_args = {}
         if "responseNotJson" in kwargs:
             response_args["responseNotJson"] = kwargs["responseNotJson"]
         return AtlasResponse(
             requests.post(
                 url,
-                headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
+                headers=self.generate_request_headers(kwargs.get(
+                    "headers_include"), kwargs.get("headers_exclude")),
                 **extra_args,
                 **self._requests_args
             ),
             **response_args
         )
-    
-    def _delete_http(self, url:str, params:dict=None, json:Union[list, dict]=None, **kwargs) -> AtlasResponse:
+
+    def _delete_http(self, url: str, params: dict = None, json: Union[list, dict] = None, **kwargs) -> AtlasResponse:
         """
         :kwargs dict headers_include:Additional headers to include.
         :kwargs List[str] headers_include:Additional headers to include.
         """
         extra_args = {}
         if json:
-            extra_args["json"]=json
+            extra_args["json"] = json
         if params:
-            extra_args["params"]=params
+            extra_args["params"] = params
         return AtlasResponse(requests.delete(
             url,
-            headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
-            **extra_args,
-            **self._requests_args
-        ))
-    
-    def _put_http(self, url:str, params:dict=None, json:Union[list, dict]=None, **kwargs) -> AtlasResponse:
-        """
-        :kwargs dict headers_include:Additional headers to include.
-        :kwargs List[str] headers_include:Additional headers to include.
-        """
-        extra_args = {}
-        if json:
-            extra_args["json"]=json
-        if params:
-            extra_args["params"]=params
-        return AtlasResponse(requests.put(
-            url,
-            headers = self.generate_request_headers(kwargs.get("headers_include"), kwargs.get("headers_exclude")),
+            headers=self.generate_request_headers(kwargs.get(
+                "headers_include"), kwargs.get("headers_exclude")),
             **extra_args,
             **self._requests_args
         ))
 
-    def generate_request_headers(self,include:dict={}, exclude:List[str]=[]):
+    def _put_http(self, url: str, params: dict = None, json: Union[list, dict] = None, **kwargs) -> AtlasResponse:
+        """
+        :kwargs dict headers_include:Additional headers to include.
+        :kwargs List[str] headers_include:Additional headers to include.
+        """
+        extra_args = {}
+        if json:
+            extra_args["json"] = json
+        if params:
+            extra_args["params"] = params
+        return AtlasResponse(requests.put(
+            url,
+            headers=self.generate_request_headers(kwargs.get(
+                "headers_include"), kwargs.get("headers_exclude")),
+            **extra_args,
+            **self._requests_args
+        ))
+
+    def generate_request_headers(self, include: dict = {}, exclude: List[str] = []):
         auth = {} if self.authentication is None else self.authentication.get_authentication_headers()
 
         if include:

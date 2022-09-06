@@ -1,5 +1,3 @@
-import requests
-
 from ..util import AtlasBaseClient
 
 

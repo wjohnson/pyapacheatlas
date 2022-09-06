@@ -2,10 +2,8 @@ import logging
 import json
 import warnings
 
-import requests
-
 from ..entity import AtlasEntity
-from ..util import AtlasBaseClient, AtlasException
+from ..util import AtlasBaseClient
 from .term import _CrossPlatformTerm
 
 
@@ -28,7 +26,6 @@ class GlossaryClient(AtlasBaseClient):
         :return: The requested glossaries with the term headers.
         :rtype: list(dict)
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/glossary"
         logging.debug("Retreiving all glossaries from catalog")
 
@@ -193,7 +190,6 @@ class GlossaryClient(AtlasBaseClient):
         :return: The uploaded term's current state.
         :rtype: dict        
         """
-        results = None
         atlas_endpoint = self.endpoint_url + "/glossary/terms"
         payload = [t.to_json() if isinstance(
             t, _CrossPlatformTerm) else t for t in terms]
@@ -265,7 +261,7 @@ class GlossaryClient(AtlasBaseClient):
         # Assumes the AtlasEntity does not have guid defined
         json_entities = []
         for e in entities:
-            if isinstance(e, AtlasEntity) and e.guid != None:
+            if isinstance(e, AtlasEntity) and e.guid is not None:
                 json_entities.append({"guid": e.guid})
             elif isinstance(e, dict) and "guid" in e:
                 json_entities.append({"guid": e["guid"]})
@@ -283,7 +279,7 @@ class GlossaryClient(AtlasBaseClient):
             _discoveredTerm = self.get_term(
                 name=termName, glossary_name=glossary_name,
                 glossary_guid=glossary_guid
-                )
+            )
             termGuid = _discoveredTerm["guid"]
 
         atlas_endpoint = self.endpoint_url + \
@@ -362,7 +358,7 @@ class GlossaryClient(AtlasBaseClient):
                     if ra.get("guid", "") == termGuid
                 ]
                 json_entities.extend(_temp_payload)
-            
+
             else:
                 warnings.warn(
                     f"{str(e)} does not contain a guid or relationshipGuid and will be skipped.",
@@ -382,14 +378,14 @@ class GlossaryClient(AtlasBaseClient):
 
         if deleteAssignment.is_successful:
             results = {
-                "message": f"Successfully deleted assigned term from entities."}
+                "message": "Successfully deleted assigned term from entities."}
         return results
-    
+
     def delete_term(self, termGuid):
         """
         Delete a term based on the termGuid
         :param str termGuid: The guid for the term. Ignored if using termName.
-        
+
         :return: A dictionary indicating success or failure.
         :rtype: dict
         """
@@ -406,6 +402,7 @@ class GlossaryClient(AtlasBaseClient):
                 "guid": termGuid
             }
         return results
+
 
 class PurviewGlossaryClient(GlossaryClient):
 
@@ -510,7 +507,7 @@ class PurviewGlossaryClient(GlossaryClient):
         postResp = self._post_http(
             atlas_endpoint,
             files={'file': ("file", open(csv_path, 'rb'))},
-            headers_exclude = ["Content-Type"]
+            headers_exclude=["Content-Type"]
         )
 
         return postResp.body
@@ -569,7 +566,6 @@ class PurviewGlossaryClient(GlossaryClient):
             raise ValueError(
                 "Either glossary_name or glossary_guid must be defined.")
 
-        results = None
         atlas_endpoint = self.endpoint_url + \
             f"/glossary/{glossary_guid}/terms/export"
 

@@ -2,9 +2,7 @@ import logging
 from typing import List, Union
 
 from ..entity import AtlasEntity
-from ..util import _handle_response, AtlasBaseClient, batch_dependent_entities
-
-import requests
+from ..util import AtlasBaseClient, batch_dependent_entities
 
 
 class PurviewCollectionsClient(AtlasBaseClient):
@@ -15,7 +13,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
     https://docs.microsoft.com/en-us/rest/api/purview/catalogdataplane/collection
 
     """
-    def __init__(self, endpoint_url : str, authentication, **kwargs):
+
+    def __init__(self, endpoint_url: str, authentication, **kwargs):
         """
         :param str endpoint_url:
             Base URL for purview account, e.g. "https://{account}.purview.azure.com/" .
@@ -26,9 +25,9 @@ class PurviewCollectionsClient(AtlasBaseClient):
 
     def upload_single_entity(
         self,
-        entity : Union[AtlasEntity, dict],
-        collection : str,
-        api_version : str = "2022-03-01-preview"
+        entity: Union[AtlasEntity, dict],
+        collection: str,
+        api_version: str = "2022-03-01-preview"
     ):
         """
         Creates or updates a single atlas entity in a purview collection.
@@ -46,10 +45,11 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
 
-        atlas_endpoint = self.endpoint_url + f"catalog/api/collections/{collection}/entity"
+        atlas_endpoint = self.endpoint_url + \
+            f"catalog/api/collections/{collection}/entity"
 
         if isinstance(entity, AtlasEntity):
-            payload = {"entity":entity.to_json(), "referredEntities":{}}
+            payload = {"entity": entity.to_json(), "referredEntities": {}}
         elif isinstance(entity, dict):
             payload = entity
         else:
@@ -57,18 +57,18 @@ class PurviewCollectionsClient(AtlasBaseClient):
 
         singleEntityResponse = self._post_http(
             atlas_endpoint,
-            json = payload,
-            params = {"api-version": api_version}
+            json=payload,
+            params={"api-version": api_version}
         )
 
         return singleEntityResponse.body
 
     def upload_entities(
         self,
-        batch : List[AtlasEntity],
-        collection : str,
-        batch_size : int = None,
-        api_version : str = "2022-03-01-preview"
+        batch: List[AtlasEntity],
+        collection: str,
+        batch_size: int = None,
+        api_version: str = "2022-03-01-preview"
     ):
         """
         Creates or updates a batch of atlas entities in a purview collection.
@@ -92,7 +92,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
 
-        atlas_endpoint = self.endpoint_url + f"catalog/api/collections/{collection}/entity/bulk"
+        atlas_endpoint = self.endpoint_url + \
+            f"catalog/api/collections/{collection}/entity/bulk"
 
         payload = PurviewCollectionsClient._prepare_entity_upload(batch)
         results = []
@@ -106,7 +107,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
                 postBulkEntities = self._post_http(
                     atlas_endpoint,
                     json=batch,
-                    params = {"api-version": api_version}
+                    params={"api-version": api_version}
                 )
                 temp_results = postBulkEntities.body
                 results.append(temp_results)
@@ -115,11 +116,11 @@ class PurviewCollectionsClient(AtlasBaseClient):
             postBulkEntities = self._post_http(
                 atlas_endpoint,
                 json=payload,
-                params = {"api-version": api_version}
+                params={"api-version": api_version}
             )
 
         return postBulkEntities.body
-    
+
     # TODO: This is duplication with the AtlasClient and should eventually be removed
     @staticmethod
     def _prepare_entity_upload(batch):
@@ -162,9 +163,9 @@ class PurviewCollectionsClient(AtlasBaseClient):
 
     def move_entities(
         self,
-        guids : List[str],
-        collection : str,
-        api_version : str = "2022-03-01-preview"
+        guids: List[str],
+        collection: str,
+        api_version: str = "2022-03-01-preview"
     ):
         """
         Move one or more entities based on their guid to the provided collection.
@@ -181,12 +182,13 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
 
-        atlas_endpoint = self.endpoint_url + f"catalog/api/collections/{collection}/entity/moveHere"
+        atlas_endpoint = self.endpoint_url + \
+            f"catalog/api/collections/{collection}/entity/moveHere"
 
         moveEntityResponse = self._post_http(
             atlas_endpoint,
-            json = {"entityGuids":guids},
-            params = {"api-version": api_version}
+            json={"entityGuids": guids},
+            params={"api-version": api_version}
         )
 
         return moveEntityResponse.body
@@ -220,8 +222,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
 
     def list_collections(
         self,
-        api_version : str = "2019-11-01-preview",
-        skipToken : str = None
+        api_version: str = "2019-11-01-preview",
+        skipToken: str = None
     ):
         """
         List the collections in the account.
@@ -232,21 +234,22 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :return: A generator that pages through the list collections
         :rtype: List[dict]
         """
-        atlas_endpoint = self.endpoint_url + f"collections?api-version={api_version}"
+        atlas_endpoint = self.endpoint_url + \
+            f"collections?api-version={api_version}"
         if skipToken:
             atlas_endpoint = atlas_endpoint + f"&$skipToken={skipToken}"
 
         collection_generator = self._list_collections_generator(atlas_endpoint)
 
         return collection_generator
-    
+
     def create_or_update_collection(
         self,
-        name:str,
-        friendlyName:str,
-        parentCollectionName:str,
-        description:str=None,
-        api_version : str = "2019-11-01-preview",
+        name: str,
+        friendlyName: str,
+        parentCollectionName: str,
+        description: str = None,
+        api_version: str = "2019-11-01-preview",
     ):
         """
         Create or update a collection. This method currently does not support
@@ -264,10 +267,10 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
         payload = {
-            "friendlyName":friendlyName,
-            "parentCollection":{
-                "referenceName":parentCollectionName,
-                "type":"CollectionReference"
+            "friendlyName": friendlyName,
+            "parentCollection": {
+                "referenceName": parentCollectionName,
+                "type": "CollectionReference"
             }
         }
         if description:

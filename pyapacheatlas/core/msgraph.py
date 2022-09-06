@@ -37,7 +37,7 @@ class MsGraphClient():
         except JSONDecodeError:
             raise ValueError(
                 f"For UPN {userPrincipalName}: Error in parsing: {getUser.text}")
-        except requests.RequestException as e:
+        except requests.RequestException:
             raise requests.RequestException(
                 f"For UPN {userPrincipalName}: Error in parsing: {getUser.text}")
         except KeyError:
@@ -74,7 +74,7 @@ class MsGraphClient():
         except JSONDecodeError:
             raise ValueError(
                 f"For email {email}: Error in parsing response: {getUser.text}")
-        except requests.RequestException as e:
+        except requests.RequestException:
             raise requests.RequestException(
                 f"For email {email}: Error in parsing response: {getUser.text}")
         except KeyError:

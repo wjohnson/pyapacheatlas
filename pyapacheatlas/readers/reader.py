@@ -256,7 +256,7 @@ class Reader(LineageMixIn):
             For Azure Purview, a function to be called on each value
             when you pass in an experts or owners header to json_rows.
             Leaving it as None will return the exact value passed in
-            to the experts and owners section. 
+            to the experts and owners section.
             It has a built in cache that will prevent redundant calls
             to your function.
 

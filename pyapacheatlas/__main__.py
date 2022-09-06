@@ -11,7 +11,7 @@ if __name__ == "__main__":
     header and specify any customizations. See `ExcelReader.make_template`
     for list of possible parameters / configuration settings.
     """
-    from .readers import ExcelConfiguration, ExcelReader
+    from .readers import ExcelReader
     from . import __version__
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             raise RuntimeError(
                 f"In your config.ini, please specify a {args.config_section} section or update your --config-section parameter.")
         template_config = config[args.config_section]
-    
+
     if args.include_deprecated:
         template_config["include_deprecated"] = args.include_deprecated
 

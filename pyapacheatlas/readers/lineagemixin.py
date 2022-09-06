@@ -462,8 +462,8 @@ class LineageMixIn():
                         "uniqueAttributes": {"qualifiedName": qual_name}}]
         return results
 
-    def _header_qn(self, l):
-        return l["uniqueAttributes"]["qualifiedName"]
+    def _header_qn(self, entity):
+        return entity["uniqueAttributes"]["qualifiedName"]
 
     def parse_update_lineage(self, json_rows):
         """
@@ -471,7 +471,7 @@ class LineageMixIn():
         entities to be uploaded. All referenced entities must already exist
         and be identified by their type and qualifiedName.
 
-        Assumes a None entry for target or source qualifiedNames means 
+        Assumes a None entry for target or source qualifiedNames means
         "no change" to the existing entity. Using 'N/A' for the target or
         source qualifiedNames will reset the existing input or output to an
         empty list.

@@ -1,10 +1,6 @@
 from datetime import datetime
-import json
-import requests
 
 from .base import AtlasAuthBase
-from azure.identity import DefaultAzureCredential
-from azure.core.exceptions import ClientAuthenticationError
 
 
 class AzCredentialWrapper(AtlasAuthBase):

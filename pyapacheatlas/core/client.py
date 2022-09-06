@@ -1,7 +1,6 @@
-from operator import is_
-from .util import AtlasException, AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly, _handle_response
+from .util import AtlasBaseClient, batch_dependent_entities, PurviewLimitation, PurviewOnly
 from .collections.purview import PurviewCollectionsClient
-from .glossary import _CrossPlatformTerm, GlossaryClient, PurviewGlossaryClient
+from .glossary import GlossaryClient, PurviewGlossaryClient
 from .discovery.purview import PurviewDiscoveryClient
 from .typedef import BaseTypeDef, TypeCategory
 from .msgraph import MsGraphClient
@@ -9,9 +8,8 @@ from .entity import AtlasClassification, AtlasEntity
 from ..auth.base import AtlasAuthBase
 import logging
 import re
-import requests
 import warnings
-import sys
+
 _AZ_IDENTITY_INSTALLED = False
 try:
     import azure.identity
@@ -33,9 +31,9 @@ class AtlasClient(AtlasBaseClient):
         The method of authentication.
     :type authentication:
         :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-    
+
     Kwargs:
-        :param requests_*: 
+        :param requests_*:
             Kwargs to pass to the underlying `requests` package method call.
             For example passing `requests_verify = False` will supply `verify=False`
             to any API call.
@@ -55,13 +53,14 @@ class AtlasClient(AtlasBaseClient):
             requests_args = AtlasClient._parse_requests_args(**kwargs)
         else:
             requests_args = kwargs.pop("requests_args")
-        
+
         if "glossary" not in kwargs:
-            self.glossary = GlossaryClient(endpoint_url, authentication, requests_args=requests_args)
+            self.glossary = GlossaryClient(
+                endpoint_url, authentication, requests_args=requests_args)
         else:
             self.glossary = kwargs["glossary"]
 
-        super().__init__(requests_args = requests_args)
+        super().__init__(requests_args=requests_args)
 
     def delete_entity(self, guid=None, qualifiedName=None, typeName=None):
         """
@@ -104,12 +103,12 @@ class AtlasClient(AtlasBaseClient):
             else:
                 guid_str = guid
             atlas_endpoint = self.endpoint_url + \
-            "/entity/bulk?guid={}".format(guid_str)
+                "/entity/bulk?guid={}".format(guid_str)
 
         deleteEntity = self._delete_http(
             atlas_endpoint,
             params=parameters
-            )
+        )
 
         return deleteEntity.body
 
@@ -126,7 +125,7 @@ class AtlasClient(AtlasBaseClient):
         businessMetadata might be:
 
         .. code-block:: python
-            
+
             {
                 'operations': {
                     'criticality': ''
@@ -154,9 +153,9 @@ class AtlasClient(AtlasBaseClient):
             f"/entity/guid/{guid}/businessmetadata"
         deleteBizMeta = self._delete_http(
             atlas_endpoint,
-            params={"isOverwrite":force_update},
+            params={"isOverwrite": force_update},
             json=businessMetadata
-            )
+        )
 
         if deleteBizMeta.is_successful:
             results = {
@@ -181,7 +180,7 @@ class AtlasClient(AtlasBaseClient):
             f"/relationship/guid/{guid}"
         deleteRelationship = self._delete_http(
             atlas_endpoint
-            )
+        )
 
         if deleteRelationship.is_successful:
             results = {
@@ -203,7 +202,7 @@ class AtlasClient(AtlasBaseClient):
             f"/types/typedef/name/{name}"
         deleteType = self._delete_http(
             atlas_endpoint
-            )
+        )
         if deleteType.is_successful:
             results = {"message": f"successfully delete {name}"}
         return results
@@ -257,7 +256,7 @@ class AtlasClient(AtlasBaseClient):
         deleteType = self._delete_http(
             atlas_endpoint,
             json=payload
-            )
+        )
         if deleteType.is_successful:
             results = {"message": f"Successfully deleted type(s)"}
         return results
@@ -826,8 +825,8 @@ class AtlasClient(AtlasBaseClient):
 
         if postBulkClassifications.is_successful:
             results = {"message": f"Successfully assigned {classification_name}",
-                    "entityGuids": entityGuids
-                    }
+                       "entityGuids": entityGuids
+                       }
         return results
 
     def _classify_entity_adds(self, guid, classifications):
@@ -982,9 +981,9 @@ class AtlasClient(AtlasBaseClient):
 
         if deleteEntityClassification.is_successful:
             results = {"message":
-                   f"Successfully removed classification: {classificationName} from {guid}.",
-                   "guid": guid,
-                   }
+                       f"Successfully removed classification: {classificationName} from {guid}.",
+                       "guid": guid,
+                       }
         return results
 
     @staticmethod
@@ -1483,7 +1482,7 @@ class AtlasClient(AtlasBaseClient):
 
         If I have a business metadata typedef of 'operations`, with attributes
         'expenseCode' and 'criticality', my businessMetadata might be:
-        
+
         .. code-block:: python
 
             {
@@ -1511,10 +1510,11 @@ class AtlasClient(AtlasBaseClient):
         :rtype: dict(str, str)
 
         """
-        atlas_endpoint= self.endpoint_url + f"/entity/guid/{guid}/businessmetadata"
+        atlas_endpoint = self.endpoint_url + \
+            f"/entity/guid/{guid}/businessmetadata"
         updateBizMeta = self._post_http(
             atlas_endpoint,
-            params={"isOverwrite":force_update},
+            params={"isOverwrite": force_update},
             json=businessMetadata
         )
 
@@ -1538,7 +1538,7 @@ class PurviewClient(AtlasClient):
         The method of authentication.
     :type authentication:
         :class:`~pyapacheatlas.auth.base.AtlasAuthBase`
-    
+
     Kwargs:
         :param requests_*: 
             Kwargs to pass to the underlying `requests` package method call.
@@ -1560,11 +1560,16 @@ class PurviewClient(AtlasClient):
         else:
             requests_args = AtlasBaseClient._parse_requests_args(**kwargs)
 
-        glossary = PurviewGlossaryClient(endpoint_url, authentication, requests_args = requests_args)
-        self.collections = PurviewCollectionsClient(f"https://{account_name.lower()}.purview.azure.com/", authentication, requests_args = requests_args)
-        self.msgraph = MsGraphClient(authentication, requests_args = requests_args)
-        self.discovery = PurviewDiscoveryClient(f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication, requests_args = requests_args)
-        super().__init__(endpoint_url, authentication, glossary = glossary, requests_args = requests_args, **kwargs)
+        glossary = PurviewGlossaryClient(
+            endpoint_url, authentication, requests_args=requests_args)
+        self.collections = PurviewCollectionsClient(
+            f"https://{account_name.lower()}.purview.azure.com/", authentication, requests_args=requests_args)
+        self.msgraph = MsGraphClient(
+            authentication, requests_args=requests_args)
+        self.discovery = PurviewDiscoveryClient(
+            f"https://{account_name.lower()}.purview.azure.com/catalog/api", authentication, requests_args=requests_args)
+        super().__init__(endpoint_url, authentication,
+                         glossary=glossary, requests_args=requests_args, **kwargs)
 
     @PurviewOnly
     def get_entity_next_lineage(self, guid, direction, getDerivedLineage=False, offset=0, limit=-1):

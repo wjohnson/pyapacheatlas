@@ -302,7 +302,7 @@ class ExcelReader(Reader):
     def parse_update_lineage(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
-        parse the (default) UpdateLineage table into existing process entities. 
+        parse the (default) UpdateLineage table into existing process entities.
 
         Assumes these process entities and any referenced entity exists.
 
@@ -339,7 +339,7 @@ class ExcelReader(Reader):
     def parse_column_mapping(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
-        parse the (default) ColumnMapping tab into existing process entities. 
+        parse the (default) ColumnMapping tab into existing process entities.
 
         Assumes these process entities and any referenced entity exists.
         This will not update the inputs and outputs, it will update name
@@ -372,7 +372,7 @@ class ExcelReader(Reader):
     def parse_update_lineage_with_mappings(self, filepath):
         """
         Read a given excel file that conforms to the excel atlas template and
-        parse the (default) UpdateLineage and ColumnMapping tabs into existing process entities. 
+        parse the (default) UpdateLineage and ColumnMapping tabs into existing process entities.
 
         Assumes these process entities and any referenced entity exists.
 
