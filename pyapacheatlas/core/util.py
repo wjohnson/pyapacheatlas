@@ -102,7 +102,7 @@ class AtlasBaseClient():
         ))
 
     def _post_http(self, url: str, params: dict = None,
-                   json: Union[list, dict] = None, files: dict = None, 
+                   json: Union[list, dict] = None, files: dict = None,
                    **kwargs) -> AtlasResponse:
         """
         :kwargs dict headers_include:Additional headers to include.
@@ -449,9 +449,9 @@ def batch_dependent_entities(entities, batch_size=1000):
 
         # If the set is SO large blow up
         if len(principal_set) > batch_size:
-            raise ValueError("You have a group of dependent entities that "
-            "exceed your max batch size. Total dependency group size: {}".format(
-                len(principal_set)))
+            raise ValueError(
+                "You have a group of dependent entities that "
+                f"exceed your max batch size. Total dependency group size: {len(principal_set)}")
         # If the set is equal to the batch size, add it to the maximized batch
         # no need to process further because we don't need to look at the next
         # largest set to merge

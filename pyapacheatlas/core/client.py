@@ -1577,7 +1577,7 @@ class PurviewClient(AtlasClient):
             f"https://{account_name.lower()}.purview.azure.com/catalog/api",
             authentication, requests_args=requests_args)
         super().__init__(endpoint_url, authentication,
-                         glossary=glossary, requests_args=requests_args, 
+                         glossary=glossary, requests_args=requests_args,
                          **kwargs)
 
     @PurviewOnly

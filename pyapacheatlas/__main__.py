@@ -46,7 +46,8 @@ if __name__ == "__main__":
         config.read(args.config)
         if args.config_section not in config:
             raise RuntimeError(
-                f"In your config.ini, please specify a {args.config_section} section or update your --config-section parameter.")
+                f"In your config.ini, please specify a {args.config_section} "
+                "section or update your --config-section parameter.")
         template_config = config[args.config_section]
 
     if args.include_deprecated:

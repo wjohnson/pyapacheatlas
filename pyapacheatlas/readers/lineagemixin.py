@@ -602,7 +602,7 @@ class LineageMixIn():
                 raise Exception(
                     "This row does not contain all of the required fields (" +
                     ', '.join([f"{tp} column", f"{tp} qualifiedName", f"{sp} column", f"{sp} column",
-                        f"{pp} name", f"{tp} typeName", f"{pp} qualifiedName"]) + '): ' +
+                              f"{pp} name", f"{tp} typeName", f"{pp} qualifiedName"]) + '): ' +
                     json.dumps(row)
                 )
 
