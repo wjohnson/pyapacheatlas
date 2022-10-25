@@ -37,3 +37,19 @@ if __name__ == "__main__":
         guid = entity["guid"]
         delete_response = client.delete_entity(guid=guid)
         print(json.dumps(delete_response, indent=2))
+
+    # When you need to delete multiple assets under a specific collection and they all
+    # are the same type
+    #filter for collection
+    filter_setup = {"collectionId": ""} 
+    query = client.search_entities("*", search_filter=filter_setup) 
+
+    batch = [] 
+    for entry in query: 
+        batch.append(entry["id"]) 
+        if len(batch) == 100: 
+            client.delete_entity(guid=batch) 
+            batch = [] 
+    # loop to clean up batches 
+    if len(batch) > 0: 
+        client.delete_entity(guid=batch) 
