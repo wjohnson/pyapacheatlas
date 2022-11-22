@@ -9,7 +9,10 @@ if __name__ == "__main__":
     """
     This sample provides an example of creating an entity with a rich text description.
 
-    This is only available in Microsoft Purview.
+    This is only available in Microsoft Purview. Rich text is made available using the
+    userDescription attribute and the microsoft_isDescriptionRichText CUSTOM attribute.
+
+    You must use both attribute and customAttribute to enable this feature in the UI.
     """
 
     # Authenticate 
@@ -27,6 +30,8 @@ if __name__ == "__main__":
         attributes={
             "userDescription": "<div><h3>Business Process</h3><p>This report shows the remaining shelf life of inventory of Finished Goods, semi-finished Goods, Raw and Packaging materials expressed in percentage in two different ways :</p> <p> <h1> New para </h1> </p>"
         },
+        # This custom attribute flips a switch inside of the Purview UI to render
+        # the rich text description.
         customAttributes={
             "microsoft_isDescriptionRichText": "true"
         }
