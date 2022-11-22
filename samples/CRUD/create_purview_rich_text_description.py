@@ -1,10 +1,9 @@
 import json
-import os
 
 # PyApacheAtlas packages
-# Connect to Atlas via a Service Principal
+# Connect to Atlas via the Azure CLI
 from azure.identity import AzureCliCredential
-from pyapacheatlas.core import PurviewClient, AtlasEntity, AtlasProcess
+from pyapacheatlas.core import PurviewClient, AtlasEntity
 
 if __name__ == "__main__":
     """
