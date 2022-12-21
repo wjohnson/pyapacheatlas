@@ -14,13 +14,13 @@ class PurviewCollectionsClient(AtlasBaseClient):
 
     """
 
-    def __init__(self, endpoint_url: str, authentication, **kwargs):
+    def __init__(self, account_name: str, authentication, **kwargs):
         """
-        :param str endpoint_url:
-            Base URL for purview account, e.g. "https://{account}.purview.azure.com/" .
+        :param str account_name:
+            The name of your Microsoft Purview account.
         """
         super().__init__(**kwargs)
-        self.endpoint_url = endpoint_url
+        self.account_name = account_name
         self.authentication = authentication
 
     def upload_single_entity(
@@ -45,8 +45,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
 
-        atlas_endpoint = self.endpoint_url + \
-            f"catalog/api/collections/{collection}/entity"
+        atlas_endpoint = f"https://{self.account_name}.purview.azure.com/catalog/api/collections/{collection}/entity"
 
         if isinstance(entity, AtlasEntity):
             payload = {"entity": entity.to_json(), "referredEntities": {}}
@@ -92,8 +91,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
 
-        atlas_endpoint = self.endpoint_url + \
-            f"catalog/api/collections/{collection}/entity/bulk"
+        atlas_endpoint = f"https://{self.account_name}.purview.azure.com/" \
+                         f"catalog/api/collections/{collection}/entity/bulk"
 
         payload = PurviewCollectionsClient._prepare_entity_upload(batch)
         results = []
@@ -182,8 +181,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :rtype: dict
         """
 
-        atlas_endpoint = self.endpoint_url + \
-            f"catalog/api/collections/{collection}/entity/moveHere"
+        atlas_endpoint = f"https://{self.account_name}.purview.azure.com/" \
+                         f"catalog/api/collections/{collection}/entity/moveHere"
 
         moveEntityResponse = self._post_http(
             atlas_endpoint,
@@ -234,8 +233,8 @@ class PurviewCollectionsClient(AtlasBaseClient):
         :return: A generator that pages through the list collections
         :rtype: List[dict]
         """
-        atlas_endpoint = self.endpoint_url + \
-            f"collections?api-version={api_version}"
+
+        atlas_endpoint = f"https://{self.account_name}.purview.azure.com/collections?api-version={api_version}"
         if skipToken:
             atlas_endpoint = atlas_endpoint + f"&$skipToken={skipToken}"
 
@@ -277,7 +276,7 @@ class PurviewCollectionsClient(AtlasBaseClient):
         if description:
             payload["description"] = description
 
-        collection_endpoint = self.endpoint_url + f"collections/{name}"
+        collection_endpoint = f"https://{self.account_name}.purview.azure.com/collections/{name}"
         cruCollection = self._put_http(
             collection_endpoint,
             params={"api-version": api_version},
