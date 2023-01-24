@@ -65,7 +65,7 @@ class GlossaryClient(AtlasBaseClient):
         results = None
 
         if guid:
-            logging.debug(f"Retreiving a Glossary based on guid: {guid}")
+            logging.debug(f"Retrieving a Glossary based on guid: {guid}")
             atlas_endpoint = self.endpoint_url + "/glossary/{}".format(guid)
             if detailed:
                 atlas_endpoint = atlas_endpoint + "/detailed"
@@ -74,7 +74,7 @@ class GlossaryClient(AtlasBaseClient):
             )
             results = getResult.body
         else:
-            logging.debug(f"Retreiving a Glossary based on name: {name}")
+            logging.debug(f"Retrieving a Glossary based on name: {name}")
             all_glossaries = self._get_glossaries()
             logging.debug(f"Iterating over {len(all_glossaries)} glossaries")
             for glossary in all_glossaries:
@@ -132,7 +132,8 @@ class GlossaryClient(AtlasBaseClient):
         else:
             terms_in_glossary = self.get_glossary(
                 name=glossary_name, guid=glossary_guid)
-            for term in terms_in_glossary["terms"]:
+
+            for term in terms_in_glossary.get("terms", []):
                 if term["displayText"] == name:
                     _guid = term["termGuid"]
                     results = self.get_term(guid=_guid)
