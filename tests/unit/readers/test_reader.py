@@ -178,9 +178,39 @@ def test_parse_bulk_entities_with_root_labels():
     assert(("status" not in ae1) and "status" in ae2)
     assert(ae2["status"] == "ACTIVE")
 
+def test_parse_bulk_entities_with_businessMeta():
+    rc = ReaderConfiguration()
+    reader = Reader(rc)
+    # "typeName", "name",
+    # "qualifiedName", "classifications",
+    # "[Relationship] table"
+    json_rows = [
+        {"typeName": "demo_table", "name": "entityNameABC",
+         "qualifiedName": "qualifiedNameofEntityNameABC",
+         "[Business][type1] attrib1": None
+         },
+        {"typeName": "demo_column", "name": "col1",
+         "qualifiedName": "col1qn",
+         "[Business][type1] attrib1": "abc"
+         },
+         {"typeName": "demo_column", "name": "col2",
+         "qualifiedName": "col2qn",
+         "[Managed][type2] attrib2": 123
+         }
+    ]
+    results = reader.parse_bulk_entities(json_rows)
+    abc = results["entities"][0]
+    col1 = results["entities"][1]
+    col2 = results["entities"][2]
+
+    assert("type1" in col1["businessAttributes"])
+    assert("type2" in col2["businessAttributes"])
+    col1_type1 = col1["businessAttributes"]["type1"]
+    assert("attrib1" in col1_type1 and col1_type1["attrib1"] == "abc")
+    col2_type2 = col2["businessAttributes"]["type2"]
+    assert("attrib2" in col2_type2 and col2_type2["attrib2"] == 123)
+    
 # TODO: classifications
-# TODO: busines attributes
-# TODO: custom attributes
 
 def test_parse_entity_defs():
     rc = ReaderConfiguration()

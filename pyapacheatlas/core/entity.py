@@ -131,6 +131,14 @@ class AtlasEntity():
         also update an existing business attribute. You can pass in a parameter
         name and a dict.
 
+        For example:
+        ```python
+        entity.addBusinessAttribute(
+            operations={"expenseCode":"123", "criticality":"low"}
+        )
+        ```
+
+
         Kwargs:
             :param kwarg: The name(s) of the business attribute(s) you're adding.
             :type kwarg: dict

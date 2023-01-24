@@ -138,7 +138,9 @@ class Reader(LineageMixIn):
         :rtype: dict(str, dict(str,str))
         """
         output = {"attributes": {}, "relationshipAttributes": {},
-                  "root": {}, "custom": {}}
+                  "root": {}, "custom": {}, "businessAttributes": {}}
+        BIZ_MGD_ATTRIB_PATTERN = r"\[(?:Business|Managed)\]\[(.*)\] (.*)"
+
         for column_name, cell_value in row.items():
             # Remove the required attributes so they're not double dipping.
             if column_name in ignore:
@@ -188,7 +190,6 @@ class Reader(LineageMixIn):
                             {cleaned_key: reference_object}
                         )
 
-            # TODO: Add support for Business
             elif column_name.startswith("[root]"):
                 # This is a root level attribute
                 cleaned_key = column_name.replace("[root]", "").strip()
@@ -212,6 +213,13 @@ class Reader(LineageMixIn):
                 cleaned_key = column_name.replace("[custom]", "").strip()
 
                 output["custom"].update({cleaned_key: cell_value})
+
+            elif re.match(BIZ_MGD_ATTRIB_PATTERN, column_name):
+                bizType, bizAttribute = re.match(BIZ_MGD_ATTRIB_PATTERN, column_name).groups()
+                if bizType in output["businessAttributes"]:
+                    output["businessAttributes"][bizType].update({bizAttribute: cell_value})
+                else:
+                    output["businessAttributes"][bizType] = {bizAttribute: cell_value}
             else:
                 output["attributes"].update({column_name: cell_value})
 
@@ -295,6 +303,10 @@ class Reader(LineageMixIn):
                 relationshipAttributes=_extracted["relationshipAttributes"],
                 **_extracted["root"]
             )
+
+            if _extracted["businessAttributes"]:
+                entity.addBusinessAttribute(**_extracted["businessAttributes"])
+
             # TODO: Remove at 1.0.0 launch
             if "classifications" in row:
                 classification_column_used = True
