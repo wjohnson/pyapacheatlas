@@ -12,7 +12,7 @@ GlossaryClient for Apache Atlas
 
    GlossaryClient
    GlossaryClient.get_glossary
-   GlossaryClient._get_glossaries
+   GlossaryClient.get_glossaries
    GlossaryClient.get_term
    GlossaryClient.upload_term
    GlossaryClient.upload_terms
@@ -30,7 +30,7 @@ PurviewGlossaryClient
 
    PurviewGlossaryClient
    PurviewGlossaryClient.get_glossary
-   PurviewGlossaryClient._get_glossaries
+   PurviewGlossaryClient.get_glossaries
    PurviewGlossaryClient.get_term
    PurviewGlossaryClient.upload_term
    PurviewGlossaryClient.upload_terms
