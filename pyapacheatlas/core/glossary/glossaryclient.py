@@ -14,25 +14,35 @@ class GlossaryClient(AtlasBaseClient):
         super().__init__(**kwargs)
 
     # Glossary
-    def _get_glossaries(self, limit=-1, offset=0, sort_order="ASC"):
+    def get_glossaries(self, limit=-1, offset=0, sort_order="ASC", **kwargs):
         """
         Retrieve all glossaries and the term headers.
+
+        Atlas Get Glossaries: https://atlas.apache.org/api/v2/resource_GlossaryREST.html#resource_GlossaryREST_getGlossaries_GET
+        MSFT Purview List Glossaries: https://learn.microsoft.com/en-us/rest/api/purview/catalogdataplane/glossary/list-glossaries?tabs=HTTP
 
         :param int limit:
             The maximum number of glossaries to pull back.  Does not affect the
             number of term headers included in the results.
         :param int offset: The number of glossaries to skip.
         :param str sort_order: ASC for DESC sort for glossary name.
+        :param bool ignoreTermsAndCategories: Used in Microsoft Purview, ignored in Atlas.
         :return: The requested glossaries with the term headers.
         :rtype: list(dict)
         """
         atlas_endpoint = self.endpoint_url + "/glossary"
-        logging.debug("Retreiving all glossaries from catalog")
+        logging.debug("Retrieving all glossaries from catalog")
+
+        params = {"limit": limit, "offset": offset, "sort": sort_order}
+        additionalParams = {}
+        if "ignoreTermsAndCategories" in kwargs:
+            additionalParams["ignoreTermsAndCategories"] = kwargs["ignoreTermsAndCategories"]
+        params.update(additionalParams)
 
         # TODO: Implement paging with offset and limit
         getResult = self._get_http(
             atlas_endpoint,
-            params={"limit": limit, "offset": offset, "sort": sort_order}
+            params=params
         )
 
         return getResult.body
@@ -75,7 +85,7 @@ class GlossaryClient(AtlasBaseClient):
             results = getResult.body
         else:
             logging.debug(f"Retrieving a Glossary based on name: {name}")
-            all_glossaries = self._get_glossaries()
+            all_glossaries = self.get_glossaries()
             logging.debug(f"Iterating over {len(all_glossaries)} glossaries")
             for glossary in all_glossaries:
                 if glossary["name"] == name:
@@ -146,9 +156,14 @@ class GlossaryClient(AtlasBaseClient):
 
         Provide an AtlasGlossaryTerm or dictionary.
 
+        Atlas new glossary term: https://atlas.apache.org/api/v2/resource_GlossaryREST.html#resource_GlossaryREST_createGlossaryTerm_POST
+
+        Atlas update glossary term: https://atlas.apache.org/api/v2/resource_GlossaryREST.html#resource_GlossaryREST_updateGlossaryTerm_PUT
+        
         :param term: The term to be uploaded.
         :type term: Union(:class:`~pyapacheatlas.core.glossary.term.AtlasGlossaryTerm`, dict)
-        :param bool force_update: Currently not used.
+        :param bool force_update: When set to true, performs a complete update of the term.
+        :param str termGuid: Required if using force_update.
 
         Kwargs:
             :param dict parameters: The parameters to pass into the url.
@@ -167,6 +182,17 @@ class GlossaryClient(AtlasBaseClient):
             raise TypeError(
                 f"The type {type(term)} is not supported. Please use a dict, AtlasGlossaryTerm, or PurviewGlossaryTerm")
 
+        if force_update and ("termGuid" not in kwargs):
+            print(kwargs)
+            raise ValueError("When using force_update, you must also include termGuid")
+        elif force_update:
+            putResp = self._put_http(
+                atlas_endpoint + f"/{kwargs['termGuid']}",
+                json=payload,
+                params=kwargs.get("parameters", {})
+            )
+            return putResp.body
+        
         postResp = self._post_http(
             atlas_endpoint,
             json=payload,
@@ -422,10 +448,15 @@ class PurviewGlossaryClient(GlossaryClient):
 
         Provide a PurviewGlossaryTerm or dictionary.
 
+        Purview new glossary term: https://learn.microsoft.com/en-us/rest/api/purview/catalogdataplane/glossary/create-glossary-term?tabs=HTTP
+        
+        Purview update glossary term: https://learn.microsoft.com/en-us/rest/api/purview/catalogdataplane/glossary/update-glossary-term?tabs=HTTP
+
         :param term: The term to be uploaded.
         :type term: Union(:class:`~pyapacheatlas.core.glossary.term.PurviewGlossaryTerm`, dict)
         :param bool includeTermHierarchy: Must be True if you are using hierarchy or term templates.
-        :param bool force_update: Currently not used.
+        :param bool force_update: When set to true, performs a complete update of the term.
+        :param str termGuid: Required if using force_update.
 
         Kwargs:
             :param dict parameters: The parameters to pass into the url.
@@ -438,7 +469,8 @@ class PurviewGlossaryClient(GlossaryClient):
             force_update,
             parameters={
                 "includeTermHierarchy": json.dumps(includeTermHierarchy)
-            }
+            },
+            **kwargs
         )
 
     def upload_terms(self, terms, includeTermHierarchy=True, force_update=False, **kwargs):
