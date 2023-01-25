@@ -13,6 +13,8 @@ The Excel Reader provides an interface to Excel templates and extracting the
 content in the standardized Atlas format. That extract can then be uploaded
 to your Microsoft Purview or Apache Atlas.
 
+Learn more about the Excel Configuration options here: :doc:`./excel-config`
+
 .. autosummary::
    :toctree: api/
 

@@ -134,7 +134,7 @@ Learn more about the Excel [features and configuration in the wiki](https://gith
 
 ## Additional Resources
 
-* Learn more about this package in the [github wiki](https://github.com/wjohnson/pyapacheatlas/wiki/Excel-Template-and-Configuration).
+* Learn more about this package in the [PyApacheAtlas docs](https://wjohnson.github.io/pyapacheatlas-docs/latest/).
 * The [Apache Atlas REST API](http://atlas.apache.org/api/v2/)
 * The [Purview CLI Package](https://github.com/tayganr/purviewcli) provides CLI support.
-* Purview [REST API Official Docs](https://docs.microsoft.com/en-us/rest/api/purview/)
+* Purview [REST API Official Docs](https://learn.microsoft.com/en-us/rest/api/purview/)
