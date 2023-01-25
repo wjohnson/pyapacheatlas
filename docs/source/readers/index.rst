@@ -9,4 +9,5 @@ PyApacheAtlas provides a means for reading templates from JSON and Excel.
    :caption: Contents:
 
    excel
+   excel-config
    reader
