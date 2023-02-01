@@ -316,7 +316,7 @@ class Reader(LineageMixIn):
 
             contacts_cache = {}
             contacts_func = contacts_func or (lambda x: x)
-            if ("experts" in row or "owners" in row) and len(row.get("experts", "") + row.get("owners", "")) > 0:
+            if ("experts" in row or "owners" in row) and (row.get("experts") or row.get("owners")):
                 experts = []
                 owners = []
 
