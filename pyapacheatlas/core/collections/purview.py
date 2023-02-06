@@ -285,3 +285,28 @@ class PurviewCollectionsClient(AtlasBaseClient):
         )
 
         return cruCollection.body
+
+    def delete_collection(
+        self,
+        name: str,
+        api_version: str = "2019-11-01-preview"
+    ):
+        """
+        Delete the given collection based on its name. The name is not the
+        friendly name but rather the unique id of the collection.
+
+        Purview API: https://learn.microsoft.com/en-us/rest/api/purview/accountdataplane/collections/delete-collection?tabs=HTTP
+
+        :param str name: The unique id for the collection to be deleted.
+        :param str api_version: The Purview API version to use.
+        :return: A dictionary with key `message` indicating success.
+        :rtype: dict
+        """
+        atlas_endpoint = self.endpoint_url + \
+            f"collections/{name}?api-version={api_version}"
+        
+        deleteCollectionResp = self._delete_http(
+            atlas_endpoint
+        )
+        
+        return {"message": f"Successfully deleted collection with id {name}"}
