@@ -8,11 +8,10 @@ from pyapacheatlas.core.typedef import AtlasAttributeDef, AtlasStructDef, TypeCa
 
 if __name__ == "__main__":
     """
-    This sample demonstrates creating, updating, and deleting custom labels
-    in Azure Purview but this could also be applied to Apache Atlas.
+    This sample demonstrates creating, updating, and deleting custom labels (i.e. tags)
+    in Microsoft Purview but this could also be applied to Apache Atlas.
 
-    Note that at time of publishing, custom labels are not visible in the
-    Purview UI.
+    Note that labels are called 'tags' in the Purview UI.
     """
     oauth = ServicePrincipalAuthentication(
         tenant_id=os.environ.get("TENANT_ID", ""),
@@ -24,7 +23,7 @@ if __name__ == "__main__":
         authentication=oauth
     )
 
-    # Create an Entity With Business Attributes
+    # Create an Entity With Labels/Tags
     # Note: Rerunning this sample with the same qualified name will not work.
     # You can't update the labels via the /entity endpoint after the entity
     # has been created.
