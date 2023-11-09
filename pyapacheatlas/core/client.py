@@ -551,7 +551,7 @@ class AtlasClient(AtlasBaseClient):
             # business_Metadata has an underscore so before it can be used in
             # the endpoint, it must be converted to businessMetadata.
             atlas_endpoint = atlas_endpoint + \
-                "{}def".format(type_category.value.replace("_", ""))
+                "{}def".format(type_category.value.replace("_", "").lower())
         elif guid or name:
             atlas_endpoint = atlas_endpoint + "typedef"
         else:
