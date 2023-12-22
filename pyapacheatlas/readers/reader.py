@@ -17,9 +17,14 @@ from . import util as reader_util
 
 class ReaderConfiguration():
     """
-    A base configuration for the Reader class.  Allows you to customize
-    headers with a source_prefix, target_prefix, and process_prefix for
-    parsing table and column lineages.
+    A base configuration for the Reader class.  Allows you to:
+
+    * value_separator: Defaults to `;` control the separator for lists of objects.
+    * source_prefix: Defaults to `Source` control the field name for Source in lineage parsing
+    * target_prefix: Defaults to `Target` control the field name for Target in lineage parsing
+    * process_prefix: Defaults to `Process` control the field name for Process in lineage parsing
+    * column_transformation_name: Defaults to `transformation` control the field name for indiciating what the transformation is, deprecated
+    * default_glossary: Defaults to `Glossary` when you specify a term this is added with `@<Value>` unless the user provided an `@` in the term.
     """
 
     def __init__(self, **kwargs):
@@ -33,6 +38,7 @@ class ReaderConfiguration():
             "process_prefix", "Process")
         self.column_transformation_name = kwargs.get(
             "column_transformation_name", "transformation")
+        self.default_glossary = kwargs.get("default_glossary", "Glossary")
 
 
 class Reader(LineageMixIn):
@@ -159,7 +165,11 @@ class Reader(LineageMixIn):
                     reference_object = [
                         {"typeName": "AtlasGlossaryTerm",
                          "uniqueAttributes": {
-                             "qualifiedName": "{}@Glossary".format(t)
+                             # Allow for a default glossary term
+                             # or for the user to manually specify it
+                             # This might break others usage of `@` in their
+                             # glossary terms though
+                             "qualifiedName": f"{t}@{self.config.default_glossary}" if "@" not in t else t
                          }
                          } for t in terms
                     ]
