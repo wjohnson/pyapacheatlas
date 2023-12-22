@@ -4,6 +4,7 @@ from .glossary import GlossaryClient, PurviewGlossaryClient
 from .discovery.purview import PurviewDiscoveryClient
 from .typedef import BaseTypeDef, TypeCategory
 from .msgraph import MsGraphClient
+from .graphql import GraphQLClient
 from .entity import AtlasClassification, AtlasEntity
 from ..auth.base import AtlasAuthBase
 import logging
@@ -1576,6 +1577,10 @@ class PurviewClient(AtlasClient):
         self.discovery = PurviewDiscoveryClient(
             f"https://{account_name.lower()}.purview.azure.com/catalog/api",
             authentication, requests_args=requests_args)
+        self.graphql = GraphQLClient(
+            endpoint_url = f"https://{account_name.lower()}.purview.azure.com/datamap/api/graphql",
+            authentication=authentication
+        )
         super().__init__(endpoint_url, authentication,
                          glossary=glossary, requests_args=requests_args,
                          **kwargs)
