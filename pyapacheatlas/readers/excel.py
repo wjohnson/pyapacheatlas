@@ -37,6 +37,11 @@ class ExcelConfiguration(ReaderConfiguration):
     :param str process_prefix:
         Defaults to "Process" and represents the prefix of the columns
         in Excel to be considered related to the table process.
+    :param str default_glossary:
+        Defaults to "Glossary" and identifies what the glossary suffix
+        should be for the `[Relationship] meanings` column if not
+        provided. Can be manually overridden in Excel with `term@OtherGlossary`
+        as the cell value.
     :param str column_transformation_name:
         Defaults to "transformation" and identifies the column that
         represents the transformation for a specific column.
