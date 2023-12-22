@@ -232,8 +232,13 @@ class AtlasEntity():
             self.relationshipAttributes = {}
         try:
             for k, v in kwargs.items():
-                val = v.to_json(minimum=True) if isinstance(
-                    v, AtlasEntity) else v
+                val = None
+                if isinstance(v, AtlasEntity):
+                    val = v.to_json(minimum=True)
+                elif isinstance(v, list):
+                    val = [vv.to_json(minimum=True) if isinstance(vv, AtlasEntity) else vv for vv in v ]
+                else:
+                    val = v
                 relationships_to_add[k] = val
             # Add all the relationships
             self.relationshipAttributes.update(relationships_to_add)
