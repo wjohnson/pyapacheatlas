@@ -1729,3 +1729,61 @@ class PurviewClient(AtlasClient):
             "PurviewClient.glossary.upload_term instead.")
         results = self.glossary.upload_term(term, includeTermHierarchy)
         return results
+
+    def update_entity_tags(self, tags, guid=None, typeName=None, qualifiedName=None, force_update=False):
+        """
+        Update the given tags for one entity. Provide a list of strings that
+        should be added. You can either provide the guid of the entity or
+        the typeName and qualifiedName of the entity. By using force_update
+        set to True you will overwrite the existing entity. force_update
+        set to False will append to the existing entity.
+
+        Note: This is a facade over `update_entity_labels` as MSFT Purview's
+        UI refers to labels as 'tags'.
+
+        :param list(str) tags: The tag(s) that should be appended or set.
+        :param str guid:
+            The guid of the entity to be updated. Optional if using typeName
+            and qualifiedName.
+        :param str typeName:
+            The type name of the entity to be updated. Must also use
+            qualifiedname with typeName. Not used if guid is provided.
+        :param str qualifiedName:
+            The qualified name of the entity to be updated. Must also use
+            typeName with qualifiedName. Not used if guid is provided.
+        :return:
+            A dict containing a message indicating success. Otherwise
+            it will raise an AtlasException.
+        :rtype: dict(str, str)
+        """
+        return super().update_entity_labels(tags, guid, typeName, qualifiedName, force_update)
+    
+    def delete_entity_tags(self, tags, guid=None, typeName=None, qualifiedName=None):
+        """
+        Delete the given tags for one entity. Provide a list of strings that
+        should be removed. You can either provide the guid of the entity or
+        the typeName and qualifiedName of the entity.
+
+        If you want to clear out an entity without knowing all the tags, you
+        should consider `update_entity_tags` instead and set
+        force_update to True.
+
+        Note: This is a facade over `delete_entity_labels` as MSFT Purview's
+        UI refers to labels as 'tags'.
+
+        :param list(str) labels: The label(s) that should be removed.
+        :param str guid:
+            The guid of the entity to be updated. Optional if using typeName
+            and qualifiedName.
+        :param str typeName:
+            The type name of the entity to be updated. Must also use
+            qualifiedname with typeName. Not used if guid is provided.
+        :param str qualifiedName:
+            The qualified name of the entity to be updated. Must also use
+            typeName with qualifiedName. Not used if guid is provided.
+        :return:
+            A dict containing a message indicating success. Otherwise
+            it will raise an AtlasException.
+        :rtype: dict(str, str)
+        """
+        return super().delete_entity_labels(tags, guid, typeName, qualifiedName)
