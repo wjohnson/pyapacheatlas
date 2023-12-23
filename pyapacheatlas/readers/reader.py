@@ -237,7 +237,7 @@ class Reader(LineageMixIn):
 
     def _organize_contacts(self, contacts, contacts_func, contacts_cache):
         """
-        Convert the string with delimiters into a list of `{id: contact}`
+        Convert the string with delimiters into a list of `{id: contact, info: value}`
         after calling the contacts_func on the stripped contact string.
 
         :param str contacts: a splittable string.
@@ -250,15 +250,29 @@ class Reader(LineageMixIn):
         for contact in contacts.split(self.config.value_separator):
             if contact == "":
                 continue
-            clean_contact = contact.strip()
-            output = contact.strip()
-            if clean_contact in contacts_cache:
-                output = contacts_cache[clean_contact]
+            # Support providing a email:info;email:info pattern
+            # This matches what Microsoft Purview does for importing
+            # terms through the UI and CSV
+            _contact_and_info = contact.strip().split(":")
+
+            _clean_contact = _contact_and_info[0].strip()
+            _clean_info = None
+            _contact_obj_id = None
+            if len(_contact_and_info) > 1:
+                _clean_info = _contact_and_info[1].strip()
+                
+            if _clean_contact in contacts_cache:
+                _contact_obj_id = contacts_cache[_clean_contact]
             else:
-                output = contacts_func(clean_contact)
-                contacts_cache[clean_contact] = output
+                _contact_obj_id = contacts_func(_clean_contact)
+                contacts_cache[_clean_contact] = _contact_obj_id
             # This format is specific to Azure Purview
-            contacts_enhanced.append({"id": output})
+            output = {
+                "id": _contact_obj_id
+            }
+            if _clean_info:
+                output["info"] = _clean_info
+            contacts_enhanced.append(output)
 
         return contacts_enhanced
 
