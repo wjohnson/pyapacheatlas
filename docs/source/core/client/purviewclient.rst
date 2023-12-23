@@ -23,15 +23,20 @@ below are presented in this order.
 .. _Lineage: https://docs.microsoft.com/en-us/rest/api/purview/catalogdataplane/lineage
 .. _Relationship: https://docs.microsoft.com/en-us/rest/api/purview/catalogdataplane/relationship
 
-Some of the APIs are separated into other clients. For the PurviewClient, there
-is a PurviewGlossaryClient that provides access to the Glossary API endpoints,
-a PurviewDiscoveryClient that provides access to the Discovery API endpoints,
-and a CollectionsClient that provides access to the Microsoft Purview only
-collections APIs.
+Some of the APIs (in the documentation) are separated into other clients. You
+do not need to instatiate these clients. They are made available in the PurviewClient.
+For the PurviewClient, there is a PurviewGlossaryClient that provides access to the
+Glossary API endpoints, a PurviewDiscoveryClient that provides access to the Discovery
+API endpoints, a CollectionsClient that provides access to the Microsoft Purview only
+collections APIs, an MSGraphClient that provides access to Microsoft Graph Utilities
+for converting email addresses to object ids, and a GraphQL client for querying
+Microsoft Purview via the preview GraphQL endpoint.
 
-* Glossary
-* Discovery(Search)
-* Collections
+* :ref:`Glossary <glossary-client>`
+* :ref:`Discovery(Search) <discovery-client>`
+* :ref:`Collections <collections-client>`
+* :ref:`Microsoft Graph (for email to object id) <ms-graph-client>`
+* :ref:`GraphQL (for GraphQL based search) <graphql-client>`
 
 .. autosummary::
    :toctree: api/
@@ -70,3 +75,5 @@ collections APIs.
 
    PurviewClient.update_entity_labels
    PurviewClient.delete_entity_labels
+   PurviewClient.update_entity_tags
+   PurviewClient.delete_entity_tags
