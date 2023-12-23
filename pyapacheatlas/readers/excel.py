@@ -105,6 +105,17 @@ class ExcelReader(Reader):
         """
         Generate a set of entities from an excel template file.
 
+        Special Headers
+        
+        * `[root] someProperty` adds the cell's value to the root of the entity in the `someProperty` property.
+        * `[Relationship] meanings` add glossary terms
+        * `experts` and `owners` add expert or owner contact. 
+            * For Microsoft Purview Supports email or email:info when used with `contacts_func`
+            * For Microsoft Purview Supports supports `objectId` or `objectId:info` without a `contacts_func`
+            * `:` is a hard coded delimiter between the email or object id and the info value
+            * `info` is the string of info text for Microsoft Purview
+            * Also supports multiple entries using the value separator (defaults to `;`) e.g. `email1;email2:info2;email3:info3`
+
         :param str filepath:
             The xlsx file that contains your table and columns.
         :param function contacts_func:
