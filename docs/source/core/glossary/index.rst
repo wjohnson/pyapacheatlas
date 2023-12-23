@@ -3,6 +3,7 @@ Atlas Glossary Methods
 ======================
 .. currentmodule:: pyapacheatlas.core.glossary.glossaryclient
 
+.. _glossary-client:
 -------------------------------
 GlossaryClient for Apache Atlas
 -------------------------------

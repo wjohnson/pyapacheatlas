@@ -22,6 +22,7 @@ easier to work with Microsoft Purview's collections and Microsoft Graph APIs.
 
    collections
    msgraph
+   graphql
 
 .. toctree::
    :maxdepth: 1

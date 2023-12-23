@@ -1,3 +1,4 @@
+.. _discovery-client:
 ================================
 Atlas Discovery / Search Methods
 ================================

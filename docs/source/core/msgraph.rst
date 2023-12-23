@@ -1,3 +1,4 @@
+.. _ms-graph-client:
 ==========================
 Microsoft Graph Utilities
 ==========================

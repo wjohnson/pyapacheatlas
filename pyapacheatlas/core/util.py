@@ -21,8 +21,7 @@ class AtlasResponse():
 
     * Raises a `ValueError` if a non 204 status code's.
     * Raises a `AtlasException` if 'errorCode' appears in the response text and a 4xx or 5xx status code is returned.
-    * Raises a `requests.RequestException` if 'errorCode' does not appear in
-    the response text and a 4xx or 5xx status code is returned.
+    * Raises a `requests.RequestException` if 'errorCode' does not appear in the response text and a 4xx or 5xx status code is returned.
 
     """
 
