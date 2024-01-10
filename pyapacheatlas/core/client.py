@@ -1205,7 +1205,8 @@ class AtlasClient(AtlasBaseClient):
         # TODO Include a Do Not Overwrite call
         results = None
         atlas_endpoint = self.endpoint_url + "/entity/bulk"
-
+        parameters = {"businessAttributeUpdateBehavior": "replace"}
+        
         payload = AtlasClient._prepare_entity_upload(batch)
 
         results = []
@@ -1218,6 +1219,7 @@ class AtlasClient(AtlasBaseClient):
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
                 postBulkEntities = self._post_http(
                     atlas_endpoint,
+                    params=parameters,
                     json=batch
                 )
                 temp_results = postBulkEntities.body
@@ -1226,6 +1228,7 @@ class AtlasClient(AtlasBaseClient):
         else:
             postBulkEntities = self._post_http(
                 atlas_endpoint,
+                params=parameters,
                 json=payload
             )
 
