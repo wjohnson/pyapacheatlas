@@ -1188,7 +1188,7 @@ class AtlasClient(AtlasBaseClient):
 
         return payload
 
-    def upload_entities(self, batch, batch_size=None):
+    def upload_entities(self, batch, batch_size=None, parameters={}):
         """
         Upload entities to your Atlas backed Data Catalog.
 
@@ -1199,13 +1199,14 @@ class AtlasClient(AtlasBaseClient):
             Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`,
             list(dict), list(:class:`~pyapacheatlas.core.entity.AtlasEntity`) )
         :param int batch_size: The number of entities you want to send in bulk
+        :param dict parameters: The parameters to pass into the url.
         :return: The results of your bulk entity upload.
         :rtype: dict
         """
         # TODO Include a Do Not Overwrite call
         results = None
         atlas_endpoint = self.endpoint_url + "/entity/bulk"
-
+        
         payload = AtlasClient._prepare_entity_upload(batch)
 
         results = []
@@ -1218,6 +1219,7 @@ class AtlasClient(AtlasBaseClient):
                 logging.debug(f"Batch upload #{batch_id} of size {batch_size}")
                 postBulkEntities = self._post_http(
                     atlas_endpoint,
+                    params=parameters,
                     json=batch
                 )
                 temp_results = postBulkEntities.body
@@ -1226,6 +1228,7 @@ class AtlasClient(AtlasBaseClient):
         else:
             postBulkEntities = self._post_http(
                 atlas_endpoint,
+                params=parameters,
                 json=payload
             )
 
@@ -1649,6 +1652,33 @@ class PurviewClient(AtlasClient):
             "Please use PurviewClient.glossary.import_terms instead.")
         results = self.glossary.import_terms(
             csv_path, glossary_name, glossary_guid)
+        return results
+
+    def upload_entities(self, batch, batch_size=None, businessAttributeUpdateBehavior=None, collectionId=None):
+        """
+        Upload entities to your Atlas backed Data Catalog.
+
+        :param batch:
+            The batch of entities you want to upload. Supports a single dict,
+            AtlasEntity, list of dicts, list of atlas entities.
+        :type batch:
+            Union(dict, :class:`~pyapacheatlas.core.entity.AtlasEntity`,
+            list(dict), list(:class:`~pyapacheatlas.core.entity.AtlasEntity`) )
+        :param int batch_size: The number of entities you want to send in bulk
+        :param str businessAttributeUpdateBehavior: Used to define the update behavior for business attributes when updating entities. https://learn.microsoft.com/en-us/rest/api/purview/datamapdataplane/entity/bulk-create-or-update?view=rest-purview-datamapdataplane-2023-09-01&tabs=HTTP#businessattributeupdatebehavior
+        :param str collectionId: The collection where entities will be moved to. 
+            Typically a 6-letter pseudo-random string such as "xcgw8s" which can be obtained
+            e.g. by visual inspection in the purview web UI (https://web.purview.azure.com/).
+        Only specify a value if you need to move an entity to another collection.
+        :return: The results of your bulk entity upload.
+        :rtype: dict   
+        """
+        parameters={}
+        if businessAttributeUpdateBehavior is not None:
+            parameters.update({"businessAttributeUpdateBehavior": businessAttributeUpdateBehavior}) 
+        if collectionId is not None:
+            parameters.update({"collectionId": collectionId})
+        results = super().upload_entities(batch, batch_size, parameters)
         return results
 
     @PurviewOnly
