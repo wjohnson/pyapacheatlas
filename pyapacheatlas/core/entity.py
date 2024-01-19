@@ -226,7 +226,7 @@ class AtlasEntity():
                 Union(dict, :class:`pyapacheatlas.core.entity.AtlasEntity`)
         """
         relationshipAttributes_was_uninitialized = isinstance(
-            self.customAttributes, AtlasUnInit)
+            self.relationshipAttributes, AtlasUnInit)
         relationships_to_add = {}
         if relationshipAttributes_was_uninitialized:
             self.relationshipAttributes = {}
