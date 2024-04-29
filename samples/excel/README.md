@@ -24,7 +24,7 @@ There are four key features of the PyApacheAtlas package with respect to the Exc
 
   file_path = 'some.xlsx'
   # Create entities (most common thing you'll do)
-  reader.parse_parse_bulk_entities(file_path)
+  reader.parse_bulk_entities(file_path)
   # Connect entities / assets with custom lineage
   reader.parse_update_lineage(file_path)
   # For Azure Purview users, pdate existing process entities with column mappings
