@@ -1,2 +1,2 @@
-mysql-connector-python==8.0.23
+mysql-connector-python==9.1.0
 pyapacheatlas>=0.4.0
